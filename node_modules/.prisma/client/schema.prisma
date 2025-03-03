@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Combine_Score {
+  id                Int     @id @default(autoincrement())
+  fortyTime         Float?
+  tenYardSplit      Float?
+  twentyYardShuttle Float?
+  threeCone         Float?
+  verticalLeap      Float?
+  playerId          Int?
+  broadJump         Float?
+  Player            Player? @relation(fields: [playerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Combine_Score_1")
+
+  @@index([playerId], map: "fk_Combine_Score_1_idx")
+}
+
+model Pick {
+  id                Int     @id @default(autoincrement())
+  selectionRound    Int?
+  selectionNumber   Int?
+  selectionYear     String? @db.VarChar(4)
+  selectionPickFrom String? @db.VarChar(45)
+  selectionPickTo   String? @db.VarChar(45)
+  combineScore      Int?
+  Team_id           Int
+  Player_id         Int
+  Player            Player  @relation(fields: [Player_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Pick_Player1")
+  Team              Team    @relation(fields: [Team_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Pick_Team1")
+
+  @@index([Player_id], map: "fk_Pick_Player1_idx")
+  @@index([Team_id], map: "fk_Pick_Team1_idx")
+}
+
+model Player {
+  id                  Int             @id @default(autoincrement())
+  firstName           String          @db.VarChar(45)
+  lastName            String          @db.VarChar(45)
+  age                 Int
+  height              Float?
+  weight              Float?
+  handSize            Float?
+  armLength           Float?
+  homeCity            String?         @db.VarChar(45)
+  homeState           String?         @db.VarChar(45)
+  university          String?         @db.VarChar(75)
+  status              String?         @db.VarChar(45)
+  position            String?         @db.VarChar(75)
+  year_entered_league Int?
+  pickId              Int?
+  combineScoreId      Int?
+  Combine_Score       Combine_Score[]
+  Pick                Pick[]
+  Player_Award        Player_Award[]
+  Player_Team         Player_Team[]
+}
+
+model Player_Award {
+  id           Int     @id @default(autoincrement())
+  playerId     Int
+  award_name   String? @db.VarChar(45)
+  year_awarded Int?
+  Player       Player  @relation(fields: [playerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Player_Awards")
+
+  @@index([playerId], map: "FK_Player_Awards_idx")
+}
+
+model Player_Team {
+  id           Int       @id @default(autoincrement())
+  playerId     Int
+  teamId       Int
+  current_team Boolean   @default(false)
+  start_date   DateTime? @db.Date
+  end_date     DateTime? @db.Date
+  Player       Player    @relation(fields: [playerId], references: [id], onDelete: Cascade, map: "fk_PlayerTeam_Player")
+  Team         Team      @relation(fields: [teamId], references: [id], onDelete: Cascade, map: "fk_PlayerTeam_Team")
+
+  @@index([playerId], map: "fk_PlayerTeam_Player_idx")
+  @@index([teamId], map: "fk_PlayerTeam_Team_idx")
+}
+
+model Post_Season_Result {
+  id                 Int     @id @default(autoincrement())
+  playoff_year       Int
+  last_round_reached String? @db.VarChar(45)
+  win_lose           String? @db.VarChar(1)
+  opponent_score     Int?
+  team_score         Int?
+  teamId             Int?
+  Team               Team?   @relation(fields: [teamId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_Team")
+
+  @@index([teamId], map: "fk_Team_idx")
+}
+
+model Schedule {
+  id                             Int       @id @default(autoincrement())
+  awayTeamId                     Int
+  homeTeamId                     Int?
+  scheduleWeek                   Int?
+  gameDate                       DateTime? @db.Date
+  gameCity                       String?   @db.VarChar(45)
+  gameStateProvince              String?   @db.VarChar(45)
+  gameCountry                    String?   @db.VarChar(45)
+  gameLocation                   String?   @db.VarChar(75)
+  awayTeamConference             String?   @db.VarChar(45)
+  awayTeamDivision               String?   @db.VarChar(45)
+  wonLostFlag                    String?   @db.VarChar(1)
+  homeOrAway                     String?   @db.VarChar(1)
+  awayTeamScore                  Int?
+  homeScore                      Int?
+  teamID                         Int?
+  Team_Schedule_homeTeamIdToTeam Team?     @relation("Schedule_homeTeamIdToTeam", fields: [homeTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Schedule_Home")
+  Team_Schedule_awayTeamIdToTeam Team      @relation("Schedule_awayTeamIdToTeam", fields: [awayTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Schedule_Visitor")
+
+  @@index([awayTeamId], map: "fk_Schedule_1_idx")
+  @@index([homeTeamId], map: "fk_Schedule_Home_idx")
+}
+
+model Team {
+  id                                 Int                  @id @default(autoincrement())
+  name                               String               @db.VarChar(45)
+  city                               String?              @db.VarChar(45)
+  state                              String?              @db.VarChar(45)
+  conference                         String?              @db.VarChar(35)
+  division                           String?              @db.VarChar(20)
+  stadium                            String?              @db.VarChar(45)
+  scheduleId                         Int?
+  Pick                               Pick[]
+  Player_Team                        Player_Team[]
+  Post_Season_Result                 Post_Season_Result[]
+  Schedule_Schedule_homeTeamIdToTeam Schedule[]           @relation("Schedule_homeTeamIdToTeam")
+  Schedule_Schedule_awayTeamIdToTeam Schedule[]           @relation("Schedule_awayTeamIdToTeam")
+}
+
+model Person {
+  pid          Int    @id @default(autoincrement())
+  userName     String @db.VarChar(25)
+  emailAddress String @db.VarChar(75)
+  password     String @db.VarChar(25)
+  firstName    String @db.VarChar(25)
+  lastName     String @db.VarChar(35)
+}
