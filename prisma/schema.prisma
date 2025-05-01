@@ -1,3 +1,5 @@
+// This is your Prisma schema file for MyNFL database
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,7 +9,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Combine_Score {
+model CombineScore {
   id                Int     @id @default(autoincrement())
   fortyTime         Float?
   tenYardSplit      Float?
@@ -16,126 +18,34 @@ model Combine_Score {
   verticalLeap      Float?
   playerId          Int?
   broadJump         Float?
-  Player            Player? @relation(fields: [playerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Combine_Score_1")
+  player            Player? @relation(fields: [playerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Combine_Score_1")
 
   @@index([playerId], map: "fk_Combine_Score_1_idx")
 }
 
-model Pick {
-  id                Int     @id @default(autoincrement())
-  selectionRound    Int?
-  selectionNumber   Int?
-  selectionYear     String? @db.VarChar(4)
-  selectionPickFrom String? @db.VarChar(45)
-  selectionPickTo   String? @db.VarChar(45)
-  combineScore      Int?
-  Team_id           Int
-  Player_id         Int
-  Player            Player  @relation(fields: [Player_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Pick_Player1")
-  Team              Team    @relation(fields: [Team_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Pick_Team1")
+model DraftPick {
+  id                              Int        @id @default(autoincrement())
+  round                           Int
+  pickNumber                      Int
+  draftYear                       Int
+  currentTeamId                   Int
+  prospectId                      Int?
+  playerId                        Int?
+  used                            Boolean    @default(false)
+  createdAt                       DateTime?  @default(now())
+  updatedAt                       DateTime?  @default(now())
+  originalTeam                    Int?
+  team                            Team       @relation(fields: [currentTeamId], references: [id], map: "fk_DraftPick_CurrentTeam")
+  player                          Player?    @relation(fields: [playerId], references: [id], map: "fk_DraftPick_Player")
+  prospect_DraftPickToProspect    Prospect?  @relation("DraftPick_prospectIdToProspect", fields: [prospectId], references: [id], map: "fk_DraftPick_Prospect")
+  prospect_ProspectToDraftPick    Prospect[] @relation("Prospect_draftPickIdToDraftPick")
 
-  @@index([Player_id], map: "fk_Pick_Player1_idx")
-  @@index([Team_id], map: "fk_Pick_Team1_idx")
-}
-
-model Player {
-  id                  Int             @id @default(autoincrement())
-  firstName           String          @db.VarChar(45)
-  lastName            String          @db.VarChar(45)
-  age                 Int
-  height              Float?
-  weight              Float?
-  handSize            Float?
-  armLength           Float?
-  homeCity            String?         @db.VarChar(45)
-  homeState           String?         @db.VarChar(45)
-  university          String?         @db.VarChar(75)
-  status              String?         @db.VarChar(45)
-  position            String?         @db.VarChar(75)
-  year_entered_league Int?
-  pickId              Int?
-  combineScoreId      Int?
-  Combine_Score       Combine_Score[]
-  Pick                Pick[]
-  Player_Award        Player_Award[]
-  Player_Team         Player_Team[]
-}
-
-model Player_Award {
-  id           Int     @id @default(autoincrement())
-  playerId     Int
-  award_name   String? @db.VarChar(45)
-  year_awarded Int?
-  Player       Player  @relation(fields: [playerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Player_Awards")
-
-  @@index([playerId], map: "FK_Player_Awards_idx")
-}
-
-model Player_Team {
-  id           Int       @id @default(autoincrement())
-  playerId     Int
-  teamId       Int
-  current_team Boolean   @default(false)
-  start_date   DateTime? @db.Date
-  end_date     DateTime? @db.Date
-  Player       Player    @relation(fields: [playerId], references: [id], onDelete: Cascade, map: "fk_PlayerTeam_Player")
-  Team         Team      @relation(fields: [teamId], references: [id], onDelete: Cascade, map: "fk_PlayerTeam_Team")
-
-  @@index([playerId], map: "fk_PlayerTeam_Player_idx")
-  @@index([teamId], map: "fk_PlayerTeam_Team_idx")
-}
-
-model Post_Season_Result {
-  id                 Int     @id @default(autoincrement())
-  playoff_year       Int
-  last_round_reached String? @db.VarChar(45)
-  win_lose           String? @db.VarChar(1)
-  opponent_score     Int?
-  team_score         Int?
-  teamId             Int?
-  Team               Team?   @relation(fields: [teamId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_Team")
-
-  @@index([teamId], map: "fk_Team_idx")
-}
-
-model Schedule {
-  id                             Int       @id @default(autoincrement())
-  awayTeamId                     Int
-  homeTeamId                     Int?
-  scheduleWeek                   Int?
-  gameDate                       DateTime? @db.Date
-  gameCity                       String?   @db.VarChar(45)
-  gameStateProvince              String?   @db.VarChar(45)
-  gameCountry                    String?   @db.VarChar(45)
-  gameLocation                   String?   @db.VarChar(75)
-  awayTeamConference             String?   @db.VarChar(45)
-  awayTeamDivision               String?   @db.VarChar(45)
-  wonLostFlag                    String?   @db.VarChar(1)
-  homeOrAway                     String?   @db.VarChar(1)
-  awayTeamScore                  Int?
-  homeScore                      Int?
-  teamID                         Int?
-  Team_Schedule_homeTeamIdToTeam Team?     @relation("Schedule_homeTeamIdToTeam", fields: [homeTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Schedule_Home")
-  Team_Schedule_awayTeamIdToTeam Team      @relation("Schedule_awayTeamIdToTeam", fields: [awayTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Schedule_Visitor")
-
-  @@index([awayTeamId], map: "fk_Schedule_1_idx")
-  @@index([homeTeamId], map: "fk_Schedule_Home_idx")
-}
-
-model Team {
-  id                                 Int                  @id @default(autoincrement())
-  name                               String               @db.VarChar(45)
-  city                               String?              @db.VarChar(45)
-  state                              String?              @db.VarChar(45)
-  conference                         String?              @db.VarChar(35)
-  division                           String?              @db.VarChar(20)
-  stadium                            String?              @db.VarChar(45)
-  scheduleId                         Int?
-  Pick                               Pick[]
-  Player_Team                        Player_Team[]
-  Post_Season_Result                 Post_Season_Result[]
-  Schedule_Schedule_homeTeamIdToTeam Schedule[]           @relation("Schedule_homeTeamIdToTeam")
-  Schedule_Schedule_awayTeamIdToTeam Schedule[]           @relation("Schedule_awayTeamIdToTeam")
+  @@unique([draftYear, round, pickNumber], map: "unique_draft_pick")
+  @@index([playerId], map: "fk_DraftPick_Player_idx")
+  @@index([prospectId], map: "fk_DraftPick_Prospect_idx")
+  @@index([currentTeamId, draftYear], map: "idx_draftpick_currentteam")
+  @@index([draftYear], map: "idx_draftpick_originalteam")
+  @@index([used], map: "idx_draftpick_used")
 }
 
 model Person {
@@ -145,4 +55,95 @@ model Person {
   password     String @db.VarChar(25)
   firstName    String @db.VarChar(25)
   lastName     String @db.VarChar(35)
+}
+
+model Player {
+  id                Int            @id @default(autoincrement())
+  firstName         String         @db.VarChar(45)
+  lastName          String         @db.VarChar(45)
+  age               Int
+  height            Float?
+  weight            Float?
+  handSize          Float?
+  armLength         Float?
+  homeCity          String?        @db.VarChar(45)
+  homeState         String?        @db.VarChar(45)
+  university        String?        @db.VarChar(75)
+  status            String?        @db.VarChar(45)
+  position          String?        @db.VarChar(75)
+  pickId            Int?
+  combineScoreId    Int?
+  prospectId        Int?
+  yearEnteredLeague DateTime?      @db.Date
+  combineScores     CombineScore[]
+  draftPicks        DraftPick[]
+  prospect          Prospect?      @relation(fields: [prospectId], references: [id], map: "fk_Player_Prospect")
+  playerAwards      PlayerAward[]
+  playerTeams       PlayerTeam[]
+
+  @@index([prospectId], map: "fk_Player_Prospect")
+}
+
+model PlayerAward {
+  id          Int     @id @default(autoincrement())
+  playerId    Int
+  awardName   String? @db.VarChar(45)
+  yearAwarded Int?
+  player      Player  @relation(fields: [playerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Player_Awards")
+
+  @@index([playerId], map: "FK_Player_Awards_idx")
+}
+
+
+model PostSeasonResult {
+  id               Int     @id @default(autoincrement())
+  playoffYear      Int
+  lastRoundReached String? @db.VarChar(45)
+  winLose          String? @db.VarChar(1)
+  opponentScore    Int?
+  teamScore        Int?
+  teamId           Int?
+  team             Team?   @relation(fields: [teamId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_Team")
+
+  @@index([teamId], map: "fk_Team_idx")
+}
+
+
+
+model Schedule {
+  id                Int       @id @default(autoincrement())
+  teamId            Int?
+  seasonYear        String    @db.VarChar(4)
+  oppTeamId         Int
+  oppTeamConference String?   @db.VarChar(45)
+  oppTeamDivision   String?   @db.VarChar(45)
+  scheduleWeek      Int?
+  gameDate          DateTime? @db.Date
+  gameCity          String?   @db.VarChar(45)
+  gameStateProvince String?   @db.VarChar(45)
+  gameCountry       String?   @db.VarChar(45)
+  gameLocation      String?   @db.VarChar(75)
+  wonLostFlag       String?   @db.VarChar(1)
+  homeOrAway        String?   @db.VarChar(1)
+  oppTeamScore      Int?
+  teamScore         Int?
+  team              Team?     @relation("Schedule_teamIdToTeam", fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Schedule_Team")
+  oppTeam           Team      @relation("Schedule_oppTeamIdToTeam", fields: [oppTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_Schedule_Visitor")
+
+  @@index([oppTeamId], map: "fk_Schedule_1_idx")
+  @@index([teamId], map: "fk_Schedule_Team_idx")
+}
+
+model TeamNeed {
+  id        Int       @id @default(autoincrement())
+  teamId    Int
+  position  String    @db.VarChar(10)
+  priority  Int       @default(1)
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @default(now())
+  draftYear DateTime? @db.Date
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade, map: "fk_TeamNeed_Team")
+
+  @@unique([teamId, position], map: "unique_team_position")
+  @@index([teamId], map: "fk_TeamNeed_Team_idx")
 }
