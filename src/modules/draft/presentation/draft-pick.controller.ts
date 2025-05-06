@@ -78,6 +78,84 @@ export class DraftPickController {
   }
 
   /**
+   * Get all draft picks with player and team details
+   */
+  async getDraftPicksWithDetails(req: Request, res: Response): Promise<void> {
+    try {
+      const draftPicks = await this.draftPickService.getDraftPicksWithDetails();
+      res.status(200).json(draftPicks);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error fetching draft picks with details',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Get draft picks by year with player and team details
+   */
+  async getDraftPicksByYearWithDetails(req: Request, res: Response): Promise<void> {
+    try {
+      const year = parseInt(req.params.year);
+      const draftPicks = await this.draftPickService.getDraftPicksByYearWithDetails(year);
+      res.status(200).json(draftPicks);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error fetching draft picks by year',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Get draft picks by team with player details
+   */
+  async getDraftPicksByTeamWithDetails(req: Request, res: Response): Promise<void> {
+    try {
+      const teamId = parseInt(req.params.teamId);
+      const draftPicks = await this.draftPickService.getDraftPicksByTeamWithDetails(teamId);
+      res.status(200).json(draftPicks);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error fetching draft picks by team',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  // New methods
+  /**
+   * Get all draft picks with their complete team history
+   */
+  async getDraftPicksWithAllTeamHistory(req: Request, res: Response): Promise<void> {
+    try {
+      const draftPicks = await this.draftPickService.getDraftPicksWithAllTeamHistory();
+      res.status(200).json(draftPicks);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error fetching draft picks with team history',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Get all draft picks with their drafting team information
+   */
+  async getDraftPicksWithDraftingTeam(req: Request, res: Response): Promise<void> {
+    try {
+      const draftPicks = await this.draftPickService.getDraftPicksWithDraftingTeam();
+      res.status(200).json(draftPicks);
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error fetching draft picks with drafting team',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
    * Create a new draft pick
    */
   async createDraftPick(req: Request, res: Response): Promise<void> {
@@ -487,12 +565,10 @@ export class DraftPickController {
       if (error instanceof ZodError) {
         res.status(400).json({ error: 'Validation error', details: error.errors });
       } else {
-        res
-          .status(500)
-          .json({
-            error: 'Failed to get draft picks by filters',
-            details: (error as Error).message,
-          });
+        res.status(500).json({
+          error: 'Failed to get draft picks by filters',
+          details: (error as Error).message,
+        });
       }
     }
   }

@@ -3,6 +3,7 @@ import { Result } from '../../../../shared/domain/Result';
 import { DraftPick } from '../../domain/draft-pick.entity';
 import { DraftPickRepository } from '../../domain/draft-pick.repository';
 import { PrismaClient } from '@prisma/client';
+import { DraftPickWithDetailsDTO } from '../../application/dtos/draft-pick-with-details.dto';
 
 export class DraftPickPrismaRepository implements DraftPickRepository {
   private prisma: PrismaClient;
@@ -165,6 +166,132 @@ export class DraftPickPrismaRepository implements DraftPickRepository {
         `Failed to fetch draft picks by filters: ${(error as Error).message}`,
       );
     }
+  }
+
+  async findDraftPicksWithDetails(): Promise<DraftPickWithDetailsDTO[]> {
+    // Use Prisma's raw SQL feature with consistent backtick quoting for MySQL
+    const draftPicks = await this.prisma.$queryRaw`
+      SELECT 
+        dp.id,
+        dp.draftYear,
+        dp.round,
+        dp.pickNumber,
+        dp.playerId,
+        pt.teamId,
+        p.firstName as playerFirstName,
+        p.lastName as playerLastName,
+        t.name as teamName
+      FROM DraftPick dp
+      LEFT JOIN Player p ON dp.playerId = p.id
+      LEFT JOIN PlayerTeam pt ON p.id = pt.playerId AND pt.endDate IS NULL
+      LEFT JOIN Team t ON pt.teamId = t.id
+      ORDER BY dp.draftYear DESC, dp.round ASC, dp.pickNumber ASC
+    `;
+
+    // Cast the result to the proper type after query execution
+    return draftPicks as unknown as DraftPickWithDetailsDTO[];
+  }
+
+  async findDraftPicksByYearWithDetails(year: number): Promise<DraftPickWithDetailsDTO[]> {
+    const draftPicks = await this.prisma.$queryRaw`
+      SELECT 
+        dp.id,
+        dp.draftYear,
+        dp.round,
+        dp.pickNumber,
+        dp.playerId,
+        pt.teamId,
+        p.firstName as playerFirstName,
+        p.lastName as playerLastName,
+        t.name as teamName
+      FROM DraftPick dp
+      LEFT JOIN Player p ON dp.playerId = p.id
+      LEFT JOIN PlayerTeam pt ON p.id = pt.playerId AND pt.endDate IS NULL
+      LEFT JOIN Team t ON pt.teamId = t.id
+      WHERE dp.draftYear = ${year}
+      ORDER BY dp.round ASC, dp.pickNumber ASC
+    `;
+
+    return draftPicks as unknown as DraftPickWithDetailsDTO[];
+  }
+
+  async findDraftPicksByTeamWithDetails(teamId: number): Promise<DraftPickWithDetailsDTO[]> {
+    const draftPicks = await this.prisma.$queryRaw`
+      SELECT 
+        dp.id,
+        dp.draftYear,
+        dp.round,
+        dp.pickNumber,
+        dp.playerId,
+        pt.teamId,
+        p.firstName as playerFirstName,
+        p.lastName as playerLastName,
+        t.name as teamName
+      FROM DraftPick dp
+      LEFT JOIN Player p ON dp.playerId = p.id
+      LEFT JOIN PlayerTeam pt ON p.id = pt.playerId AND pt.endDate IS NULL
+      LEFT JOIN Team t ON pt.teamId = t.id
+      WHERE p.teamId = ${teamId}
+
+      
+      ORDER BY dp.draftYear DESC, dp.round ASC, dp.pickNumber ASC
+    `;
+
+    return draftPicks as unknown as DraftPickWithDetailsDTO[];
+  }
+  // Alternative query that doesn't filter by endDate to get all team history
+  async findDraftPicksWithAllTeamHistory(): Promise<DraftPickWithDetailsDTO[]> {
+    const draftPicks = await this.prisma.$queryRaw`
+    SELECT 
+      dp.id,
+      dp.draftYear,
+      dp.round,
+      dp.pickNumber,
+      dp.playerId,
+      pt.teamId,
+      p.firstName as playerFirstName,
+      p.lastName as playerLastName,
+      t.name as teamName,
+      pt.startDate as playerTeamStartDate,
+      pt.endDate as playerTeamEndDate
+    FROM DraftPick dp
+    LEFT JOIN Player p ON dp.playerId = p.id
+    LEFT JOIN PlayerTeam pt ON p.id = pt.playerId
+    LEFT JOIN Team t ON pt.teamId = t.id
+    ORDER BY dp.draftYear DESC, dp.round ASC, dp.pickNumber ASC, pt.startDate DESC
+  `;
+
+    return draftPicks as unknown as DraftPickWithDetailsDTO[];
+  }
+
+  // Query to get the team that drafted a player (their first team assignment)
+  async findDraftPicksWithDraftingTeam(): Promise<DraftPickWithDetailsDTO[]> {
+    const draftPicks = await this.prisma.$queryRaw`
+    SELECT 
+      dp.id,
+      dp.draftYear,
+      dp.round,
+      dp.pickNumber,
+      dp.playerId,
+      pt.teamId,
+      p.firstName as playerFirstName,
+      p.lastName as playerLastName,
+      t.name as teamName
+    FROM DraftPick dp
+    LEFT JOIN Player p ON dp.playerId = p.id
+    LEFT JOIN PlayerTeam pt ON p.id = pt.playerId 
+    LEFT JOIN Team t ON pt.teamId = t.id
+    WHERE pt.id = (
+      SELECT id 
+      FROM PlayerTeam 
+      WHERE playerId = dp.playerId 
+      ORDER BY startDate ASC 
+      LIMIT 1
+    )
+    ORDER BY dp.draftYear DESC, dp.round ASC, dp.pickNumber ASC
+  `;
+
+    return draftPicks as unknown as DraftPickWithDetailsDTO[];
   }
 
   /**

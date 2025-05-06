@@ -10,6 +10,8 @@ const teamController = new TeamController(teamService);
 
 // Create router
 const teamRouter = Router();
+// src/modules/team/presentation/team.routes.ts
+// Add these JSDoc comments before your routes
 
 // Define routes
 teamRouter.get('/', (req, res) => teamController.getAllTeams(req, res));

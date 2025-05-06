@@ -7,6 +7,7 @@ import combineScoreRouter from '../modules/combine/presentation/combine-score.ro
 import draftPickRouter from '../modules/draft/presentation/draft-pick.routes';
 import personRouter from '../modules/person/presentation/person.routes';
 import { playerAwardRouter } from '../modules/player/presentation/player-award.routes';
+import { postSeasonResultRouter } from '@/modules/postSeasonResult/presentation/post-season-result.routes';
 
 // Create router
 const router = Router();
@@ -24,9 +25,11 @@ router.use('/players', playerRouter);
 router.use('/teams', teamRouter);
 router.use('/player-teams', playerTeamRouter);
 router.use('/prospects', prospectRouter);
+router.use('/post-season-results', postSeasonResultRouter);
 router.use('/combine-scores', combineScoreRouter);
 router.use('/draft-picks', draftPickRouter);
 router.use('/persons', personRouter);
 router.use('/player-awards', playerAwardRouter);
 
+console.log('Available routes:', router.stack.map(r => r.route?.path).filter(Boolean));
 export default router;

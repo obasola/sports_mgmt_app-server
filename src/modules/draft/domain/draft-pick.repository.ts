@@ -1,5 +1,6 @@
 import { DraftPick } from './draft-pick.entity';
 import { Result } from '../../../shared/domain/Result';
+import { DraftPickWithDetailsDTO } from '../application/dtos/draft-pick-with-details.dto';
 
 /**
  * DraftPick Repository Interface
@@ -16,6 +17,12 @@ export interface DraftPickRepository {
    */
   findAll(limit?: number, offset?: number): Promise<Result<DraftPick[]>>;
 
+  findDraftPicksWithDetails(): Promise<DraftPickWithDetailsDTO[]>;
+  findDraftPicksByYearWithDetails(year: number): Promise<DraftPickWithDetailsDTO[]>;
+  findDraftPicksByTeamWithDetails(teamId: number): Promise<DraftPickWithDetailsDTO[]>;
+  // New methods
+  findDraftPicksWithAllTeamHistory(): Promise<DraftPickWithDetailsDTO[]>;
+  findDraftPicksWithDraftingTeam(): Promise<DraftPickWithDetailsDTO[]>;
   /**
    * Find draft picks by filters
    */

@@ -1,13 +1,15 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import config from './config/config';
 import routes from './api/routes';
+import { setupSwagger } from './api/swagger';
 
 // Create Express application
 const app: Express = express();
-
+// Set up Swagger documentation
+setupSwagger(app);
 // Apply middleware
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
@@ -16,7 +18,10 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded requests
 app.use(morgan(config.env === 'development' ? 'dev' : 'combined')); // Request logging
 
 // API routes
-app.use(config.apiPrefix, routes);
+console.log('Registering API routes');
+app.use('/api', routes);
+console.log('API routes registered');
+//app.use(config.apiPrefix === null ? 'api' : config.apiPrefix, routes);
 
 // Health check route
 app.get('/health', (req: Request, res: Response) => {
@@ -29,9 +34,9 @@ app.use((req: Request, res: Response) => {
 });
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response) => {
   console.error('Error:', err);
-  
+
   res.status(500).json({
     message: 'Internal server error',
     error: config.env === 'development' ? err.message : undefined,

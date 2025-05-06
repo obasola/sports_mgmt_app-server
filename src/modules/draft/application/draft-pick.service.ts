@@ -1,6 +1,7 @@
 import { Result } from '../../../shared/domain/Result';
 import { DraftPick, DraftPickProps } from '../domain/draft-pick.entity';
 import { DraftPickRepository } from '../domain/draft-pick.repository';
+import { DraftPickWithDetailsDTO } from './dtos/draft-pick-with-details.dto';
 
 export class DraftPickService {
   private readonly draftPickRepository: DraftPickRepository;
@@ -21,6 +22,48 @@ export class DraftPickService {
    */
   async getAllDraftPicks(limit?: number, offset?: number): Promise<Result<DraftPick[]>> {
     return await this.draftPickRepository.findAll(limit, offset);
+  }
+
+  /**
+   * Get draft picks with player and team details
+   * @returns List of draft picks with player and team information
+   */
+  async getDraftPicksWithDetails(): Promise<DraftPickWithDetailsDTO[]> {
+    return await this.draftPickRepository.findDraftPicksWithDetails();
+  }
+
+  /**
+   * Get draft picks for a specific year with player and team details
+   * @param year The draft year to filter by
+   * @returns List of draft picks for the specified year with details
+   */
+  async getDraftPicksByYearWithDetails(year: number): Promise<DraftPickWithDetailsDTO[]> {
+    return await this.draftPickRepository.findDraftPicksByYearWithDetails(year);
+  }
+
+  /**
+   * Get draft picks for a specific team with player details
+   * @param teamId The team ID to filter by
+   * @returns List of draft picks for the specified team with details
+   */
+  async getDraftPicksByTeamWithDetails(teamId: number): Promise<DraftPickWithDetailsDTO[]> {
+    return await this.draftPickRepository.findDraftPicksByTeamWithDetails(teamId);
+  }
+  // New methods
+  /**
+   * Get draft picks with all team history (including past teams)
+   * @returns List of draft picks with complete team history
+   */
+  async getDraftPicksWithAllTeamHistory(): Promise<DraftPickWithDetailsDTO[]> {
+    return await this.draftPickRepository.findDraftPicksWithAllTeamHistory();
+  }
+
+  /**
+   * Get draft picks with the team that drafted them (first team assignment)
+   * @returns List of draft picks with their drafting team
+   */
+  async getDraftPicksWithDraftingTeam(): Promise<DraftPickWithDetailsDTO[]> {
+    return await this.draftPickRepository.findDraftPicksWithDraftingTeam();
   }
 
   /**
