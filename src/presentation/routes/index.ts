@@ -1,6 +1,7 @@
 // src/presentation/routes/index.ts
 import { Router } from 'express';
 import { teamRoutes } from './teamRoutes';
+import { personRoutes } from './personRoutes';
 import { playerRoutes } from './playerRoutes';
 import { playerAwardRoutes } from './playerAwardRoutes';
 import { combineScoreRoutes } from './combineScoreRoutes';
@@ -15,6 +16,7 @@ const router = Router();
 
 // Register all domain routes
 router.use('/teams', teamRoutes);
+router.use('/person', personRoutes);
 router.use('/players', playerRoutes);
 router.use('/player-awards', playerAwardRoutes);
 router.use('/combine-scores', combineScoreRoutes);
@@ -24,9 +26,10 @@ router.use('/schedules', scheduleRoutes);
 router.use('/team-needs', teamNeedRoutes);
 router.use('/player-teams', playerTeamRoutes);
 router.use('/postseason-results', postSeasonResultRoutes);
+router.use('/persons', personRoutes);
 
 // Future routes (uncomment as you build them)
-// router.use('/people', personRoutes);
+// 
 
 // Health check for API
 router.get('/health', (req, res) => {
@@ -38,6 +41,7 @@ router.get('/health', (req, res) => {
       teams: '/api/v1/teams',
       teamNeeds: '/api/v1/teamNeeds',
       prospects: '/api/v1/prospects',
+      persons: '/api/v1/persons',
       players: '/api/v1/players',
       playerAwards: '/api/v1/player-awards',
       playerTeams: '/api/v1/player-teams',
@@ -71,6 +75,11 @@ router.get('/', (req, res) => {
         base: '/api/v1/prospect',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team prospects',
+      },
+      person: {
+        base: '/api/v1/person',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports authorized persons',
       },
       player: {
         base: '/api/v1/players',
