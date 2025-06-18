@@ -1,0 +1,73 @@
+
+// Installation and Setup Instructions
+
+1. **Initialize the project:**
+```bash
+mkdir sports_mgmt_app-server
+cd sports_mgmt_app-server
+npm init -y
+```
+
+2. **Install dependencies:**
+```bash
+npm install @prisma/client express axios cors helmet morgan dotenv zod
+npm install -D @types/express @types/node @types/cors @types/morgan @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-prettier nodemon prettier prisma ts-node typescript jest @types/jest
+```
+
+3. **Set up environment variables:**
+```bash
+cp .env.example .env
+# Edit .env with your database connection string
+```
+
+4. **Generate Prisma client:**
+```bash
+npx prisma generate
+```
+
+5. **Run database migration:**
+```bash
+npx prisma migrate dev --name init
+```
+
+6. **Start development server:**
+```bash
+npm run dev
+```
+
+## API Endpoints
+
+**Base URL:** `http://localhost:3000/api/v1`
+
+### Teams
+- `POST /teams` - Create a new team
+- `GET /teams` - Get all teams (with pagination and filtering)
+- `GET /teams/:id` - Get team by ID
+- `PUT /teams/:id` - Update team
+- `DELETE /teams/:id` - Delete team
+
+### Example Usage
+
+**Create Team:**
+```bash
+curl -X POST http://localhost:3000/api/v1/teams \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Dallas Cowboys",
+    "city": "Dallas",
+    "state": "Texas",
+    "stadium": "AT&T Stadium",
+    "conference": "NFC",
+    "division": "East"
+  }'
+```
+
+**Get All Teams:**
+```bash
+curl "http://localhost:3000/api/v1/teams?page=1&limit=10&conference=NFC"
+```
+
+This implementation follows DDD and SOLID principles with a clean separation of concerns. Test the Team domain thoroughly before proceeding with other domains!
+Improve
+Explain
+

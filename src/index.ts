@@ -1,39 +1,73 @@
-import { createServer } from 'http';
-import config from './config/config';
-import { PrismaService } from './shared/infrastructure/persistence/prisma.service';
-import 'module-alias/register';
-import app from './app';
+// src/index.ts (Main entry point)
+//import './config/moduleAlias'; // If using module-alias
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { config } from 'dotenv';
 
-// Initialize database connection
-const prisma = PrismaService.getInstance();
+// Load environment variables
+config();
 
-async function startServer() {
-  try {
-    // Connect to database
-    await prisma.connect();
+// Import routes
+import { apiRoutes } from './presentation/routes/index';
+import { errorHandler } from './presentation/middleware/errorHandler';
 
-    // Create HTTP server
-    const server = createServer(app);
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-    // Start listening
-    server.listen(config.port, () => {
-      console.log(`Server running in ${config.env} mode on port ${config.port}`);
-      console.log(`API available at http://localhost:${config.port}${config.apiPrefix}`);
-    });
+// Middleware
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173', // Vue dev server
+  credentials: true,
+}));
+app.use(morgan('combined'));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-    // Handle graceful shutdown
-    process.on('SIGTERM', async () => {
-      console.log('SIGTERM signal received: closing HTTP server');
-      server.close(async () => {
-        await prisma.disconnect();
-        console.log('HTTP server closed');
-        process.exit(0);
-      });
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-}
+// Health check route
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Sports Management API is running',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+  });
+});
 
-startServer();
+// API routes
+app.use('/api/v1', apiRoutes);
+
+// Also support /api without version for convenience
+app.use('/api', apiRoutes);
+
+// Catch-all route for 404s
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Route ${req.originalUrl} not found`,
+    availableRoutes: [
+      'GET /health',
+      'GET /api/v1/teams',
+      'POST /api/v1/teams',
+      'GET /api/v1/teams/:id',
+      'PUT /api/v1/teams/:id',
+      'DELETE /api/v1/teams/:id',
+    ],
+  });
+});
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`📋 API Base URL: http://localhost:${PORT}/api/v1`);
+  console.log(`👥 Teams endpoint: http://localhost:${PORT}/api/v1/teams`);
+});
+
+export default app;
