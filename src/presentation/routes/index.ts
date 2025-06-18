@@ -15,18 +15,20 @@ import { postSeasonResultRoutes } from './PostSeasonResultRoutes';
 const router = Router();
 
 // Register all domain routes
-router.use('/teams', teamRoutes);
-router.use('/person', personRoutes);
+router.use('/combine-scores', combineScoreRoutes);
+router.use('/draft-picks', draftpickRoutes);
+
+router.use('/persons', personRoutes);
 router.use('/players', playerRoutes);
 router.use('/player-awards', playerAwardRoutes);
-router.use('/combine-scores', combineScoreRoutes);
-router.use('/prospects', prospectRoutes);
-router.use('/draft-picks', draftpickRoutes);
-router.use('/schedules', scheduleRoutes);
-router.use('/team-needs', teamNeedRoutes);
 router.use('/player-teams', playerTeamRoutes);
+router.use('/prospects', prospectRoutes);
+router.use('/schedules', scheduleRoutes);
+router.use('/teams', teamRoutes);
+router.use('/team-needs', teamNeedRoutes);
+
 router.use('/postseason-results', postSeasonResultRoutes);
-router.use('/persons', personRoutes);
+
 
 // Future routes (uncomment as you build them)
 // 
@@ -38,17 +40,17 @@ router.get('/health', (req, res) => {
     message: 'Sports Management API v1 is running',
     timestamp: new Date().toISOString(),
     endpoints: {
-      teams: '/api/v1/teams',
-      teamNeeds: '/api/v1/teamNeeds',
-      prospects: '/api/v1/prospects',
+      combineScores: '/api/v1/combine-scores',
+      draftPicks: '/api/v1/draft-picks',
       persons: '/api/v1/persons',
       players: '/api/v1/players',
       playerAwards: '/api/v1/player-awards',
-      playerTeams: '/api/v1/player-teams',
-      combineScores: '/api/v1/combine-scores',
-      draftPicks: '/api/v1/draft-picks',
-      schedules: '/api/v1/schedules',
+      playerTeams: '/api/v1/player-teams',            
       postSeason: '/api/v1/postseason-results',
+      prospects: '/api/v1/prospects',
+      schedules: '/api/v1/schedules',
+      teams: '/api/v1/teams',
+      teamNeeds: '/api/v1/teamNeeds',
       // Add other endpoints as you build them
     },
   });
