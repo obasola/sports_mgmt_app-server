@@ -23,12 +23,10 @@ router.use('/players', playerRoutes);
 router.use('/player-awards', playerAwardRoutes);
 router.use('/player-teams', playerTeamRoutes);
 router.use('/prospects', prospectRoutes);
+router.use('/postseason-results', postSeasonResultRoutes);
 router.use('/schedules', scheduleRoutes);
 router.use('/teams', teamRoutes);
 router.use('/team-needs', teamNeedRoutes);
-
-router.use('/postseason-results', postSeasonResultRoutes);
-
 
 // Future routes (uncomment as you build them)
 // 
