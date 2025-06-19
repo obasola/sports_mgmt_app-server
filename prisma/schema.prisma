@@ -60,9 +60,9 @@ model Player {
   firstName         String         @db.VarChar(45)
   lastName          String         @db.VarChar(45)
   age               Int
-  height            Float?         @db.Float
+  height            Int?           @db.TinyInt
   weight            Float?         @db.Float
-  handSize          Float?         @db.Float
+  handSize          Int?           @db.Int
   armLength         Float?         @db.Float
   homeCity          String?        @db.VarChar(45)
   homeState         String?        @db.VarChar(45)

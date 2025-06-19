@@ -27,7 +27,7 @@ export class PlayerName {
     }
 
     // Check for valid characters (letters, spaces, hyphens, apostrophes)
-    const namePattern = /^[a-zA-Z\s\-']+$/;
+    const namePattern = /^[a-zA-ZÀ-ÿ\s\-'.,IVX]+$/;
     if (!namePattern.test(this.firstName)) {
       throw new ValidationError('First name contains invalid characters');
     }

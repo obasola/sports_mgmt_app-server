@@ -43,7 +43,7 @@ export class TeamController {
 
   getAllTeams = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<TeamResponseDto>>>,
+    res: Response<{success: boolean, data: TeamResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -65,7 +65,8 @@ export class TeamController {
       const teams = await this.teamService.getAllTeams(filters, pagination);
       res.json({
         success: true,
-        data: teams,
+        data: teams.data,
+        pagination: teams.pagination,
       });
     } catch (error) {
       next(error);

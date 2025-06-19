@@ -75,8 +75,7 @@ export interface PlayerResponseDto {
   heightFormatted?: string;
   weightFormatted?: string;
   bmi?: number | null;
-  createdAt: Date;
-  updatedAt: Date;
+
 }
 
 // Statistical response DTOs

@@ -23,8 +23,6 @@ export class PrismaPlayerRepository implements IPlayerRepository {
     position: true,
     yearEnteredLeague: true,
     prospectId: true,
-    createdAt: true,
-    updatedAt: true,
   };
 
   async save(player: Player): Promise<Player> {

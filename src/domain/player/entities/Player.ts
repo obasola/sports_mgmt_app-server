@@ -22,8 +22,7 @@ export interface PlayerProps {
   position?: string;
   yearEnteredLeague?: number;
   prospectId?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+
 }
 
 export class Player {
@@ -51,8 +50,7 @@ export class Player {
     position?: string | null;
     yearEnteredLeague?: number | null;
     prospectId?: number | null;
-    createdAt: Date;
-    updatedAt: Date;
+
   }): Player {
     return new Player({
       id: data.id,
@@ -70,8 +68,7 @@ export class Player {
       position: data.position || undefined,
       yearEnteredLeague: data.yearEnteredLeague || undefined,
       prospectId: data.prospectId || undefined,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+
     });
   }
 
@@ -169,15 +166,7 @@ export class Player {
     return this.props.prospectId;
   }
 
-  public get createdAt(): Date | undefined {
-    return this.props.createdAt;
-  }
-
-  public get updatedAt(): Date | undefined {
-    return this.props.updatedAt;
-  }
-
-  // Business methods
+  // Business method
   public updatePersonalInfo(firstName: string, lastName: string, age: number): void {
     // Validate new name
     new PlayerName(firstName, lastName);
@@ -190,7 +179,7 @@ export class Player {
     this.props.firstName = firstName;
     this.props.lastName = lastName;
     this.props.age = age;
-    this.props.updatedAt = new Date();
+
   }
 
   public updatePhysicals(height?: number, weight?: number, handSize?: number, armLength?: number): void {
@@ -203,7 +192,7 @@ export class Player {
     this.props.weight = weight;
     this.props.handSize = handSize;
     this.props.armLength = armLength;
-    this.props.updatedAt = new Date();
+    
   }
 
   public updateLocation(homeCity?: string, homeState?: string): void {
@@ -214,7 +203,7 @@ export class Player {
 
     this.props.homeCity = homeCity;
     this.props.homeState = homeState;
-    this.props.updatedAt = new Date();
+
   }
 
   public updateCareerInfo(university?: string, status?: string, position?: string, yearEnteredLeague?: number): void {
@@ -230,7 +219,7 @@ export class Player {
     this.props.status = status;
     this.props.position = position;
     this.props.yearEnteredLeague = yearEnteredLeague;
-    this.props.updatedAt = new Date();
+
   }
 
   public linkToProspect(prospectId: number): void {
@@ -239,12 +228,12 @@ export class Player {
     }
     
     this.props.prospectId = prospectId;
-    this.props.updatedAt = new Date();
+
   }
 
   public unlinkFromProspect(): void {
     this.props.prospectId = undefined;
-    this.props.updatedAt = new Date();
+
   }
 
   public calculateYearsInLeague(): number | null {

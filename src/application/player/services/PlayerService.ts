@@ -305,8 +305,7 @@ export class PlayerService {
       heightFormatted: physicals.getHeightFormatted() || undefined,
       weightFormatted: physicals.getWeightFormatted() || undefined,
       bmi: physicals.getBMI(),
-      createdAt: player.createdAt!,
-      updatedAt: player.updatedAt!,
+
     };
   }
 }

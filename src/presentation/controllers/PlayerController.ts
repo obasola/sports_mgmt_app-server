@@ -51,8 +51,8 @@ export class PlayerController {
   };
 
   getAllPlayers = async (
-    req: Request,
-    res: Response<ApiResponse<PaginatedResponse<PlayerResponseDto>>>,
+    req: Request,    
+    res: Response<{success: boolean, data: PlayerResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -83,7 +83,8 @@ export class PlayerController {
       const players = await this.playerService.getAllPlayers(filters, pagination);
       res.json({
         success: true,
-        data: players,
+        data: players.data,
+        pagination: players.pagination,
       });
     } catch (error) {
       next(error);
