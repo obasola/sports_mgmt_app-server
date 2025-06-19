@@ -49,7 +49,7 @@ export class PostSeasonResultController {
 
   getAllPostSeasonResults = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<PostSeasonResultResponseDto>>>,
+    res: Response<{success:boolean, data: PostSeasonResultResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -68,7 +68,8 @@ export class PostSeasonResultController {
       const postSeasonResults = await this.postSeasonResultService.getAllPostSeasonResults(filters, pagination);
       res.json({
         success: true,
-        data: postSeasonResults,
+        data: postSeasonResults.data,
+        pagination: postSeasonResults.pagination
       });
     } catch (error) {
       next(error);

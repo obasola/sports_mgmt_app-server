@@ -43,7 +43,7 @@ export class ScheduleController {
 
   getAllSchedules = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<ScheduleResponseDto>>>,
+    res: Response<{success: boolean, data: ScheduleResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -70,7 +70,8 @@ export class ScheduleController {
       const schedules = await this.scheduleService.getAllSchedules(filters, pagination);
       res.json({
         success: true,
-        data: schedules,
+        data: schedules.data,
+        pagination: schedules.pagination
       });
     } catch (error) {
       next(error);

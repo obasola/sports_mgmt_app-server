@@ -66,7 +66,7 @@ export class DraftPickController {
 
   getAllDraftPicks = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<DraftPickResponseDto>>>,
+    res: Response<{success:boolean, data: DraftPickResponseDto[],pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -93,7 +93,8 @@ export class DraftPickController {
       const draftPicks = await this.draftPickService.getAllDraftPicks(filters, pagination);
       res.json({
         success: true,
-        data: draftPicks,
+        data: draftPicks.data,
+        pagination: draftPicks.pagination,
       });
     } catch (error) {
       next(error);

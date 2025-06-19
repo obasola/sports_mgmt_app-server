@@ -77,7 +77,7 @@ export class PersonController {
 
   getAllPersons = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<PersonResponseDto>>>,
+    res: Response<{success:boolean, data: PersonResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -95,8 +95,9 @@ export class PersonController {
 
       const persons = await this.personService.getAllPersons(filters, pagination);
       res.json({
-        success: true,
-        data: persons,
+       success: true,
+        data: persons.data,
+        pagination: persons.pagination,
       });
     } catch (error) {
       next(error);

@@ -43,7 +43,7 @@ export class TeamNeedController {
 
   getAllTeamNeeds = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<TeamNeedResponseDto>>>,
+    res: Response<{success: boolean, data: TeamNeedResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -62,7 +62,8 @@ export class TeamNeedController {
       const teamNeeds = await this.teamNeedService.getAllTeamNeeds(filters, pagination);
       res.json({
         success: true,
-        data: teamNeeds,
+        data: teamNeeds.data,
+        pagination: teamNeeds.pagination
       });
     } catch (error) {
       next(error);

@@ -33,24 +33,26 @@ export const ProspectFiltersDtoSchema = z.object({
   position: z.string().optional(),
   college: z.string().optional(),
   homeState: z.string().optional(),
-  drafted: z.boolean().optional(),
-  draftYear: z.number().min(1990).max(2030).optional(),
-  teamId: z.number().positive().optional(),
-  minHeight: z.number().positive().optional(),
-  maxHeight: z.number().positive().optional(),
-  minWeight: z.number().positive().optional(),
-  maxWeight: z.number().positive().optional(),
-  minFortyTime: z.number().positive().optional(),
-  maxFortyTime: z.number().positive().optional(),
-  minVerticalLeap: z.number().positive().optional(),
-  maxVerticalLeap: z.number().positive().optional(),
-  minBenchPress: z.number().min(0).optional(),
-  maxBenchPress: z.number().min(0).optional(),
+  drafted: z.union([z.string(), z.boolean()]).transform(val => 
+    typeof val === 'string' ? val === 'true' : val
+  ).optional(),
+  draftYear: z.coerce.number().min(1990).max(2030).optional(),
+  teamId: z.coerce.number().positive().optional(),
+  minHeight: z.coerce.number().positive().optional(),
+  maxHeight: z.coerce.number().positive().optional(),
+  minWeight: z.coerce.number().positive().optional(),
+  maxWeight: z.coerce.number().positive().optional(),
+  minFortyTime: z.coerce.number().positive().optional(),
+  maxFortyTime: z.coerce.number().positive().optional(),
+  minVerticalLeap: z.coerce.number().positive().optional(),
+  maxVerticalLeap: z.coerce.number().positive().optional(),
+  minBenchPress: z.coerce.number().min(0).optional(),
+  maxBenchPress: z.coerce.number().min(0).optional(),
 });
 
 export const PaginationDtoSchema = z.object({
-  page: z.number().min(1).optional().default(1),
-  limit: z.number().min(1).max(100).optional().default(10),
+  page: z.coerce.number().min(1).optional().default(1),
+  limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
 export const UpdatePersonalInfoDtoSchema = z.object({
@@ -77,10 +79,10 @@ export const MarkAsDraftedDtoSchema = z.object({
 });
 
 export const CombineScoreFilterDtoSchema = z.object({
-  minFortyTime: z.number().positive().optional(),
-  maxFortyTime: z.number().positive().optional(),
-  minVerticalLeap: z.number().positive().optional(),
-  maxVerticalLeap: z.number().positive().optional(),
+  minFortyTime: z.coerce.number().positive().optional(),
+  maxFortyTime: z.coerce.number().positive().optional(),
+  minVerticalLeap: z.coerce.number().positive().optional(),
+  maxVerticalLeap: z.coerce.number().positive().optional(),
 });
 
 export type CreateProspectDto = z.infer<typeof CreateProspectDtoSchema>;

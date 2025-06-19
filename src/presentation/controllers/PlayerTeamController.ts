@@ -43,7 +43,7 @@ export class PlayerTeamController {
 
   getAllPlayerTeams = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<PlayerTeamResponseDto>>>,
+    res: Response<{success:boolean, data: PlayerTeamResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -64,7 +64,8 @@ export class PlayerTeamController {
       const playerTeams = await this.playerTeamService.getAllPlayerTeams(filters, pagination);
       res.json({
         success: true,
-        data: playerTeams,
+        data: playerTeams.data,
+        pagination: playerTeams.pagination
       });
     } catch (error) {
       next(error);

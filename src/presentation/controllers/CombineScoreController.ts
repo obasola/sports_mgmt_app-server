@@ -49,7 +49,7 @@ export class CombineScoreController {
 
   getAllCombineScores = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<CombineScoreResponseDto>>>,
+    res: Response<{success: boolean, data: CombineScoreResponseDto[], pagination:any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -72,7 +72,8 @@ export class CombineScoreController {
       const combineScores = await this.combineScoreService.getAllCombineScores(filters, pagination);
       res.json({
         success: true,
-        data: combineScores,
+        data: combineScores.data,
+        pagination: combineScores.pagination,
       });
     } catch (error) {
       next(error);

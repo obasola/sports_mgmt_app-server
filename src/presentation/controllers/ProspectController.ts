@@ -49,10 +49,15 @@ export class ProspectController {
 
   getAllProspects = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<ProspectResponseDto>>>,
+    res: Response<{success: boolean, data: ProspectResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
+      console.log('=== CONTROLLER DEBUG ===');
+      console.log('Raw query params:', req.query);
+      console.log('Page from query:', req.query.page, typeof req.query.page);
+      console.log('Limit from query:', req.query.limit, typeof req.query.limit);
+
       const filters: ProspectFiltersDto = {
         firstName: req.query.firstName as string,
         lastName: req.query.lastName as string,
@@ -74,17 +79,31 @@ export class ProspectController {
         maxBenchPress: req.query.maxBenchPress ? parseFloat(req.query.maxBenchPress as string) : undefined,
       };
 
+      // Remove undefined values to clean up filters
+      const cleanFilters = Object.fromEntries(
+        Object.entries(filters).filter(([_, value]) => value !== undefined)
+      ) as ProspectFiltersDto;
+
       const pagination: PaginationDto = {
         page: req.query.page ? parseInt(req.query.page as string) : 1,
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
       };
 
-      const prospects = await this.prospectService.getAllProspects(filters, pagination);
+      console.log('Parsed filters:', cleanFilters);
+      console.log('Parsed pagination:', pagination);
+
+      const prospects = await this.prospectService.getAllProspects(cleanFilters, pagination);
+
+      console.log('Service returned pagination:', prospects.pagination);
+      console.log('Service returned data count:', prospects.data.length);
+
       res.json({
         success: true,
-        data: prospects,
+        data: prospects.data,
+        pagination: prospects.pagination,
       });
     } catch (error) {
+      console.error('Controller error:', error);
       next(error);
     }
   };
@@ -126,7 +145,7 @@ export class ProspectController {
 
   getProspectsByPosition = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<ProspectResponseDto>>>,
+    res: Response<{success: boolean, data: ProspectResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -139,7 +158,8 @@ export class ProspectController {
       const prospects = await this.prospectService.getProspectsByPosition(position, pagination);
       res.json({
         success: true,
-        data: prospects,
+        data: prospects.data,
+        pagination: prospects.pagination,
       });
     } catch (error) {
       next(error);
@@ -148,7 +168,7 @@ export class ProspectController {
 
   getProspectsByCollege = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<ProspectResponseDto>>>,
+    res: Response<{success: boolean, data: ProspectResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -161,7 +181,8 @@ export class ProspectController {
       const prospects = await this.prospectService.getProspectsByCollege(college, pagination);
       res.json({
         success: true,
-        data: prospects,
+        data: prospects.data,
+        pagination: prospects.pagination,
       });
     } catch (error) {
       next(error);
@@ -170,7 +191,7 @@ export class ProspectController {
 
   getUndraftedProspects = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<ProspectResponseDto>>>,
+    res: Response<{success: boolean, data: ProspectResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -182,7 +203,8 @@ export class ProspectController {
       const prospects = await this.prospectService.getUndraftedProspects(pagination);
       res.json({
         success: true,
-        data: prospects,
+        data: prospects.data,
+        pagination: prospects.pagination,
       });
     } catch (error) {
       next(error);
@@ -191,7 +213,7 @@ export class ProspectController {
 
   getDraftedProspects = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<ProspectResponseDto>>>,
+    res: Response<{success: boolean, data: ProspectResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -204,7 +226,8 @@ export class ProspectController {
       const prospects = await this.prospectService.getDraftedProspects(draftYear, pagination);
       res.json({
         success: true,
-        data: prospects,
+        data: prospects.data,
+        pagination: prospects.pagination,
       });
     } catch (error) {
       next(error);
@@ -213,7 +236,7 @@ export class ProspectController {
 
   getProspectsByTeam = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<ProspectResponseDto>>>,
+    res: Response<{success: boolean, data: ProspectResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -226,7 +249,8 @@ export class ProspectController {
       const prospects = await this.prospectService.getProspectsByTeam(teamId, pagination);
       res.json({
         success: true,
-        data: prospects,
+        data: prospects.data,
+        pagination: prospects.pagination,
       });
     } catch (error) {
       next(error);
@@ -324,7 +348,7 @@ export class ProspectController {
 
   getProspectsByCombineScore = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<ProspectResponseDto>>>,
+    res: Response<{success: boolean, data: ProspectResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -343,7 +367,8 @@ export class ProspectController {
       const prospects = await this.prospectService.getProspectsByCombineScore(filters, pagination);
       res.json({
         success: true,
-        data: prospects,
+        data: prospects.data,
+        pagination: prospects.pagination,
       });
     } catch (error) {
       next(error);

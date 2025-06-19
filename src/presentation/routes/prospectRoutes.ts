@@ -46,11 +46,11 @@ const CombineQuerySchema = CombineScoreFilterDtoSchema.merge(PaginationDtoSchema
 const PaginationQuerySchema = PaginationDtoSchema;
 
 const TopAthletesQuerySchema = z.object({
-  limit: z.string().regex(/^\d+$/, 'Limit must be a number').transform(Number).optional(),
+  limit: z.coerce.number().positive().max(100).optional().default(10),
 });
 
 const DraftedQuerySchema = PaginationDtoSchema.extend({
-  draftYear: z.string().regex(/^\d+$/, 'Draft year must be a number').transform(Number).optional(),
+  draftYear: z.coerce.number().min(1990).max(2030).optional(),
 });
 
 // Basic CRUD routes

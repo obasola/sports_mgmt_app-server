@@ -51,7 +51,7 @@ export class PrismaProspectRepository implements IProspectRepository {
         orderBy: [
           { lastName: 'asc' },
           { firstName: 'asc' },
-        ],        
+        ],
       }),
       prisma.prospect.count({ where }),
     ]);
@@ -265,12 +265,62 @@ export class PrismaProspectRepository implements IProspectRepository {
       where.drafted = filters.drafted;
     }
 
-    if (filters.draftYear) {
+    if (filters.draftYear !== undefined) {
       where.draftYear = filters.draftYear;
     }
 
-    if (filters.teamId) {
+    if (filters.teamId !== undefined) {
       where.teamId = filters.teamId;
+    }
+
+    if (filters.minHeight !== undefined || filters.maxHeight !== undefined) {
+      where.height = {};
+      if (filters.minHeight !== undefined) {
+        (where.height as any).gte = filters.minHeight;
+      }
+      if (filters.maxHeight !== undefined) {
+        (where.height as any).lte = filters.maxHeight;
+      }
+    }
+
+    if (filters.minWeight !== undefined || filters.maxWeight !== undefined) {
+      where.weight = {};
+      if (filters.minWeight !== undefined) {
+        (where.weight as any).gte = filters.minWeight;
+      }
+      if (filters.maxWeight !== undefined) {
+        (where.weight as any).lte = filters.maxWeight;
+      }
+    }
+
+    if (filters.minFortyTime !== undefined || filters.maxFortyTime !== undefined) {
+      where.fortyTime = {};
+      if (filters.minFortyTime !== undefined) {
+        (where.fortyTime as any).gte = filters.minFortyTime;
+      }
+      if (filters.maxFortyTime !== undefined) {
+        (where.fortyTime as any).lte = filters.maxFortyTime;
+      }
+    }
+
+    if (filters.minVerticalLeap !== undefined || filters.maxVerticalLeap !== undefined) {
+      where.verticalLeap = {};
+      if (filters.minVerticalLeap !== undefined) {
+        (where.verticalLeap as any).gte = filters.minVerticalLeap;
+      }
+      if (filters.maxVerticalLeap !== undefined) {
+        (where.verticalLeap as any).lte = filters.maxVerticalLeap;
+      }
+    }
+
+    if (filters.minBenchPress !== undefined || filters.maxBenchPress !== undefined) {
+      where.benchPress = {};
+      if (filters.minBenchPress !== undefined) {
+        (where.benchPress as any).gte = filters.minBenchPress;
+      }
+      if (filters.maxBenchPress !== undefined) {
+        (where.benchPress as any).lte = filters.maxBenchPress;
+      }
     }
 
     return where;

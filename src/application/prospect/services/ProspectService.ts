@@ -286,8 +286,8 @@ export class ProspectService {
     const totalProspects = prospects.length;
 
     // Calculate averages
-    const averageHeight = prospects.reduce((sum, p) => sum + p.height, 0) / totalProspects;
-    const averageWeight = prospects.reduce((sum, p) => sum + p.weight, 0) / totalProspects;
+    const averageHeight = prospects.reduce((sum, p) => sum + (p.height || 0), 0) / totalProspects;
+    const averageWeight = prospects.reduce((sum, p) => sum + (p.weight || 0), 0) / totalProspects;
 
     const prospectsWithFortyTime = prospects.filter(p => p.fortyTime);
     const averageFortyTime = prospectsWithFortyTime.length > 0

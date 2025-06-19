@@ -45,7 +45,7 @@ export class PlayerAwardController {
 
   getAllPlayerAwards = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<PlayerAwardResponseDto>>>,
+    res: Response<{success:boolean, data: PlayerAwardResponseDto[], pagination: any}>,
     next: NextFunction
   ): Promise<void> => {
     try {
@@ -65,7 +65,8 @@ export class PlayerAwardController {
       const playerAwards = await this.playerAwardService.getAllPlayerAwards(filters, pagination);
       res.json({
         success: true,
-        data: playerAwards,
+        data: playerAwards.data,
+        pagination: playerAwards.pagination,
       });
     } catch (error) {
       next(error);
