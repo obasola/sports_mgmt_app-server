@@ -40,8 +40,9 @@ export const PlayerFiltersDtoSchema = z.object({
 });
 
 export const PaginationDtoSchema = z.object({
-  page: z.number().min(1).optional().default(1),
-  limit: z.number().min(1).max(100).optional().default(10),
+  page: z.coerce.number().optional().default(1),      // ← Add .coerce
+  limit: z.coerce.number().optional().default(10),    // ← Add .coerce  
+  include: z.string().optional(),    
 });
 
 // DTO type exports

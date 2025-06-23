@@ -46,12 +46,12 @@ export const TeamFiltersDtoSchema = z.object({
   conference: z.string().trim().optional(),
   division: z.string().trim().optional(),
   stadium: z.string().trim().optional(),
-  scheduleId: z.number().optional(),
+  scheduleId: z.coerce.number().optional(), // ← CHANGED: was z.number().optional()
 });
 
 export const PaginationDtoSchema = z.object({
-  page: z.number().min(1).optional().default(1),
-  limit: z.number().min(1).max(100).optional().default(10),
+  page: z.coerce.number().min(1).optional().default(1),      // ← CHANGED: was z.number().min(1).optional().default(1)
+  limit: z.coerce.number().min(1).max(100).optional().default(10), // ← CHANGED: was z.number().min(1).max(100).optional().default(10)
 });
 
 export type CreateTeamDto = z.infer<typeof CreateTeamDtoSchema>;

@@ -11,13 +11,14 @@ import { scheduleRoutes } from './scheduleRoutes';
 import { teamNeedRoutes } from './TeamNeedRoutes';
 import { playerTeamRoutes } from './PlayerTeamRoutes';
 import { postSeasonResultRoutes } from './PostSeasonResultRoutes';
+import { gameRoutes } from './gameRoutes';
 
 const router = Router();
 
 // Register all domain routes
 router.use('/combine-scores', combineScoreRoutes);
 router.use('/draft-picks', draftpickRoutes);
-
+router.use('/games', gameRoutes);
 router.use('/persons', personRoutes);
 router.use('/players', playerRoutes);
 router.use('/player-awards', playerAwardRoutes);
@@ -65,6 +66,11 @@ router.get('/', (req, res) => {
         base: '/api/v1/teamNeeds',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team needs',
+      },
+      games: {
+        base: '/api/v1/games',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team games',
       },
       teams: {
         base: '/api/v1/teams',
