@@ -61,8 +61,8 @@ export class GameService {
     return this.toResponseDto(game, homeTeam, awayTeam);
   }
 
-  async getPreseasonGames(teamId?: number, seasonYear?: number, preseasonWeek?: number): Promise<GameResponseDto[]> {
-    const games = await this.gameRepository.findPreseasonGames(teamId, seasonYear, preseasonWeek);
+  async getPreseasonGames(teamId?: number, seasonYear?: number): Promise<GameResponseDto[]> {
+    const games = await this.gameRepository.findPreseasonGames(teamId, seasonYear);
     return games.map((game) => this.toResponseDto(game));
   }
 

@@ -225,7 +225,7 @@ export class Game {
   }
 
   private validate(): void {
-    console.log('🔍 Validating Game with props:', JSON.stringify(this.props, null, 2));
+   // console.log('🔍 Validating Game with props:', JSON.stringify(this.props, null, 2));
     // Update gameWeek validation to allow 0
     if (this.props.gameWeek !== undefined) {
       if (this.props.gameWeek < 0 || this.props.gameWeek > 20) {

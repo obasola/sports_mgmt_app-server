@@ -54,31 +54,32 @@ export class PrismaGameRepository implements IGameRepository {
     return { game, homeTeam, awayTeam };
   }
 
-  async findPreseasonGames(teamId?: number, seasonYear?: number, preseasonWeek?: number): Promise<Game[]> {
+  async findPreseasonGames(teamId?: number, reqYear?: number): Promise<Game[]> {
     const where: any = {
-      seasonYear: seasonYear ? seasonYear : { not: null },
+      preseason: 1,
     };
 
-    where.AND = {
-      preseason: preseasonWeek ? preseasonWeek : { not: null },
-    };
+    // Only add filters if values are provided
+    if (reqYear !== undefined) {
+      where.seasonYear = reqYear;
+    }
 
-    if (teamId) {
+    if (teamId !== undefined) {
       where.OR = [{ homeTeamId: teamId }, { awayTeamId: teamId }];
     }
 
-    const games = await this.prisma.game.findMany({
+    const results = await this.prisma.game.findMany({
       where,
-      orderBy: [{ preseason: 'asc' }, { gameDate: 'asc' }],
+      orderBy: [{ gameDate: 'asc' }, { id: 'asc' }],
       include: {
         homeTeam: true,
         awayTeam: true,
       },
     });
 
-    return games.map((game) => Game.fromPersistence(game));
+    // ✅ Clean data separation like your good example
+    return results.map(({ homeTeam, awayTeam, ...gameData }) => Game.fromPersistence(gameData));
   }
-
   async findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
     const where: any = {
       gameWeek: { not: null },
@@ -137,7 +138,7 @@ export class PrismaGameRepository implements IGameRepository {
     const page = pagination?.page || 1;
     const limit = pagination?.limit || 10;
     const skip = (page - 1) * limit;
-    console.log("PrismaGameRepository::findAll - entryPoint");
+    console.log('PrismaGameRepository::findAll - entryPoint');
     const where = this.buildWhereClause(filters);
 
     const [games, total] = await Promise.all([
@@ -209,6 +210,26 @@ export class PrismaGameRepository implements IGameRepository {
       where: {
         seasonYear,
         OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+      },
+      orderBy: [{ gameWeek: 'asc' }, { gameDate: 'asc' }],
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+      },
+    });
+
+    return games.map((game) => Game.fromPersistence(game));
+  }
+  async findByTeamSeasonWeek(
+    teamId: number,
+    seasonYear: string,
+    gameWeek: number
+  ): Promise<Game[]> {
+    const games = await this.prisma.game.findMany({
+      where: {
+        seasonYear,
+        OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+        AND: { gameWeek: gameWeek },
       },
       orderBy: [{ gameWeek: 'asc' }, { gameDate: 'asc' }],
       include: {

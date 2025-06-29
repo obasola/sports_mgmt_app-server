@@ -26,9 +26,10 @@ export interface IGameRepository {
   delete(id: number): Promise<void>;
   exists(id: number): Promise<boolean>;
   findByTeamAndSeason(teamId: number, seasonYear: string): Promise<Game[]>;
+  findByTeamSeasonWeek(teamId: number, seasonYear: string, gameWeek: number): Promise<Game[]>;
   findUpcomingGames(teamId?: number, limit?: number): Promise<Game[]>;
   findCompletedGames(teamId?: number, limit?: number): Promise<Game[]>;
-  findPreseasonGames(teamId?: number, seasonYear?: number, preseasonWeek?: number): Promise<Game[]>;
+  findPreseasonGames(teamId?: number, seasonYear?: number): Promise<Game[]>;
   findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]>;
   findAllGamesForSeason(teamId?: number, seasonYear?: string): Promise<Game[]>;
   checkGameConflict(homeTeamId: number, awayTeamId: number, gameDate: Date, seasonYear: string): Promise<boolean>;
