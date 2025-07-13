@@ -31,6 +31,7 @@ export interface IGameRepository {
   findCompletedGames(teamId?: number, limit?: number): Promise<Game[]>;
   findPreseasonGames(teamId?: number, seasonYear?: number): Promise<Game[]>;
   findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]>;
+  findRegularSeasonGameByWeek(teamId?: number, seasonYear?: string, week?: number): Promise<Game[]>;
   findAllGamesForSeason(teamId?: number, seasonYear?: string): Promise<Game[]>;
   checkGameConflict(homeTeamId: number, awayTeamId: number, gameDate: Date, seasonYear: string): Promise<boolean>;
 }

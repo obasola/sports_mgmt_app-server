@@ -18,6 +18,8 @@ export interface DraftPickFilters {
 }
 
 export interface IDraftPickRepository {
+  getTeamForPick(arg0: number): any;
+  updatePick(pickId: number, arg1: { prospectId: number; used: boolean; }): unknown;
   save(draftPick: DraftPick): Promise<DraftPick>;
   findById(id: number): Promise<DraftPick | null>;
   findAll(filters?: DraftPickFilters, pagination?: PaginationParams): Promise<PaginatedResponse<DraftPick>>;

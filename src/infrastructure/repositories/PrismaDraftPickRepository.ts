@@ -6,6 +6,12 @@ import { NotFoundError } from '@/shared/errors/AppError';
 import { prisma } from '../database/prisma';
 
 export class PrismaDraftPickRepository implements IDraftPickRepository {
+  getTeamForPick(arg0: number) {
+    throw new Error('Method not implemented.');
+  }
+  updatePick(pickId: number, arg1: { prospectId: number; used: boolean; }): unknown {
+    throw new Error('Method not implemented.');
+  }
   async save(draftPick: DraftPick): Promise<DraftPick> {
     const data = draftPick.toPersistence();
     const { id, ...createData } = data;

@@ -6,6 +6,9 @@ import { NotFoundError } from '@/shared/errors/AppError';
 import { prisma } from '../database/prisma';
 
 export class PrismaProspectRepository implements IProspectRepository {
+  findAvailable(): unknown {
+    throw new Error('Method not implemented.');
+  }
   
   private convertToProspect(prospectData: any): Prospect {
     return Prospect.fromPersistence({

@@ -24,6 +24,7 @@ export interface ProspectFilters {
 }
 
 export interface IProspectRepository {
+  findAvailable(): unknown;
   save(prospect: Prospect): Promise<Prospect>;
   findById(id: number): Promise<Prospect | null>;
   findAll(filters?: ProspectFilters, pagination?: PaginationParams): Promise<PaginatedResponse<Prospect>>;

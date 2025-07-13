@@ -80,6 +80,38 @@ export class PrismaGameRepository implements IGameRepository {
     // ✅ Clean data separation like your good example
     return results.map(({ homeTeam, awayTeam, ...gameData }) => Game.fromPersistence(gameData));
   }
+  async findRegularSeasonGameByWeek(
+    teamId?: number,
+    seasonYear?: string,
+    week?: number
+  ): Promise<Game[]> {
+    const where: any = {
+      preseason: null,
+    };
+
+    if (week) {
+      where.gameWeek = week;
+    }
+    if (seasonYear) {
+      where.seasonYear = seasonYear;
+    }    
+
+    if (teamId) {
+      where.OR = [{ homeTeamId: teamId }, { awayTeamId: teamId }];
+    }
+
+    const games = await this.prisma.game.findMany({
+      where,
+      orderBy: [{ gameWeek: 'asc' }, { gameDate: 'asc' }],
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+      },
+    });
+
+    return games.map((game) => Game.fromPersistence(game));
+  }
+
   async findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
     const where: any = {
       gameWeek: { not: null },
