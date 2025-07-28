@@ -61,6 +61,21 @@ const VeteransQuerySchema = z.object({
   minYears: z.string().regex(/^\d+$/, 'Minimum years must be a number').transform(Number).optional(),
 });
 
+// Add this to your existing playerRoutes.ts file
+
+// 1. Add this new schema with your other parameter validation schemas
+const TeamIdParamsSchema = z.object({
+  teamId: z.string().regex(/^\d+$/, 'Team ID must be a number').transform(Number),
+});
+
+// 2. Add this route in your filter routes section (around line 90-120)
+router.get(
+  '/team/:teamId',
+  validateParams(TeamIdParamsSchema),
+  playerController.getPlayersByTeam
+);
+
+// That's it! Your route will now be: GET /api/v1/players/team/:teamId
 // Main CRUD routes
 router.post(
   '/',

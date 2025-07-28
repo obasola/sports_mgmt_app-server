@@ -13,7 +13,22 @@ import {
   PlayerBulkUpdateDto
 } from '@/application/player/dto/PlayerDto';
 
+// Define the response types
+type SuccessResponse = {
+  success: true;
+  data: PlayerResponseDto[];
+  pagination?: any;
+}
+
+type ErrorResponse = {
+  success: false;
+  message: string;
+}
+
+type PlayersByTeamResponse = SuccessResponse | ErrorResponse;
+
 export class PlayerController {
+  
   constructor(private readonly playerService: PlayerService) {}
 
   createPlayer = async (
@@ -91,6 +106,55 @@ export class PlayerController {
     }
   };
 
+// GET /players/team/:teamId
+// PlayerController.ts - Use ARROW FUNCTION (like your working getPlayerById method)
+
+/**
+ * Get players by team ID
+ * GET /api/v1/players/team/:teamId
+ */
+getPlayersByTeam = async (
+  req: Request,
+  res: Response<PlayersByTeamResponse>,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const teamId = parseInt(req.params.teamId)
+    
+    if (isNaN(teamId)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid team ID'
+      })
+      return
+    }
+    
+    console.log("===========================");
+    console.log("making service call now...");
+    console.log("this.playerService exists:", !!this.playerService);
+    console.log("===========================");
+    
+    const players = await this.playerService.getPlayersByTeam(teamId)
+    
+    console.log("===========================");
+    console.log("made service call successfully.");
+    console.log("===========================");
+    
+    res.json({
+      success: true,
+      data: players
+    })
+  } catch (error) {
+    console.log("===========================");
+    console.log("service call FAILED.");      
+    console.error('Error fetching team players:', error)
+    console.log("===========================");
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch team players'
+    })
+  }
+};
   updatePlayer = async (
     req: Request,
     res: Response<ApiResponse<PlayerResponseDto>>,

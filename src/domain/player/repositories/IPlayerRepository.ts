@@ -31,6 +31,7 @@ export interface IPlayerRepository {
   
   // Domain-specific query methods
   findByName(firstName: string, lastName: string): Promise<Player[]>;
+  findByTeamId(teamId: number): Promise<Player[]>;
   findByPosition(position: string): Promise<Player[]>;
   findByUniversity(university: string): Promise<Player[]>;
   findByProspectId(prospectId: number): Promise<Player | null>;

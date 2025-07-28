@@ -1,4 +1,5 @@
 // src/application/player/services/PlayerService.ts
+import { Request, Response, NextFunction } from 'express';
 import { IPlayerRepository } from '@/domain/player/repositories/IPlayerRepository';
 import { Player } from '@/domain/player/entities/Player';
 import { NotFoundError, ConflictError, ValidationError } from '@/shared/errors/AppError';
@@ -6,6 +7,7 @@ import { PaginatedResponse, PaginationParams } from '@/shared/types/common';
 import { PlayerName } from '@/domain/player/value-objects/PlayerName';
 import { PlayerLocation } from '@/domain/player/value-objects/PlayerLocation';
 import { PlayerPhysicals } from '@/domain/player/value-objects/PlayerPhysicals';
+
 import {
   CreatePlayerDto,
   UpdatePlayerDto,
@@ -32,9 +34,13 @@ export class PlayerService {
 
     // If prospectId is provided, validate that prospect exists and isn't already linked
     if (dto.prospectId) {
-      const existingPlayerWithProspect = await this.playerRepository.findByProspectId(dto.prospectId);
+      const existingPlayerWithProspect = await this.playerRepository.findByProspectId(
+        dto.prospectId
+      );
       if (existingPlayerWithProspect) {
-        throw new ConflictError(`Prospect ${dto.prospectId} is already linked to player ${existingPlayerWithProspect.id}`);
+        throw new ConflictError(
+          `Prospect ${dto.prospectId} is already linked to player ${existingPlayerWithProspect.id}`
+        );
       }
     }
 
@@ -67,6 +73,22 @@ export class PlayerService {
     return this.toResponseDto(player);
   }
 
+  async getPlayersByTeam(teamId: number): Promise<PlayerResponseDto[]> {
+    console.log("===========================");
+    console.log("In PLAYERSERVICE")
+    console.log("===========================");
+    try {
+      // Call the repository method (which returns Player domain objects)
+      console.log("PlayerService::getByTeamId ID: "+teamId);
+      const players = await this.playerRepository.findByTeamId(teamId);
+
+      // Convert domain objects to DTOs using the helper method
+      return players.map((player) => this.toResponseDto(player));
+    } catch (error) {
+      console.error('Service error fetching players by team:', error);
+      throw new Error('Failed to fetch players by team');
+    }
+  }
   async getAllPlayers(
     filters?: PlayerFiltersDto,
     pagination?: PaginationParams
@@ -86,9 +108,13 @@ export class PlayerService {
 
     // If prospectId is being updated, validate it's not already linked to another player
     if (dto.prospectId && dto.prospectId !== existingPlayer.prospectId) {
-      const existingPlayerWithProspect = await this.playerRepository.findByProspectId(dto.prospectId);
+      const existingPlayerWithProspect = await this.playerRepository.findByProspectId(
+        dto.prospectId
+      );
       if (existingPlayerWithProspect && existingPlayerWithProspect.id !== id) {
-        throw new ConflictError(`Prospect ${dto.prospectId} is already linked to player ${existingPlayerWithProspect.id}`);
+        throw new ConflictError(
+          `Prospect ${dto.prospectId} is already linked to player ${existingPlayerWithProspect.id}`
+        );
       }
     }
 
@@ -101,7 +127,12 @@ export class PlayerService {
       );
     }
 
-    if (dto.height !== undefined || dto.weight !== undefined || dto.handSize !== undefined || dto.armLength !== undefined) {
+    if (
+      dto.height !== undefined ||
+      dto.weight !== undefined ||
+      dto.handSize !== undefined ||
+      dto.armLength !== undefined
+    ) {
       existingPlayer.updatePhysicals(
         dto.height ?? existingPlayer.height,
         dto.weight ?? existingPlayer.weight,
@@ -117,7 +148,12 @@ export class PlayerService {
       );
     }
 
-    if (dto.university !== undefined || dto.status !== undefined || dto.position !== undefined || dto.yearEnteredLeague !== undefined) {
+    if (
+      dto.university !== undefined ||
+      dto.status !== undefined ||
+      dto.position !== undefined ||
+      dto.yearEnteredLeague !== undefined
+    ) {
       existingPlayer.updateCareerInfo(
         dto.university ?? existingPlayer.university,
         dto.status ?? existingPlayer.status,
@@ -279,7 +315,12 @@ export class PlayerService {
   private toResponseDto(player: Player): PlayerResponseDto {
     const name = new PlayerName(player.firstName, player.lastName);
     const location = new PlayerLocation(player.homeCity, player.homeState);
-    const physicals = new PlayerPhysicals(player.height, player.weight, player.handSize, player.armLength);
+    const physicals = new PlayerPhysicals(
+      player.height,
+      player.weight,
+      player.handSize,
+      player.armLength
+    );
 
     return {
       id: player.id!,
@@ -305,7 +346,6 @@ export class PlayerService {
       heightFormatted: physicals.getHeightFormatted() || undefined,
       weightFormatted: physicals.getWeightFormatted() || undefined,
       bmi: physicals.getBMI(),
-
     };
   }
 }

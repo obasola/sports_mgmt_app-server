@@ -1,6 +1,7 @@
 // src/infrastructure/repositories/PrismaPlayerRepository.ts
 import { IPlayerRepository, PlayerFilters } from '@/domain/player/repositories/IPlayerRepository';
 import { Player } from '@/domain/player/entities/Player';
+import { PlayerTeam } from '@prisma/client';
 import { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 import { NotFoundError } from '@/shared/errors/AppError';
 import { prisma } from '../database/prisma';
@@ -61,10 +62,7 @@ export class PrismaPlayerRepository implements IPlayerRepository {
         where,
         skip,
         take: limit,
-        orderBy: [
-          { lastName: 'asc' },
-          { firstName: 'asc' }
-        ],
+        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
         select: this.playerSelect,
       }),
       prisma.player.count({ where }),
@@ -117,6 +115,27 @@ export class PrismaPlayerRepository implements IPlayerRepository {
     return count > 0;
   }
 
+  // Fixed Method 1: Convert Prisma data to domain objects
+  async findByTeamId(teamId: number): Promise<Player[]> {
+    try {
+      const playersData = await prisma.player.findMany({
+        where: {
+          PlayerTeam: {
+            some: {
+              teamId: teamId,
+            },
+          },
+        },
+        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+      });
+
+      // Convert raw Prisma data to domain objects
+      return playersData.map((playerData) => Player.fromPersistence(playerData));
+    } catch (error) {
+      console.error('Error fetching players by team ID:', error);
+      throw error;
+    }
+  }
   // Domain-specific query methods
   async findByName(firstName: string, lastName: string): Promise<Player[]> {
     const players = await prisma.player.findMany({
@@ -166,7 +185,7 @@ export class PrismaPlayerRepository implements IPlayerRepository {
 
   async findRookies(): Promise<Player[]> {
     const currentYear = new Date().getFullYear();
-    
+
     const players = await prisma.player.findMany({
       where: {
         yearEnteredLeague: currentYear,
@@ -181,7 +200,7 @@ export class PrismaPlayerRepository implements IPlayerRepository {
   async findVeterans(minYears: number = 5): Promise<Player[]> {
     const currentYear = new Date().getFullYear();
     const maxYearEntered = currentYear - minYears;
-    
+
     const players = await prisma.player.findMany({
       where: {
         yearEnteredLeague: {
@@ -221,11 +240,11 @@ export class PrismaPlayerRepository implements IPlayerRepository {
 
   async findByLocation(city?: string, state?: string): Promise<Player[]> {
     const where: any = {};
-    
+
     if (city) {
       where.homeCity = { contains: city };
     }
-    
+
     if (state) {
       where.homeState = { contains: state };
     }
