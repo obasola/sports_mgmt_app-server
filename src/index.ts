@@ -49,11 +49,11 @@ app.use('*', (req, res) => {
     error: `Route ${req.originalUrl} not found`,
     availableRoutes: [
       'GET /health',
-      'GET /api/v1/teams',
-      'POST /api/v1/teams',
-      'GET /api/v1/teams/:id',
-      'PUT /api/v1/teams/:id',
-      'DELETE /api/v1/teams/:id',
+      'GET /api/teams',
+      'POST /api/teams',
+      'GET /api/teams/:id',
+      'PUT /api/teams/:id',
+      'DELETE /api/teams/:id',
     ],
   });
 });
