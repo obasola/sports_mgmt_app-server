@@ -12,6 +12,7 @@ import { teamNeedRoutes } from './TeamNeedRoutes';
 import { playerTeamRoutes } from './PlayerTeamRoutes';
 import { postSeasonResultRoutes } from './PostSeasonResultRoutes';
 import { gameRoutes } from './gameRoutes';
+import jobRoutes from './jobRoutes';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ const router = Router();
 router.use('/combine-scores', combineScoreRoutes);
 router.use('/draft-picks', draftpickRoutes);
 router.use('/games', gameRoutes);
+router.use('/jobs', jobRoutes);
 router.use('/persons', personRoutes);
 router.use('/players', playerRoutes);
 router.use('/player-awards', playerAwardRoutes);
@@ -39,17 +41,18 @@ router.get('/health', (req, res) => {
     message: 'Sports Management API v1 is running',
     timestamp: new Date().toISOString(),
     endpoints: {
-      combineScores: '/api/combine-scores',
-      draftPicks: '/api/draft-picks',
-      persons: '/api/persons',
-      players: '/api/players',
-      playerAwards: '/api/player-awards',
-      playerTeams: '/api/player-teams',            
-      postSeason: '/api/postseason-results',
-      prospects: '/api/prospects',
-      schedules: '/api/schedules',
-      teams: '/api/teams',
-      teamNeeds: '/api/teamNeeds',
+      combineScores: '/api/v1/combine-scores',
+      draftPicks: '/api/v1/draft-picks',
+      jobs: '/api/v1/jobs',
+      persons: '/api/v1/persons',
+      players: '/api/v1/players',
+      playerAwards: '/api/v1/player-awards',
+      playerTeams: '/api/v1/player-teams',            
+      postSeason: '/api/v1/postseason-results',
+      prospects: '/api/v1/prospects',
+      schedules: '/api/v1/schedules',
+      teams: '/api/v1/teams',
+      teamNeeds: '/api/v1/teamNeeds',
       // Add other endpoints as you build them
     },
   });
@@ -63,52 +66,52 @@ router.get('/', (req, res) => {
     version: '1.0.0',
     availableEndpoints: {
       teamNeeds: {
-        base: '/api/teamNeeds',
+        base: '/api/v1/teamNeeds',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team needs',
       },
       games: {
-        base: '/api/games',
+        base: '/api/v1/games',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team games',
       },
       teams: {
-        base: '/api/teams',
+        base: '/api/v1/teams',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports teams',
       },
       prospect: {
-        base: '/api/prospect',
+        base: '/api/v1/prospect',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team prospects',
       },
       person: {
-        base: '/api/person',
+        base: '/api/v1/person',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports authorized persons',
       },
       player: {
-        base: '/api/players',
+        base: '/api/v1/players',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team players',
       },
       playerAwards: {
-        base: '/api/player-awards',
+        base: '/api/v1/player-awards',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team playerAwards',
       },
       playerTeams: {
-        base: '/api/player-teams',
+        base: '/api/v1/player-teams',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team player-teams',
       },
       postSeason: {
-        base: '/api/postseason-results',
+        base: '/api/v1/postseason-results',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team post season result',
       },
       combineScores: {
-        base: '/api/combine-scores',
+        base: '/api/v1/combine-scores',
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         description: 'Manage player combine scores and athletic metrics',
         specialEndpoints: [
@@ -121,46 +124,46 @@ router.get('/', (req, res) => {
         ],
       },
       draftPicks: {
-        base: '/api/draft-picks',
+        base: '/api/v1/draft-picks',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team draftPicks',
       },
       schedule: {
-        base: '/api/schedules',
+        base: '/api/v1/schedules',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team schedules',
       },
     },
     endpoints: [
-      'GET /api/teams - Get all teams',
-      'POST /api/teams - Create a team',
-      'GET /api/teams/:id - Get team by ID',
-      'PUT /api/teams/:id - Update team',
-      'DELETE /api/teams/:id - Delete team',
+      'GET /api/v1/teams - Get all teams',
+      'POST /api/v1/teams - Create a team',
+      'GET /api/v1/teams/:id - Get team by ID',
+      'PUT /api/v1/teams/:id - Update team',
+      'DELETE /api/v1/teams/:id - Delete team',
 
-      'GET /api/teamNeeds - Get all teamNeed',
-      'POST /api/teamNeeds - Create a teamNeed',
-      'GET /api/teamNeeds/:id - Get teamNeed by ID',
-      'PUT /api/teamNeeds/:id - Update teamNeed',
-      'DELETE /api/teamNeeds/:id - Delete teamNeed',
+      'GET /api/v1/teamNeeds - Get all teamNeed',
+      'POST /api/v1/teamNeeds - Create a teamNeed',
+      'GET /api/v1/teamNeeds/:id - Get teamNeed by ID',
+      'PUT /api/v1/teamNeeds/:id - Update teamNeed',
+      'DELETE /api/v1/teamNeeds/:id - Delete teamNeed',
 
-      'GET /api/players - Get all players',
-      'POST /api/players - Create a player',
-      'GET /api/players/:id - Get player by ID',
-      'PUT /api/players/:id - Update player',
-      'DELETE /api/players/:id - Delete player',
+      'GET /api/v1/players - Get all players',
+      'POST /api/v1/players - Create a player',
+      'GET /api/v1/players/:id - Get player by ID',
+      'PUT /api/v1/players/:id - Update player',
+      'DELETE /api/v1/players/:id - Delete player',
 
-      'GET /api/player-awards - Get all playerAwards',
-      'POST /api/player-awards - Create a playerAward',
-      'GET /api/player-awards/:id - Get playerAward by ID',
-      'PUT /api/player-awards/:id - Update playerAward',
-      'DELETE /api/player-awards/:id - Delete playerAward',
+      'GET /api/v1/player-awards - Get all playerAwards',
+      'POST /api/v1/player-awards - Create a playerAward',
+      'GET /api/v1/player-awards/:id - Get playerAward by ID',
+      'PUT /api/v1/player-awards/:id - Update playerAward',
+      'DELETE /api/v1/player-awards/:id - Delete playerAward',
 
-      'GET /api/schedules - Get all schedules',
-      'POST /api/schedules - Create a schedule',
-      'GET /api/schedules/:id - Get schedule by ID',
-      'PUT /api/schedules/:id - Update schedule',
-      'DELETE /api/schedules/:id - Delete schedule',
+      'GET /api/v1/schedules - Get all schedules',
+      'POST /api/v1/schedules - Create a schedule',
+      'GET /api/v1/schedules/:id - Get schedule by ID',
+      'PUT /api/v1/schedules/:id - Update schedule',
+      'DELETE /api/v1/schedules/:id - Delete schedule',
     ],
     documentation: 'Coming soon...',
   });

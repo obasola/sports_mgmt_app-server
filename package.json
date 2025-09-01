@@ -4,17 +4,13 @@
   "description": "Sports Management REST API Server",
   "main": "dist/index.js",
   "scripts": {
-
     "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
     "dev": "nodemon",
-
     "dev:ts": "ts-node -r tsconfig-paths/register src/index.ts",
     "dev:debug": "nodemon --inspect --exec 'ts-node -r tsconfig-paths/register' src/index.ts",
+    "import:nfl": "tsx src/scripts/import-nfl-season.ts",
     "test:routes": "ts-node -r tsconfig-paths/register src/test/testRoutes.ts",
-
-  
-    
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
@@ -26,13 +22,15 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "axios": "^1.10.0",
+    "@prisma/client": "^6.15.0",
+    "axios": "^1.11.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "helmet": "^7.2.0",
     "morgan": "^1.10.0",
+    "p-limit": "^7.1.1",
+    "yargs": "^18.0.0",
     "zod": "^3.25.64"
   },
   "devDependencies": {
@@ -40,22 +38,26 @@
     "@types/express": "^4.17.23",
     "@types/jest": "^29.5.8",
     "@types/morgan": "^1.9.10",
-    "@types/node": "^20.19.1",
+    "@types/node": "^20.19.11",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.4.1",
     "jest": "^29.7.0",
-    "nodemon": "^3.1.10",
+    "nodemon": "^3.0.1",
     "prettier": "^3.5.3",
-    "prisma": "^5.22.0",
+    "prisma": "^6.15.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3"
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
   },
   "directories": {
     "doc": "doc"
+  },
+  "overrides": {
+    "debug": "4.3.7"
   },
   "keywords": [],
   "author": "",
