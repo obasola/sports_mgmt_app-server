@@ -127,7 +127,12 @@ router.get(
   '/completed',
   gameController.getCompletedGames
 );
-
+// Team-specific routes
+router.get(
+  '/team/:teamId/season/:seasonYear',
+  validateParams(TeamSeasonParamsSchema),
+  gameController.getTeamGames
+);
 router.get(
   '/:id',
   validateParams(IdParamsSchema),
@@ -162,11 +167,6 @@ router.delete(
   gameController.deleteGame
 );
 
-// Team-specific routes
-router.get(
-  '/team/:teamId/season/:seasonYear',
-  validateParams(TeamSeasonParamsSchema),
-  gameController.getTeamGames
-);
+
 
 export { router as gameRoutes };

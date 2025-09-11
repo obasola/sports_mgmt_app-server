@@ -55,6 +55,7 @@ export class PrismaGameRepository implements IGameRepository {
   }
 
   async findPreseasonGames(teamId?: number, reqYear?: number): Promise<Game[]> {
+    console.log("infrastructure.repositories.PrismaGameRepository::findPreSeasonGames - Getting Games ");
     const where: any = {
       preseason: 1,
     };
@@ -113,6 +114,7 @@ export class PrismaGameRepository implements IGameRepository {
   }
 
   async findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
+    console.log("infrastructure.repositories.PrismaGameRepository::findRegularSeasonGames - Getting Games ");
     const where: any = {
       gameWeek: { not: null },
       preseason: null,
@@ -139,6 +141,7 @@ export class PrismaGameRepository implements IGameRepository {
   }
 
   async findAllGamesForSeason(teamId?: number, seasonYear?: string): Promise<Game[]> {
+    console.log("infrastructure.repositories.PrismaGameRepository::findAllGamesForSeason - Getting Games ");
     const where: any = {
       gameWeek: { not: null },
     };
@@ -238,9 +241,11 @@ export class PrismaGameRepository implements IGameRepository {
   }
 
   async findByTeamAndSeason(teamId: number, seasonYear: string): Promise<Game[]> {
+    const preseason = 0;
     const games = await this.prisma.game.findMany({
       where: {
         seasonYear,
+        preseason,
         OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
       },
       orderBy: [{ gameWeek: 'asc' }, { gameDate: 'asc' }],

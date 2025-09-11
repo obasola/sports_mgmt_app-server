@@ -49,3 +49,12 @@ export const validateParams = (schema: z.ZodSchema) => {
     }
   };
 };
+
+export const TeamSeasonParamsSchema = z.object({
+  teamId: z.coerce.number().int().positive(),
+  seasonYear: z.string().regex(/^\d{4}$/),
+});
+
+export const IdParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});

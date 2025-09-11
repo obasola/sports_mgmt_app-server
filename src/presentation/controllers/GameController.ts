@@ -1,11 +1,15 @@
-
-// Controller
-
 // src/presentation/controllers/GameController.ts
 import { Request, Response, NextFunction } from 'express';
-import type{ GameService } from '@/application/game/services/GameService';
-import { ApiResponse, PaginatedResponse } from '@/shared/types/common';
-import { GameResponseDto, GameFiltersDto, PaginationDto } from '@/application/game/dto/GameDto';
+import type { GameService } from '@/application/game/services/GameService';
+import { ApiResponse } from '@/shared/types/common';
+import {
+  GameResponseDto,
+  GameFiltersDto,
+  PaginationDto,
+  UpdateScoreDtoSchema,
+} from '@/application/game/dto/GameDto';
+import { z } from 'zod';
+import { mapGameToResponse } from '@/application/game/dto/mapGameToResponse';
 
 export class GameController {
   constructor(private readonly gameService: GameService) {}
@@ -15,8 +19,8 @@ export class GameController {
     res: Response<ApiResponse<GameResponseDto>>,
     next: NextFunction
   ): Promise<void> => {
-    console.log("🔍 RAW req.body:", JSON.stringify(req.body, null, 2));
-    console.log("🔍 req.body.preseason:", req.body.preseason, typeof req.body.preseason);    
+    console.log('🔍 RAW req.body:', JSON.stringify(req.body, null, 2));
+    console.log('🔍 req.body.preseason:', req.body.preseason, typeof req.body.preseason);
     try {
       const game = await this.gameService.createGame(req.body);
       res.status(201).json({
@@ -34,8 +38,9 @@ export class GameController {
     res: Response<ApiResponse<GameResponseDto>>,
     next: NextFunction
   ): Promise<void> => {
+    console.log("presentation.controllers.GameController::getGamesByUd - Entrypoint");
     try {
-      const id = parseInt(req.params.id);
+      const id = z.coerce.number().parse(req.params.id);
       const game = await this.gameService.getGameById(id);
       res.json({
         success: true,
@@ -48,29 +53,35 @@ export class GameController {
 
   getAllGames = async (
     req: Request,
-    res: Response<{success:boolean, data: GameResponseDto[],pagination: any}>,
+    res: Response<{ success: boolean; data: GameResponseDto[]; pagination: any }>,
     next: NextFunction
   ): Promise<void> => {
-
-    type GameStatus = "scheduled" | "in_progress" | "completed" | "cancelled" | "postponed";
-
+    console.log("presentation.controllers.GameController::getAllGames - Entrypoint");
+    type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
     const validStatuses: GameStatus[] = [
-    "scheduled",
-    "in_progress",
-    "completed",
-    "cancelled",
-    "postponed",
-    ]; 
-    const rawStatus = req.query.gameStatus;   
+      'scheduled',
+      'in_progress',
+      'completed',
+      'cancelled',
+      'postponed',
+    ];
+    const rawStatus = req.query.gameStatus;
+
     try {
       const filters: GameFiltersDto = {
         seasonYear: req.query.seasonYear as string,
-        gameWeek: req.query.gameWeek ? parseInt(req.query.gameWeek as string) : undefined,
-        preseason: req.query.preseason ? parseInt(req.query.preseason as string) : undefined, // ✅ ADD THIS
-        homeTeamId: req.query.homeTeamId ? parseInt(req.query.homeTeamId as string) : undefined,
-        awayTeamId: req.query.awayTeamId ? parseInt(req.query.awayTeamId as string) : undefined,
-        teamId: req.query.teamId ? parseInt(req.query.teamId as string) : undefined,
-        gameStatus: validStatuses.includes(rawStatus as GameStatus) ? (rawStatus as GameStatus) : undefined,
+        gameWeek: req.query.gameWeek ? z.coerce.number().parse(req.query.gameWeek) : undefined,
+        preseason: req.query.preseason ? z.coerce.number().parse(req.query.preseason) : undefined,
+        homeTeamId: req.query.homeTeamId
+          ? z.coerce.number().parse(req.query.homeTeamId)
+          : undefined,
+        awayTeamId: req.query.awayTeamId
+          ? z.coerce.number().parse(req.query.awayTeamId)
+          : undefined,
+        teamId: req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined,
+        gameStatus: validStatuses.includes(rawStatus as GameStatus)
+          ? (rawStatus as GameStatus)
+          : undefined,
         gameCity: req.query.gameCity as string,
         gameCountry: req.query.gameCountry as string,
         dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
@@ -78,13 +89,20 @@ export class GameController {
       };
 
       const pagination: PaginationDto = {
-        page: req.query.page ? parseInt(req.query.page as string) : 1,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
+        page: req.query.page ? z.coerce.number().parse(req.query.page) : 1,
+        limit: req.query.limit ? z.coerce.number().parse(req.query.limit) : 10,
       };
 
       const games = await this.gameService.getAllGames(filters, pagination);
-      let teamName = games.data[0].homeTeam ? games.data[0].homeTeam.name : 'isEmpty';
-      console.log("GameController.getAllGames - homeTeam: "+ teamName);
+
+      // Safe debug (avoid crash on empty list)
+      if (games.data.length > 0) {
+        const teamName = games.data[0].homeTeam ? games.data[0].homeTeam.name : 'isEmpty';
+        console.log('GameController.getAllGames - homeTeam:', teamName);
+      } else {
+        console.log('GameController.getAllGames - no games returned.');
+      }
+
       res.json({
         success: true,
         data: games.data,
@@ -100,9 +118,12 @@ export class GameController {
     res: Response<ApiResponse<GameResponseDto[]>>,
     next: NextFunction
   ): Promise<void> => {
+    console.log("presentation.controllers.GameController::getPreSeasonGames - Entrypoint");
     try {
-      const teamId = req.query.teamId ? parseInt(req.query.teamId as string) : undefined;
-      const preseasonWeek = req.query.preseasonWeek ? parseInt(req.query.preseasonWeek as string) : undefined;
+      const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
+      const preseasonWeek = req.query.preseasonWeek
+        ? z.coerce.number().parse(req.query.preseasonWeek)
+        : undefined;
       const games = await this.gameService.getPreseasonGames(teamId, preseasonWeek);
       res.json({
         success: true,
@@ -118,8 +139,9 @@ export class GameController {
     res: Response<ApiResponse<GameResponseDto[]>>,
     next: NextFunction
   ): Promise<void> => {
+    console.log("presentation.controllers.GameController::getRegularSeasonGames - Entrypoint");
     try {
-      const teamId = req.query.teamId ? parseInt(req.query.teamId as string) : undefined;
+      const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
       const seasonYear = req.query.seasonYear as string;
       const games = await this.gameService.getRegularSeasonGames(teamId, seasonYear);
       res.json({
@@ -130,7 +152,38 @@ export class GameController {
       next(error);
     }
   };
+    /**
+   * GET /teams/:teamId/games?seasonYear=YYYY
+   * Returns games for a team+season with team relations for names/logos.
+   */
+  getTeamGames = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    console.log("presentation.controllers.GameController::getTeamGames - Entrypoint");
+    try {
+      // ✅ use params, not query
+      const teamId = z.coerce.number().parse(req.params.teamId);
+      const seasonYear = z
+        .string()
+        .regex(/^\d{4}$/)
+        .parse(req.params.seasonYear);
 
+      // ✅ service still returns Game[] (domain entities)
+      const games = await this.gameService.getTeamSeasonGames(teamId, seasonYear);
+
+      // ✅ convert to DTOs
+      const dtoGames = games.map(mapGameToResponse);
+
+      res.json({
+        success: true,
+        data: dtoGames,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   updateGame = async (
     req: Request,
@@ -138,7 +191,7 @@ export class GameController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id);
+      const id = z.coerce.number().parse(req.params.id);
       const game = await this.gameService.updateGame(id, req.body);
       res.json({
         success: true,
@@ -150,14 +203,30 @@ export class GameController {
     }
   };
 
+  /**
+   * PATCH /games/:id/score
+   * Accepts only { homeScore, awayScore, gameStatus? } as per UpdateScoreDtoSchema.
+   */
   updateGameScore = async (
     req: Request,
     res: Response<ApiResponse<GameResponseDto>>,
     next: NextFunction
   ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id);
-      const game = await this.gameService.updateGameScore(id, req.body);
+      const id = z.coerce.number().parse(req.params.id);
+
+      // Validate payload strictly against UpdateScoreDtoSchema
+      const parsed = UpdateScoreDtoSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid score update payload',
+          errors: parsed.error.issues,
+        } as any);
+        return;
+      }
+
+      const game = await this.gameService.updateGameScore(id, parsed.data);
       res.json({
         success: true,
         data: game,
@@ -174,7 +243,7 @@ export class GameController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id);
+      const id = z.coerce.number().parse(req.params.id);
       await this.gameService.deleteGame(id);
       res.status(204).json({
         success: true,
@@ -185,23 +254,6 @@ export class GameController {
     }
   };
 
-  getTeamGames = async (
-    req: Request,
-    res: Response<ApiResponse<GameResponseDto[]>>,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      const teamId = parseInt(req.params.teamId);
-      const seasonYear = req.params.seasonYear;
-      const games = await this.gameService.getTeamGames(teamId, seasonYear);
-      res.json({
-        success: true,
-        data: games,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
 
   getUpcomingGames = async (
     req: Request,
@@ -209,8 +261,8 @@ export class GameController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const teamId = req.query.teamId ? parseInt(req.query.teamId as string) : undefined;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
+      const limit = req.query.limit ? z.coerce.number().parse(req.query.limit) : undefined;
       const games = await this.gameService.getUpcomingGames(teamId, limit);
       res.json({
         success: true,
@@ -222,13 +274,13 @@ export class GameController {
   };
 
   getCompletedGames = async (
-      req: Request,
-      res: Response<ApiResponse<GameResponseDto[]>>,
-      next: NextFunction
-    ): Promise<void> => {
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      const teamId = req.query.teamId ? parseInt(req.query.teamId as string) : undefined;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
+      const limit = req.query.limit ? z.coerce.number().parse(req.query.limit) : undefined;
       const games = await this.gameService.getCompletedGames(teamId, limit);
       res.json({
         success: true,

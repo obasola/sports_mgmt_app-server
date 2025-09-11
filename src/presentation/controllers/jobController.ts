@@ -49,11 +49,13 @@ export async function listJobs(req: Request, res: Response) {
   res.json(jobs)
 }
 
-export async function getJob(req: Request, res: Response) {
+export async function getJob(req: Request, res: Response): Promise<Response> {
   const id = Number(req.params.id)
   const job = await prisma.job.findUnique({ where: { id } })
-  if (!job) return res.status(404).json({ message: 'Not found' })
-  res.json(job)
+  if (!job) {
+    return res.status(404).json({ message: 'Not found' })
+  }
+  return res.json(job)
 }
 
 export async function getJobLogs(req: Request, res: Response) {
