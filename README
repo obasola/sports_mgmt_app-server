@@ -34,6 +34,10 @@ npx prisma migrate dev --name init
 ```bash
 npm run dev
 ```
+7. ** Run batch jobs
+npm run cli:syncTeams
+npm run cli:importWeek -- 2024 2 1
+npm run cli:backfillSeason -- 2024 2
 
 ## API Endpoints
 

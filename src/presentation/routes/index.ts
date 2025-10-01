@@ -12,8 +12,11 @@ import { teamNeedRoutes } from './TeamNeedRoutes';
 import { playerTeamRoutes } from './PlayerTeamRoutes';
 import { postSeasonResultRoutes } from './PostSeasonResultRoutes';
 import { gameRoutes } from './gameRoutes';
+
 import jobRoutes from './jobRoutes';
 
+import { scoreboardJobs } from './jobs.scoreboard'
+import { scoreboardScheduleRoutes } from './job.scoreboard.schedule';
 const router = Router();
 
 // Register all domain routes
@@ -30,7 +33,9 @@ router.use('/postseason-results', postSeasonResultRoutes);
 router.use('/schedules', scheduleRoutes);
 router.use('/teams', teamRoutes);
 router.use('/team-needs', teamNeedRoutes);
-
+router.use('/jobs', jobRoutes);
+router.use('/jobs/kickoff/scoreboard', scoreboardJobs)
+router.use('/jobs/scoreboard/schedule', scoreboardScheduleRoutes)
 // Future routes (uncomment as you build them)
 // 
 

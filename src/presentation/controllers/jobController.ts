@@ -1,10 +1,11 @@
 // src/presentation/controllers/jobController.ts
 import { Request, Response } from 'express'
-import { PrismaClient, JobStatus, Prisma } from '@prisma/client'
+import { PrismaClient, Prisma, type Job_status } from '@prisma/client'
 import { ParsedQs } from 'qs'
 import { runImportNflSeasonJob } from '../../application/services/importer/runImportJob'
 
 const prisma = new PrismaClient()
+const ALLOWED: Array<Job_status> = ['pending','in_progress','completed','failed','canceled'];
 
 // Flatten Express/qs query values into an array of strings
 function stringsFromQueryValue(
@@ -20,21 +21,13 @@ function stringsFromQueryValue(
 // Parse status=? to JobStatus[]
 function parseStatusQuery(
   statusVal: undefined | string | ParsedQs | (string | ParsedQs)[]
-): JobStatus[] {
-  const raw = stringsFromQueryValue(statusVal).flatMap((s) => s.split(','))
-
-  const allowedLower = new Set(
-    (Object.values(JobStatus) as string[]).map((s) => s.toLowerCase())
-  )
-
+): Job_status[] {
+  const raw = stringsFromQueryValue(statusVal).flatMap((s) => s.split(','));
   const normalized = raw
     .map((s) => s.trim().toLowerCase())
-    .filter((s) => allowedLower.has(s))
-
-  // Safe cast after filtering against the enum values
-  return normalized as JobStatus[]
+    .filter((s): s is Job_status => (ALLOWED as string[]).includes(s));
+  return normalized;
 }
-
 export async function listJobs(req: Request, res: Response) {
   const statuses = parseStatusQuery(req.query.status)
 

@@ -5,6 +5,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { config } from 'dotenv';
+import jobsRouter from '@/routes/jobs'
+import { initScoreboardCron } from '@/jobs/scoreboardCron'
 
 // Load environment variables
 config();
@@ -41,7 +43,7 @@ app.use('/api/v1', apiRoutes);
 
 // Also support /api without version for convenience
 app.use('/api', apiRoutes);
-
+app.use('/api/jobs', jobsRouter)   // <-- mount the Jobs API
 // Catch-all route for 404s
 app.use('*', (req, res) => {
   res.status(404).json({
@@ -49,6 +51,8 @@ app.use('*', (req, res) => {
     error: `Route ${req.originalUrl} not found`,
     availableRoutes: [
       'GET /health',
+      'GET /api/jobs',
+      'GET /api/jobs/:id',
       'GET /api/teams',
       'POST /api/teams',
       'GET /api/teams/:id',
@@ -69,5 +73,7 @@ app.listen(PORT, () => {
   console.log(`📋 API Base URL: http://localhost:${PORT}/api/v1`);
   console.log(`👥 Teams endpoint: http://localhost:${PORT}/api/v1/teams`);
 });
+
+initScoreboardCron().catch(err => console.error('cron init failed', err))
 
 export default app;

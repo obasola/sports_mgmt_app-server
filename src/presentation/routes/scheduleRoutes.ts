@@ -19,29 +19,43 @@ const scheduleRepository = new PrismaScheduleRepository();
 const scheduleService = new ScheduleService(scheduleRepository);
 const scheduleController = new ScheduleController(scheduleService);
 
-// Parameter validation schemas
+// ---------------------
+// Zod schemas (coerce + passthrough + defaults)
+// ---------------------
 const IdParamsSchema = z.object({
-  id: z.string().regex(/^\d+$/, 'ID must be a number').transform(Number),
-});
+  id: z.coerce.number().int().positive(),
+}).passthrough();
 
 const TeamSeasonParamsSchema = z.object({
-  teamId: z.string().regex(/^\d+$/, 'Team ID must be a number').transform(Number),
-  seasonYear: z.string().regex(/^\d+$/, 'Season year must be a number').transform(Number),
-});
+  teamId: z.coerce.number().int().positive(),
+  // keep seasonYear numeric; change to string+regex if your controller expects a string
+  seasonYear: z.coerce.number().int().min(1900).max(3000),
+}).passthrough();
 
 const OpponentParamsSchema = z.object({
-  oppTeamId: z.string().regex(/^\d+$/, 'Opponent team ID must be a number').transform(Number),
-});
+  oppTeamId: z.coerce.number().int().positive(),
+}).passthrough();
 
+// Bodies often arrive as strings; coerce and validate
 const GameResultSchema = z.object({
-  teamScore: z.number().min(0, 'Team score cannot be negative'),
-  oppTeamScore: z.number().min(0, 'Opponent team score cannot be negative'),
+  teamScore: z.coerce.number().int().min(0, 'Team score cannot be negative'),
+  oppTeamScore: z.coerce.number().int().min(0, 'Opponent team score cannot be negative'),
   wonLostFlag: z.string().length(1, 'Won/Lost flag must be a single character'),
-});
+}).passthrough();
 
-const QuerySchema = ScheduleFiltersDtoSchema.merge(PaginationDtoSchema);
+// Keep your existing list filters, but allow extra keys
+const QuerySchema = ScheduleFiltersDtoSchema.merge(PaginationDtoSchema).passthrough();
 
+// Optional per-route query with sensible defaults
+// (Use when you want defaults like regular season)
+const ScheduleQuerySchema = z.object({
+  week: z.coerce.number().int().min(0).max(25).optional(),
+  seasonType: z.coerce.number().int().min(1).max(3).default(2), // 2 = regular season
+}).passthrough();
+
+// ---------------------
 // Routes
+// ---------------------
 router.post(
   '/',
   validateBody(CreateScheduleDtoSchema),
@@ -54,19 +68,14 @@ router.get(
   scheduleController.getAllSchedules
 );
 
-router.get(
-  '/upcoming',
-  scheduleController.getUpcomingGames
-);
+router.get('/upcoming', scheduleController.getUpcomingGames);
 
-router.get(
-  '/completed',
-  scheduleController.getCompletedGames
-);
+router.get('/completed', scheduleController.getCompletedGames);
 
 router.get(
   '/team/:teamId/season/:seasonYear',
   validateParams(TeamSeasonParamsSchema),
+  validateQuery(ScheduleQuerySchema), // ← adds seasonType default=2, optional week
   scheduleController.getTeamSchedule
 );
 

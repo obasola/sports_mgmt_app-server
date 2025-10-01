@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API routes
 app.use(`/api/${process.env.API_VERSION || ''}`, apiRoutes);
-
+ 
 // Error handling
 app.use(errorHandler);
 

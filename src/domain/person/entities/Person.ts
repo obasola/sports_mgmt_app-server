@@ -1,40 +1,78 @@
 // src/domain/person/entities/Person.ts
 import { ValidationError } from '@/shared/errors/AppError';
 
-export interface PersonProps {
+// What the domain ultimately holds
+export type PersonProps = {
   pid?: number;
+  userName: string;
+  emailAddress: string;
+  password: string | null;
+  firstName: string;
+  lastName: string;
+  rid: number | null;
+  isActive: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  lastLoginAt: Date | null;
+};
+
+// What the service supplies when creating a new person
+export type NewPersonInput = {
   userName: string;
   emailAddress: string;
   password: string;
   firstName: string;
   lastName: string;
-}
+  rid?: number | null;
+};
 
 export class Person {
   private constructor(private props: PersonProps) {
     this.validate();
   }
 
-  public static create(props: PersonProps): Person {
-    return new Person(props);
+  static create(input: NewPersonInput): Person {
+    return new Person({
+      pid: undefined,
+      userName: input.userName,
+      emailAddress: input.emailAddress,
+      password: input.password ?? null,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      rid: input.rid ?? 1, // sensible default (adjust to your rules)
+      isActive: true,
+      createdAt: null, // DB will set; we keep nullable in domain
+      updatedAt: null,
+      lastLoginAt: null,
+    });
   }
-
   // 🚨 CRITICAL: fromPersistence MUST match actual Prisma return types
-  public static fromPersistence(data: {
+  // Accepts a row from persistence (nullable timestamps etc.) and normalizes
+  static fromPersistence(row: {
     pid: number;
     userName: string;
     emailAddress: string;
-    password: string;
+    password: string | null;
     firstName: string;
     lastName: string;
+    rid: number | null;
+    isActive: boolean | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+    lastLoginAt: Date | null;
   }): Person {
     return new Person({
-      pid: data.pid,
-      userName: data.userName,
-      emailAddress: data.emailAddress,
-      password: data.password,
-      firstName: data.firstName,
-      lastName: data.lastName,
+      pid: row.pid,
+      userName: row.userName,
+      emailAddress: row.emailAddress,
+      password: row.password,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      rid: row.rid,
+      isActive: row.isActive ?? true,
+      createdAt: row.createdAt ?? null,
+      updatedAt: row.updatedAt ?? null,
+      lastLoginAt: row.lastLoginAt ?? null,
     });
   }
 
@@ -45,7 +83,7 @@ export class Person {
     if (this.props.userName.length > 25) {
       throw new ValidationError('Username cannot exceed 25 characters');
     }
-    
+
     if (!this.props.emailAddress || this.props.emailAddress.trim().length === 0) {
       throw new ValidationError('Email address is required');
     }
@@ -55,21 +93,21 @@ export class Person {
     if (!this.isValidEmail(this.props.emailAddress)) {
       throw new ValidationError('Invalid email format');
     }
-    
+
     if (!this.props.password || this.props.password.trim().length === 0) {
       throw new ValidationError('Password is required');
     }
     if (this.props.password.length > 25) {
       throw new ValidationError('Password cannot exceed 25 characters');
     }
-    
+
     if (!this.props.firstName || this.props.firstName.trim().length === 0) {
       throw new ValidationError('First name is required');
     }
     if (this.props.firstName.length > 25) {
       throw new ValidationError('First name cannot exceed 25 characters');
     }
-    
+
     if (!this.props.lastName || this.props.lastName.trim().length === 0) {
       throw new ValidationError('Last name is required');
     }
@@ -97,7 +135,7 @@ export class Person {
   }
 
   public get password(): string {
-    return this.props.password;
+    return this.props.password === null ? '' : this.props.password;
   }
 
   public get firstName(): string {
@@ -116,7 +154,7 @@ export class Person {
     if (!lastName || lastName.trim().length === 0) {
       throw new ValidationError('Last name is required');
     }
-    
+
     this.props.firstName = firstName.trim();
     this.props.lastName = lastName.trim();
     this.validate();
@@ -126,7 +164,7 @@ export class Person {
     if (!emailAddress || emailAddress.trim().length === 0) {
       throw new ValidationError('Email address is required');
     }
-    
+
     this.props.emailAddress = emailAddress.trim();
     this.validate();
   }
@@ -135,7 +173,7 @@ export class Person {
     if (!password || password.trim().length === 0) {
       throw new ValidationError('Password is required');
     }
-    
+
     this.props.password = password;
     this.validate();
   }
@@ -144,7 +182,7 @@ export class Person {
     if (!userName || userName.trim().length === 0) {
       throw new ValidationError('Username is required');
     }
-    
+
     this.props.userName = userName.trim();
     this.validate();
   }
@@ -161,12 +199,17 @@ export class Person {
 
   // 🔧 toPersistence: Convert entity back to Prisma format
   public toPersistence(): {
-    pid?: number;
+    pid: number | undefined;
     userName: string;
     emailAddress: string;
-    password: string;
+    password: string | null;
     firstName: string;
     lastName: string;
+    rid: number | null;
+    isActive: boolean | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+    lastLoginAt: Date | null;
   } {
     return {
       pid: this.props.pid,
@@ -175,6 +218,11 @@ export class Person {
       password: this.props.password,
       firstName: this.props.firstName,
       lastName: this.props.lastName,
+      rid: this.props.rid,
+    isActive: this.props.isActive,
+    createdAt: this.props.createdAt,
+    updatedAt: this.props.updatedAt,
+    lastLoginAt: this.props.lastLoginAt,
     };
   }
 

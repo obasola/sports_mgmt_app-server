@@ -8,6 +8,9 @@
     "build": "npm run clean && tsc -p tsconfig.json && tsc-alias -p tsconfig.json --verbose",
     "start": "node dist/index.js",
     "dev": "nodemon",
+
+    "ingest": "ts-node -r tsconfig-paths/register src/cli/ingest.ts",
+    "dev:espn": "ts-node -r tsconfig-paths/register src/espn/dev/try-endpoints.ts",
     "dev:ts": "ts-node -r tsconfig-paths/register src/index.ts",
     "dev:debug": "nodemon --inspect --exec 'ts-node -r tsconfig-paths/register' src/index.ts",
     "import:nfl": "tsx src/scripts/import-nfl-season.ts",
@@ -20,7 +23,10 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
     "test": "jest",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "cli:importWeek": "ts-node src/cli/importWeek.ts",
+    "cli:backfillSeason": "ts-node src/cli/backfillSeason.ts",
+    "cli:syncTeams": "ts-node src/cli/syncTeams.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.15.0",
@@ -30,8 +36,10 @@
     "express": "^4.21.2",
     "helmet": "^7.2.0",
     "morgan": "^1.10.0",
+
     "p-limit": "^7.1.1",
     "yargs": "^18.0.0",
+    "node-cron": "^4.2.1",
     "zod": "^3.25.64"
   },
   "devDependencies": {

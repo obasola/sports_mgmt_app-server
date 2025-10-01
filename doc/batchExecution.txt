@@ -1,0 +1,11 @@
+Quick sanity test (CLI)
+# Week import (single)
+npx ts-node src/cli/importWeek.ts 2024 2 1
+
+# Season backfill
+npx ts-node src/cli/backfillSeason.ts --year=2024 --seasonType=2
+
+
+If you still don’t see rows changing, log one event payload in mapCompetition before the upsert to confirm the mapping, and temporarily add select: { id: true } to the upsert return in the repo to verify writes.
+
+If you want, send me IJobLogger and scoreboardClient typings; I’ll align those too so you’re 100% green.

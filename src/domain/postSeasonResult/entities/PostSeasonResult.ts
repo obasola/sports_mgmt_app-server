@@ -44,6 +44,8 @@ export class PostSeasonResult {
       division: string | null;    // ✅ YOUR DATABASE HAS THIS (string, not enum)
       stadium: string | null;     // ✅ YOUR DATABASE HAS THIS
       scheduleId: number | null;  // ✅ YOUR DATABASE HAS THIS
+      espnTeamId: number | null;
+      abbreviation: string | null;
     } | null;
   }): PostSeasonResult {
     return new PostSeasonResult({

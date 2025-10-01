@@ -1,8 +1,12 @@
 // src/presentation/controllers/ScheduleController.ts
 import { Request, Response, NextFunction } from 'express';
 import { ScheduleService } from '@/application/schedule/services/ScheduleService';
-import { ApiResponse, PaginatedResponse } from '@/shared/types/common';
-import { ScheduleResponseDto, ScheduleFiltersDto, PaginationDto } from '@/application/schedule/dto/ScheduleDto';
+import { ApiResponse } from '@/shared/types/common';
+import {
+  ScheduleResponseDto,
+  ScheduleFiltersDto,
+  PaginationDto,
+} from '@/application/schedule/dto/ScheduleDto';
 
 export class ScheduleController {
   constructor(private readonly scheduleService: ScheduleService) {}
@@ -30,7 +34,7 @@ export class ScheduleController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id, 10);
       const schedule = await this.scheduleService.getScheduleById(id);
       res.json({
         success: true,
@@ -41,37 +45,48 @@ export class ScheduleController {
     }
   };
 
+  // LIST (paginated)
   getAllSchedules = async (
     req: Request,
-    res: Response<{success: boolean, data: ScheduleResponseDto[], pagination: any}>,
+    res: Response<{ success: boolean; data: ScheduleResponseDto[]; pagination: any }>,
     next: NextFunction
   ): Promise<void> => {
     try {
+      // Let the client override; otherwise choose a larger sensible default than 10
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 25;
+
       const filters: ScheduleFiltersDto = {
-        teamId: req.query.teamId ? parseInt(req.query.teamId as string) : undefined,
-        seasonYear: req.query.seasonYear ? parseInt(req.query.seasonYear as string) : undefined,
-        oppTeamId: req.query.oppTeamId ? parseInt(req.query.oppTeamId as string) : undefined,
+        teamId: req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined,
+        seasonYear: req.query.seasonYear ? parseInt(req.query.seasonYear as string, 10) : undefined,
+        oppTeamId: req.query.oppTeamId ? parseInt(req.query.oppTeamId as string, 10) : undefined,
         oppTeamConference: req.query.oppTeamConference as string,
         oppTeamDivision: req.query.oppTeamDivision as string,
-        scheduleWeek: req.query.scheduleWeek ? parseInt(req.query.scheduleWeek as string) : undefined,
+        scheduleWeek: req.query.scheduleWeek
+          ? parseInt(req.query.scheduleWeek as string, 10)
+          : undefined,
         gameCity: req.query.gameCity as string,
         gameStateProvince: req.query.gameStateProvince as string,
         gameCountry: req.query.gameCountry as string,
         wonLostFlag: req.query.wonLostFlag as string,
         homeOrAway: req.query.homeOrAway as string,
-        completed: req.query.completed ? req.query.completed === 'true' : undefined,
+        completed: req.query.completed ? (req.query.completed as string) === 'true' : undefined,
       };
 
-      const pagination: PaginationDto = {
-        page: req.query.page ? parseInt(req.query.page as string) : 1,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
-      };
+      const { data, pagination } = await this.scheduleService.getAllSchedules(filters, {
+        page,
+        limit,
+      });
 
-      const schedules = await this.scheduleService.getAllSchedules(filters, pagination);
+      // Many data tables look for this header for server-side pagination
+      res.set('X-Total-Count', String(pagination.total));
+      // Make sure browsers allow your frontend to read the header
+      res.set('Access-Control-Expose-Headers', 'X-Total-Count');
+
       res.json({
         success: true,
-        data: schedules.data,
-        pagination: schedules.pagination
+        data,
+        pagination, // { page, limit, total, pages }
       });
     } catch (error) {
       next(error);
@@ -84,7 +99,7 @@ export class ScheduleController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id, 10);
       const schedule = await this.scheduleService.updateSchedule(id, req.body);
       res.json({
         success: true,
@@ -102,7 +117,7 @@ export class ScheduleController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id, 10);
       await this.scheduleService.deleteSchedule(id);
       res.status(204).json({
         success: true,
@@ -113,18 +128,33 @@ export class ScheduleController {
     }
   };
 
+  // TEAM SEASON (paginated so the client can render a pager)
   getTeamSchedule = async (
     req: Request,
-    res: Response<ApiResponse<ScheduleResponseDto[]>>,
+    res: Response<{
+      success: boolean;
+      data: ScheduleResponseDto[];
+      pagination: any;
+      message: string;
+    }>,
     next: NextFunction
   ): Promise<void> => {
     try {
-      const teamId = parseInt(req.params.teamId);
-      const seasonYear = parseInt(req.params.seasonYear);
-      const schedules = await this.scheduleService.getTeamSchedule(teamId, seasonYear);
+      const teamId = parseInt(req.params.teamId, 10);
+      const seasonYear = parseInt(req.params.seasonYear, 10);
+
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 25;
+
+      const result = await this.scheduleService.getTeamSchedulePaginated(teamId, seasonYear, {
+        page,
+        limit,
+      });
+
       res.json({
         success: true,
-        data: schedules,
+        data: result.data,
+        pagination: result.pagination,
         message: `Retrieved schedule for team ${teamId} in ${seasonYear}`,
       });
     } catch (error) {
@@ -138,7 +168,7 @@ export class ScheduleController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const oppTeamId = parseInt(req.params.oppTeamId);
+      const oppTeamId = parseInt(req.params.oppTeamId, 10);
       const schedules = await this.scheduleService.getOpponentHistory(oppTeamId);
       res.json({
         success: true,
@@ -156,7 +186,7 @@ export class ScheduleController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const teamId = req.query.teamId ? parseInt(req.query.teamId as string) : undefined;
+      const teamId = req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined;
       const schedules = await this.scheduleService.getUpcomingGames(teamId);
       res.json({
         success: true,
@@ -174,7 +204,7 @@ export class ScheduleController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const teamId = req.query.teamId ? parseInt(req.query.teamId as string) : undefined;
+      const teamId = req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined;
       const schedules = await this.scheduleService.getCompletedGames(teamId);
       res.json({
         success: true,
@@ -192,12 +222,12 @@ export class ScheduleController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id, 10);
       const { teamScore, oppTeamScore, wonLostFlag } = req.body;
       const schedule = await this.scheduleService.updateGameResult(
-        id, 
-        teamScore, 
-        oppTeamScore, 
+        id,
+        teamScore,
+        oppTeamScore,
         wonLostFlag
       );
       res.json({

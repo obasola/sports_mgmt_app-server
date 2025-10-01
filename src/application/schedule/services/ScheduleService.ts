@@ -1,4 +1,3 @@
-
 // src/application/schedule/services/ScheduleService.ts
 import { IScheduleRepository } from '@/domain/schedule/repositories/IScheduleRepository';
 import { Schedule } from '@/domain/schedule/entities/Schedule';
@@ -15,12 +14,9 @@ export class ScheduleService {
   constructor(private readonly scheduleRepository: IScheduleRepository) {}
 
   async createSchedule(dto: CreateScheduleDto): Promise<ScheduleResponseDto> {
-    // Business logic: Validate that the team doesn't play itself
     if (dto.teamId && dto.teamId === dto.oppTeamId) {
       throw new ConflictError('A team cannot play against itself');
     }
-
-    // Business logic: Validate game date is not in the past for new games
     if (dto.gameDate && dto.gameDate < new Date()) {
       throw new ConflictError('Cannot schedule games in the past');
     }
@@ -49,35 +45,36 @@ export class ScheduleService {
 
   async getScheduleById(id: number): Promise<ScheduleResponseDto> {
     const schedule = await this.scheduleRepository.findById(id);
-    if (!schedule) {
-      throw new NotFoundError('Schedule', id);
-    }
+    if (!schedule) throw new NotFoundError('Schedule', id);
     return this.toResponseDto(schedule);
   }
 
+  // LIST (paginated)
   async getAllSchedules(
     filters?: ScheduleFiltersDto,
     pagination?: PaginationParams
   ): Promise<PaginatedResponse<ScheduleResponseDto>> {
-    const result = await this.scheduleRepository.findAll(filters, pagination);
+    // default: page=1, limit=25 for better table UX
+    const paged = {
+      page: pagination?.page ?? 1,
+      limit: pagination?.limit ?? 25,
+    };
+
+    const result = await this.scheduleRepository.findAll(filters, paged);
     return {
       data: result.data.map((schedule) => this.toResponseDto(schedule)),
-      pagination: result.pagination,
+      pagination: result.pagination, // expect { page, limit, total, totalPages } from repo
     };
   }
-
+  /*
   async updateSchedule(id: number, dto: UpdateScheduleDto): Promise<ScheduleResponseDto> {
     const existingSchedule = await this.scheduleRepository.findById(id);
-    if (!existingSchedule) {
-      throw new NotFoundError('Schedule', id);
-    }
+    if (!existingSchedule) throw new NotFoundError('Schedule', id);
 
-    // Business logic: Validate that the team doesn't play itself
     if (dto.teamId && dto.oppTeamId && dto.teamId === dto.oppTeamId) {
       throw new ConflictError('A team cannot play against itself');
     }
 
-    // Apply updates to the existing schedule
     const updatedProps = {
       id: existingSchedule.id,
       teamId: dto.teamId ?? existingSchedule.teamId,
@@ -101,13 +98,70 @@ export class ScheduleService {
     const updatedSchedule = await this.scheduleRepository.update(id, schedule);
     return this.toResponseDto(updatedSchedule);
   }
+  */
+ async updateSchedule(id: number, dto: UpdateScheduleDto): Promise<ScheduleResponseDto> {
+  const existingSchedule = await this.scheduleRepository.findById(id);
+  if (!existingSchedule) throw new NotFoundError('Schedule', id);
+
+  // Don’t allow result mutations here — use updateGameResult instead
+  if (
+    dto.teamScore !== undefined ||
+    dto.oppTeamScore !== undefined ||
+    dto.wonLostFlag !== undefined
+  ) {
+    throw new ConflictError('Scores and result must be updated via updateGameResult');
+  }
+
+  // Business rule: no team vs itself
+  if (dto.teamId && dto.oppTeamId && dto.teamId === dto.oppTeamId) {
+    throw new ConflictError('A team cannot play against itself');
+  }
+
+  // Apply *only* schedule/meta updates
+  const updatedProps = {
+    id: existingSchedule.id,
+    teamId: dto.teamId ?? existingSchedule.teamId,
+    seasonYear: dto.seasonYear ?? existingSchedule.seasonYear,
+    oppTeamId: dto.oppTeamId ?? existingSchedule.oppTeamId,
+    oppTeamConference: dto.oppTeamConference ?? existingSchedule.oppTeamConference,
+    oppTeamDivision: dto.oppTeamDivision ?? existingSchedule.oppTeamDivision,
+    scheduleWeek: dto.scheduleWeek ?? existingSchedule.scheduleWeek,
+    gameDate: dto.gameDate ?? existingSchedule.gameDate,
+    gameCity: dto.gameCity ?? existingSchedule.gameCity,
+    gameStateProvince: dto.gameStateProvince ?? existingSchedule.gameStateProvince,
+    gameCountry: dto.gameCountry ?? existingSchedule.gameCountry,
+    gameLocation: dto.gameLocation ?? existingSchedule.gameLocation,
+    homeOrAway: dto.homeOrAway ?? existingSchedule.homeOrAway,
+    // NOTE: teamScore / oppTeamScore / wonLostFlag are intentionally *not* updated here
+  };
+
+  const schedule = Schedule.create(updatedProps);
+  const updatedSchedule = await this.scheduleRepository.update(id, schedule);
+  return this.toResponseDto(updatedSchedule);
+}
+
+  // Add this inside class ScheduleService
+async updateGameResult(
+  id: number,
+  teamScore: number,
+  oppTeamScore: number,
+  wonLostFlag: string
+): Promise<ScheduleResponseDto> {
+  const existingSchedule = await this.scheduleRepository.findById(id);
+  if (!existingSchedule) {
+    throw new NotFoundError('Schedule', id);
+  }
+
+  // Domain method applies validation and sets fields
+  existingSchedule.updateGameResult(teamScore, oppTeamScore, wonLostFlag);
+
+  const updatedSchedule = await this.scheduleRepository.update(id, existingSchedule);
+  return this.toResponseDto(updatedSchedule);
+}
 
   async deleteSchedule(id: number): Promise<void> {
     const schedule = await this.scheduleRepository.findById(id);
-    if (!schedule) {
-      throw new NotFoundError('Schedule', id);
-    }
-
+    if (!schedule) throw new NotFoundError('Schedule', id);
     await this.scheduleRepository.delete(id);
   }
 
@@ -115,6 +169,29 @@ export class ScheduleService {
     return this.scheduleRepository.exists(id);
   }
 
+  // TEAM SEASON (paginated version for datatable)
+  async getTeamSchedulePaginated(
+    teamId: number,
+    seasonYear: number,
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<ScheduleResponseDto>> {
+    const paged = {
+      page: pagination?.page ?? 1,
+      limit: pagination?.limit ?? 25,
+    };
+
+    const result = await this.scheduleRepository.findAll(
+      { teamId, seasonYear }, // reuse the generic filterable repo method
+      paged
+    );
+
+    return {
+      data: result.data.map((s) => this.toResponseDto(s)),
+      pagination: result.pagination,
+    };
+  }
+
+  // (legacy array versions still available if other pages use them)
   async getTeamSchedule(teamId: number, seasonYear: number): Promise<ScheduleResponseDto[]> {
     const schedules = await this.scheduleRepository.findByTeamAndSeason(teamId, seasonYear);
     return schedules.map((schedule) => this.toResponseDto(schedule));
@@ -135,27 +212,9 @@ export class ScheduleService {
     return schedules.map((schedule) => this.toResponseDto(schedule));
   }
 
-  async updateGameResult(
-    id: number,
-    teamScore: number,
-    oppTeamScore: number,
-    wonLostFlag: string
-  ): Promise<ScheduleResponseDto> {
-    const existingSchedule = await this.scheduleRepository.findById(id);
-    if (!existingSchedule) {
-      throw new NotFoundError('Schedule', id);
-    }
-
-    // Use domain method to update game result
-    existingSchedule.updateGameResult(teamScore, oppTeamScore, wonLostFlag);
-
-    const updatedSchedule = await this.scheduleRepository.update(id, existingSchedule);
-    return this.toResponseDto(updatedSchedule);
-  }
-
   private toResponseDto(schedule: Schedule): ScheduleResponseDto {
     const gameLocation = this.buildFullGameLocation(schedule);
-    
+
     return {
       id: schedule.id!,
       teamId: schedule.teamId,
@@ -182,12 +241,10 @@ export class ScheduleService {
 
   private buildFullGameLocation(schedule: Schedule): string {
     const parts: string[] = [];
-    
     if (schedule.gameLocation) parts.push(schedule.gameLocation);
     if (schedule.gameCity) parts.push(schedule.gameCity);
     if (schedule.gameStateProvince) parts.push(schedule.gameStateProvince);
     if (schedule.gameCountry) parts.push(schedule.gameCountry);
-    
     return parts.length > 0 ? parts.join(', ') : 'Location TBD';
   }
 }
