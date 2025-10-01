@@ -4,8 +4,6 @@ import type { GameService } from '@/application/game/services/GameService';
 import { ApiResponse } from '@/shared/types/common';
 import {
   GameResponseDto,
-  GameFiltersDto,
-  PaginationDto,
   UpdateScoreDtoSchema,
 } from '@/application/game/dto/GameDto';
 import { z } from 'zod';
@@ -23,9 +21,10 @@ export class GameController {
     console.log('🔍 req.body.preseason:', req.body.preseason, typeof req.body.preseason);
     try {
       const game = await this.gameService.createGame(req.body);
+      const dto = mapGameToResponse(game);
       res.status(201).json({
         success: true,
-        data: game,
+        data: dto,
         message: 'Game created successfully',
       });
     } catch (error) {
@@ -38,13 +37,14 @@ export class GameController {
     res: Response<ApiResponse<GameResponseDto>>,
     next: NextFunction
   ): Promise<void> => {
-    console.log('presentation.controllers.GameController::getGamesByUd - Entrypoint');
+    console.log('presentation.controllers.GameController::getGameById - Entrypoint');
     try {
       const id = z.coerce.number().parse(req.params.id);
       const game = await this.gameService.getGameById(id);
+      const dto = mapGameToResponse(game);
       res.json({
         success: true,
-        data: game,
+        data: dto,
       });
     } catch (error) {
       next(error);
@@ -61,10 +61,12 @@ export class GameController {
         limit,
       });
 
+      const dtoGames = data.map(mapGameToResponse);
+
       res.set('X-Total-Count', String(pagination.total));
       res.set('Access-Control-Expose-Headers', 'X-Total-Count');
 
-      res.json({ success: true, data, pagination });
+      res.json({ success: true, data: dtoGames, pagination });
     } catch (err) {
       next(err);
     }
@@ -75,16 +77,17 @@ export class GameController {
     res: Response<ApiResponse<GameResponseDto[]>>,
     next: NextFunction
   ): Promise<void> => {
-    console.log('presentation.controllers.GameController::getPreSeasonGames - Entrypoint');
+    console.log('presentation.controllers.GameController::getPreseasonGames - Entrypoint');
     try {
       const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
       const preseasonWeek = req.query.preseasonWeek
         ? z.coerce.number().parse(req.query.preseasonWeek)
         : undefined;
       const games = await this.gameService.getPreseasonGames(teamId, preseasonWeek);
+      const dtoGames = games.map(mapGameToResponse);
       res.json({
         success: true,
-        data: games,
+        data: dtoGames,
       });
     } catch (error) {
       next(error);
@@ -101,14 +104,16 @@ export class GameController {
       const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
       const seasonYear = req.query.seasonYear as string;
       const games = await this.gameService.getRegularSeasonGames(teamId, seasonYear);
+      const dtoGames = games.map(mapGameToResponse);
       res.json({
         success: true,
-        data: games,
+        data: dtoGames,
       });
     } catch (error) {
       next(error);
     }
   };
+
   /**
    * GET /teams/:teamId/games?seasonYear=YYYY
    * Returns games for a team+season with team relations for names/logos.
@@ -120,17 +125,16 @@ export class GameController {
   ): Promise<void> => {
     console.log('presentation.controllers.GameController::getTeamGames - Entrypoint');
     try {
-      // ✅ use params, not query
       const teamId = z.coerce.number().parse(req.params.teamId);
       const seasonYear = z
         .string()
         .regex(/^\d{4}$/)
         .parse(req.params.seasonYear);
 
-      // ✅ service still returns Game[] (domain entities)
+      // Service now returns Game[] with team relations already loaded
       const games = await this.gameService.getTeamSeasonGames(teamId, seasonYear);
 
-      // ✅ convert to DTOs
+      // Convert to DTOs
       const dtoGames = games.map(mapGameToResponse);
 
       res.json({
@@ -150,9 +154,10 @@ export class GameController {
     try {
       const id = z.coerce.number().parse(req.params.id);
       const game = await this.gameService.updateGame(id, req.body);
+      const dto = mapGameToResponse(game);
       res.json({
         success: true,
-        data: game,
+        data: dto,
         message: 'Game updated successfully',
       });
     } catch (error) {
@@ -184,9 +189,10 @@ export class GameController {
       }
 
       const game = await this.gameService.updateGameScore(id, parsed.data);
+      const dto = mapGameToResponse(game);
       res.json({
         success: true,
-        data: game,
+        data: dto,
         message: 'Game score updated successfully',
       });
     } catch (error) {
@@ -220,9 +226,10 @@ export class GameController {
       const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
       const limit = req.query.limit ? z.coerce.number().parse(req.query.limit) : undefined;
       const games = await this.gameService.getUpcomingGames(teamId, limit);
+      const dtoGames = games.map(mapGameToResponse);
       res.json({
         success: true,
-        data: games,
+        data: dtoGames,
       });
     } catch (error) {
       next(error);
@@ -238,9 +245,10 @@ export class GameController {
       const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
       const limit = req.query.limit ? z.coerce.number().parse(req.query.limit) : undefined;
       const games = await this.gameService.getCompletedGames(teamId, limit);
+      const dtoGames = games.map(mapGameToResponse);
       res.json({
         success: true,
-        data: games,
+        data: dtoGames,
       });
     } catch (error) {
       next(error);

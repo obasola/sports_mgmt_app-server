@@ -1,3 +1,4 @@
+// src/application/game/dto/mapGameToResponse.ts
 import type { GameResponseDto } from './GameDto'
 import type { Game } from '@/domain/game/entities/Game'
 

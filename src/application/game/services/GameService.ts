@@ -1,26 +1,49 @@
-import { z } from 'zod'
-import { IGameRepository } from '@/domain/game/repositories/IGameRepository';
+// src/application/game/services/GameService.ts
 import { Game } from '@/domain/game/entities/Game';
-import { NotFoundError, ValidationError } from '@/shared/errors/AppError';
-import { PaginatedResponse, PaginationParams } from '@/shared/types/common';
-import {
-  CreateGameDto,
-  UpdateGameDto,
-  GameFiltersDto,
-  GameResponseDto,
-  UpdateScoreDto,
+import type { IGameRepository } from '@/domain/game/repositories/IGameRepository';
+import type { 
+  CreateGameDto, 
+  UpdateGameDto, 
+  GameFiltersDto, 
+  PaginationDto,
+  UpdateScoreDto 
 } from '../dto/GameDto';
-import { mapGameToResponse } from '../dto/mapGameToResponse'   // ← add this
+import type { PaginatedResponse } from '@/shared/types/common';
+import { NotFoundError, ValidationError } from '@/shared/errors/AppError';
 
 export class GameService {
   constructor(private readonly gameRepository: IGameRepository) {}
 
-  async createGame(dto: CreateGameDto): Promise<GameResponseDto> {
+  /**
+   * Create a new game
+   * Repository now returns Game with team relations loaded
+   */
+  async createGame(dto: CreateGameDto): Promise<Game> {
+    // Validate teams exist and are different
+    if (dto.homeTeamId === dto.awayTeamId) {
+      throw new ValidationError('Home team and away team cannot be the same');
+    }
+
+    // Check for game conflicts
+    if (dto.gameDate) {
+      const conflict = await this.gameRepository.checkGameConflict(
+        dto.homeTeamId,
+        dto.awayTeamId,
+        new Date(dto.gameDate),
+        dto.seasonYear
+      );
+      if (conflict) {
+        throw new ValidationError(
+          'A game already exists for these teams on this date in this season'
+        );
+      }
+    }
+
     const game = Game.create({
       seasonYear: dto.seasonYear,
       gameWeek: dto.gameWeek,
       preseason: dto.preseason,
-      gameDate: dto.gameDate,
+      gameDate: dto.gameDate ? new Date(dto.gameDate) : undefined,
       homeTeamId: dto.homeTeamId,
       awayTeamId: dto.awayTeamId,
       gameLocation: dto.gameLocation,
@@ -32,113 +55,163 @@ export class GameService {
       gameStatus: dto.gameStatus || 'scheduled',
     });
 
-    const saved = await this.gameRepository.save(game);
-    return mapGameToResponse(saved);            // ← use mapper
+    return await this.gameRepository.save(game);
   }
 
-  async getGameById(id: number): Promise<GameResponseDto> {
-    console.log("application.game.GameService::getGameById - Getting Game by UD: "+id);
-    const result = await this.gameRepository.findByIdWithTeams(id);
-    if (!result) throw new NotFoundError('Game', id);
-
-    const { game } = result; // relations already merged in entity by fromPersistence
-    return mapGameToResponse(game);             // ← use mapper
+  /**
+   * Get game by ID
+   * Repository now returns Game with team relations loaded
+   */
+  async getGameById(id: number): Promise<Game> {
+    const game = await this.gameRepository.findById(id);
+    if (!game) {
+      throw new NotFoundError('Game', id);
+    }
+    return game;
   }
 
-  async getTeamSeasonGames(teamId: number, seasonYear: string) {
-    return this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
-  }
-
-  async getPreseasonGames(teamId?: number, seasonYear?: number): Promise<GameResponseDto[]> {
-    const games = await this.gameRepository.findPreseasonGames(teamId, seasonYear);
-    return games.map(mapGameToResponse);        // ← use mapper
-  }
-
-  async getRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<GameResponseDto[]> {
-    const games = await this.gameRepository.findRegularSeasonGames(teamId, seasonYear);
-    return games.map(mapGameToResponse);        // ← use mapper
-  }
-
-  async getAllGamesForSeason(teamId?: number, seasonYear?: string): Promise<GameResponseDto[]> {
-    const games = await this.gameRepository.findRegularSeasonGames(teamId, seasonYear);
-    return games.map(mapGameToResponse);        // ← use mapper
-  }
-
+  /**
+   * Get all games with filters and pagination
+   * Repository now returns Games with team relations loaded
+   */
   async getAllGames(
     filters?: GameFiltersDto,
-    pagination?: PaginationParams
-  ): Promise<PaginatedResponse<GameResponseDto>> {
-    const result = await this.gameRepository.findAll(filters, pagination);
-    return {
-      data: result.data.map(mapGameToResponse), // ← use mapper
-      pagination: result.pagination,
-    };
+    pagination?: PaginationDto
+  ): Promise<PaginatedResponse<Game>> {
+    return await this.gameRepository.findAll(filters, pagination);
   }
 
-  async updateGame(id: number, dto: UpdateGameDto): Promise<GameResponseDto> {
-    const existing = await this.gameRepository.findById(id);
-    if (!existing) throw new NotFoundError('Game', id);
-
-    const updated = Game.create({
-      id: existing.id,
-      seasonYear: existing.seasonYear,
-      homeTeamId: existing.homeTeamId,
-      awayTeamId: existing.awayTeamId,
-      gameWeek: dto.gameWeek ?? existing.gameWeek,
-      preseason: dto.preseason ?? existing.preseason,
-      gameDate: dto.gameDate ?? existing.gameDate,
-      gameLocation: dto.gameLocation ?? existing.gameLocation,
-      gameCity: dto.gameCity ?? existing.gameCity,
-      gameStateProvince: dto.gameStateProvince ?? existing.gameStateProvince,
-      gameCountry: dto.gameCountry ?? existing.gameCountry,
-      homeScore: dto.homeScore ?? existing.homeScore,
-      awayScore: dto.awayScore ?? existing.awayScore,
-      gameStatus: dto.gameStatus ?? existing.gameStatus,
-      createdAt: existing.createdAt,
-      updatedAt: new Date(),
-    });
-
-    const saved = await this.gameRepository.update(id, updated);
-    return mapGameToResponse(saved);            // ← use mapper
+  /**
+   * Get preseason games
+   * Repository now returns Games with team relations loaded
+   */
+  async getPreseasonGames(teamId?: number, preseasonWeek?: number): Promise<Game[]> {
+    return await this.gameRepository.findPreseasonGames(teamId, preseasonWeek);
   }
 
-  async updateGameScore(id: number, dto: UpdateScoreDto): Promise<GameResponseDto> {
-    const existing = await this.gameRepository.findById(id);
-    if (!existing) throw new NotFoundError('Game', id);
+  /**
+   * Get regular season games
+   * Repository now returns Games with team relations loaded
+   */
+  async getRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
+    return await this.gameRepository.findRegularSeasonGames(teamId, seasonYear);
+  }
 
-    if (existing.gameStatus === 'cancelled' || existing.gameStatus === 'postponed') {
-      throw new ValidationError('Cannot update score for cancelled or postponed games');
+  /**
+   * Get games for a specific team and season
+   * Repository now returns Games with team relations loaded
+   */
+  async getTeamSeasonGames(teamId: number, seasonYear: string): Promise<Game[]> {
+    return await this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
+  }
+
+  /**
+   * Get upcoming games
+   * Repository now returns Games with team relations loaded
+   */
+  async getUpcomingGames(teamId?: number, limit?: number): Promise<Game[]> {
+    return await this.gameRepository.findUpcomingGames(teamId, limit);
+  }
+
+  /**
+   * Get completed games
+   * Repository now returns Games with team relations loaded
+   */
+  async getCompletedGames(teamId?: number, limit?: number): Promise<Game[]> {
+    return await this.gameRepository.findCompletedGames(teamId, limit);
+  }
+
+  /**
+   * Update a game
+   * Repository now returns Game with team relations loaded
+   */
+  async updateGame(id: number, dto: UpdateGameDto): Promise<Game> {
+    const existingGame = await this.gameRepository.findById(id);
+    if (!existingGame) {
+      throw new NotFoundError('Game', id);
     }
 
-    existing.updateScore(dto.homeScore, dto.awayScore);
-    if (dto.gameStatus) existing.updateStatus(dto.gameStatus);
+    // Validate date conflict if date is being updated
+    if (dto.gameDate) {
+      const conflict = await this.gameRepository.checkGameConflict(
+        existingGame.homeTeamId,
+        existingGame.awayTeamId,
+        new Date(dto.gameDate),
+        existingGame.seasonYear
+      );
+      if (conflict) {
+        const conflictGame = await this.gameRepository.findById(id);
+        if (!conflictGame || conflictGame.id !== id) {
+          throw new ValidationError(
+            'A game already exists for these teams on this date in this season'
+          );
+        }
+      }
+    }
 
-    const saved = await this.gameRepository.update(id, existing);
-    return mapGameToResponse(saved);            // ← use mapper
+    const updatedGame = Game.create({
+      id: existingGame.id,
+      seasonYear: existingGame.seasonYear,
+      gameWeek: dto.gameWeek ?? existingGame.gameWeek,
+      preseason: dto.preseason ?? existingGame.preseason,
+      gameDate: dto.gameDate ? new Date(dto.gameDate) : existingGame.gameDate,
+      homeTeamId: existingGame.homeTeamId,
+      awayTeamId: existingGame.awayTeamId,
+      gameLocation: dto.gameLocation ?? existingGame.gameLocation,
+      gameCity: dto.gameCity ?? existingGame.gameCity,
+      gameStateProvince: dto.gameStateProvince ?? existingGame.gameStateProvince,
+      gameCountry: dto.gameCountry ?? existingGame.gameCountry,
+      homeScore: dto.homeScore ?? existingGame.homeScore,
+      awayScore: dto.awayScore ?? existingGame.awayScore,
+      gameStatus: (dto.gameStatus ?? existingGame.gameStatus) as 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed' | undefined,
+    });
+
+    return await this.gameRepository.update(id, updatedGame);
   }
 
+  /**
+   * Update game score only
+   * Repository now returns Game with team relations loaded
+   */
+  async updateGameScore(id: number, dto: UpdateScoreDto): Promise<Game> {
+    const existingGame = await this.gameRepository.findById(id);
+    if (!existingGame) {
+      throw new NotFoundError('Game', id);
+    }
+
+    existingGame.updateScore(dto.homeScore, dto.awayScore, dto.gameStatus);
+
+    return await this.gameRepository.update(id, existingGame);
+  }
+
+  /**
+   * Delete a game
+   */
   async deleteGame(id: number): Promise<void> {
-    const game = await this.gameRepository.findById(id);
-    if (!game) throw new NotFoundError('Game', id);
+    const exists = await this.gameRepository.exists(id);
+    if (!exists) {
+      throw new NotFoundError('Game', id);
+    }
     await this.gameRepository.delete(id);
   }
 
-  async gameExists(id: number): Promise<boolean> {
-    return this.gameRepository.exists(id);
+  /**
+   * Get games for a team in a specific week
+   * Repository now returns Games with team relations loaded
+   */
+  async getTeamWeekGames(
+    teamId: number,
+    seasonYear: string,
+    gameWeek: number
+  ): Promise<Game[]> {
+    return await this.gameRepository.findByTeamSeasonWeek(teamId, seasonYear, gameWeek);
   }
 
-  async getTeamGames(teamId: number, seasonYear: string): Promise<GameResponseDto[]> {
-    const games = await this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
-    return games.map(mapGameToResponse);        // ← use mapper
-  }
-
-  async getUpcomingGames(teamId?: number, limit?: number): Promise<GameResponseDto[]> {
-    const games = await this.gameRepository.findUpcomingGames(teamId, limit);
-    return games.map(mapGameToResponse);        // ← use mapper
-  }
-
-  async getCompletedGames(teamId?: number, limit?: number): Promise<GameResponseDto[]> {
-    const games = await this.gameRepository.findCompletedGames(teamId, limit);
-    return games.map(mapGameToResponse);        // ← use mapper
+  /**
+   * Get all games for a season (preseason + regular + playoffs)
+   * Repository now returns Games with team relations loaded
+   */
+  async getAllSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
+    return await this.gameRepository.findAllGamesForSeason(teamId, seasonYear);
   }
 }

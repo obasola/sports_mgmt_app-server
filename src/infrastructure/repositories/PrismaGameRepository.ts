@@ -3,10 +3,16 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import { Game } from "../../domain/game/entities/Game";
 import type { IGameRepository, GameFilters } from "../../domain/game/repositories/IGameRepository";
 import type { PaginationParams, PaginatedResponse } from "@/shared/types/common";
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'; // at top with other imports
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export class PrismaGameRepository implements IGameRepository {
   constructor(private prisma: PrismaClient) {}
+
+  // Shared include object for team relations
+  private readonly teamInclude = {
+    homeTeam: true,
+    awayTeam: true,
+  };
 
   // ---------- ESPN helper mapping ----------
   async findTeamIdByEspnTeamId(id: string): Promise<number | null> {
@@ -34,34 +40,35 @@ export class PrismaGameRepository implements IGameRepository {
         gameLocation: data.gameLocation ?? null,
         gameCity: data.gameCity ?? null,
         gameStateProvince: data.gameStateProvince ?? null,
-        gameCountry: data.gameCountry ?? undefined, // let default 'USA' work if undefined
+        gameCountry: data.gameCountry ?? undefined,
         homeScore: data.homeScore ?? undefined,
         awayScore: data.awayScore ?? undefined,
         gameStatus: (data.gameStatus as any) ?? undefined,
         espnEventId: data.espnEventId ?? undefined,
         espnCompetitionId: data.espnCompetitionId ?? undefined,
       },
+      include: this.teamInclude,
     });
-    return Game.fromPersistence(created as any);
+    return this.hydrateGameWithTeams(created);
   }
 
   async findById(id: number): Promise<Game | null> {
-    const row = await this.prisma.game.findUnique({ where: { id } });
-    return row ? Game.fromPersistence(row as any) : null;
+    const row = await this.prisma.game.findUnique({ 
+      where: { id },
+      include: this.teamInclude,
+    });
+    return row ? this.hydrateGameWithTeams(row) : null;
   }
 
   async findByIdWithTeams(id: number): Promise<{ game: Game; homeTeam: any; awayTeam: any } | null> {
     const row = await this.prisma.game.findUnique({
       where: { id },
-      include: {
-        homeTeam: true,
-        awayTeam: true,
-      },
+      include: this.teamInclude,
     });
     if (!row) return null;
     const { homeTeam, awayTeam, ...g } = row;
     return {
-      game: Game.fromPersistence(g as any),
+      game: this.hydrateGameWithTeams(row),
       homeTeam,
       awayTeam,
     };
@@ -87,7 +94,7 @@ export class PrismaGameRepository implements IGameRepository {
     }
 
     return where;
-    }
+  }
 
   async findAll(filters?: GameFilters, pagination?: PaginationParams): Promise<PaginatedResponse<Game>> {
     const page = pagination?.page ?? 1;
@@ -101,15 +108,15 @@ export class PrismaGameRepository implements IGameRepository {
         skip,
         take: limit,
         orderBy: [{ seasonYear: 'desc' }, { gameWeek: 'asc' }, { gameDate: 'asc' }],
+        include: this.teamInclude,
       }),
       this.prisma.game.count({ where }),
     ]);
 
     return {
-      data: rows.map((r) => Game.fromPersistence(r as any)),
+      data: rows.map(r => this.hydrateGameWithTeams(r)),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     };
-    
   }
 
   async update(id: number, game: Game): Promise<Game> {
@@ -133,8 +140,9 @@ export class PrismaGameRepository implements IGameRepository {
         espnEventId: data.espnEventId ?? undefined,
         espnCompetitionId: data.espnCompetitionId ?? undefined,
       },
+      include: this.teamInclude,
     });
-    return Game.fromPersistence(updated as any);
+    return this.hydrateGameWithTeams(updated);
   }
 
   async delete(id: number): Promise<void> {
@@ -150,16 +158,18 @@ export class PrismaGameRepository implements IGameRepository {
     const rows = await this.prisma.game.findMany({
       where: { seasonYear, OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }] },
       orderBy: [{ gameWeek: 'asc' }, { gameDate: 'asc' }],
+      include: this.teamInclude,
     });
-    return rows.map((r) => Game.fromPersistence(r as any));
+    return rows.map(r => this.hydrateGameWithTeams(r));
   }
 
   async findByTeamSeasonWeek(teamId: number, seasonYear: string, gameWeek: number): Promise<Game[]> {
     const rows = await this.prisma.game.findMany({
       where: { seasonYear, gameWeek, OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }] },
       orderBy: [{ gameDate: 'asc' }],
+      include: this.teamInclude,
     });
-    return rows.map((r) => Game.fromPersistence(r as any));
+    return rows.map(r => this.hydrateGameWithTeams(r));
   }
 
   async findUpcomingGames(teamId?: number, limit = 10): Promise<Game[]> {
@@ -171,8 +181,9 @@ export class PrismaGameRepository implements IGameRepository {
       where,
       orderBy: [{ gameDate: 'asc' }],
       take: limit,
+      include: this.teamInclude,
     });
-    return rows.map((r) => Game.fromPersistence(r as any));
+    return rows.map(r => this.hydrateGameWithTeams(r));
   }
 
   async findCompletedGames(teamId?: number, limit = 10): Promise<Game[]> {
@@ -183,8 +194,9 @@ export class PrismaGameRepository implements IGameRepository {
       where,
       orderBy: [{ gameDate: 'desc' }],
       take: limit,
+      include: this.teamInclude,
     });
-    return rows.map((r) => Game.fromPersistence(r as any));
+    return rows.map(r => this.hydrateGameWithTeams(r));
   }
 
   async findPreseasonGames(teamId?: number, seasonYear?: number): Promise<Game[]> {
@@ -195,8 +207,9 @@ export class PrismaGameRepository implements IGameRepository {
     const rows = await this.prisma.game.findMany({
       where,
       orderBy: [{ gameDate: 'asc' }],
+      include: this.teamInclude,
     });
-    return rows.map((r) => Game.fromPersistence(r as any));
+    return rows.map(r => this.hydrateGameWithTeams(r));
   }
 
   async findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
@@ -207,8 +220,9 @@ export class PrismaGameRepository implements IGameRepository {
     const rows = await this.prisma.game.findMany({
       where,
       orderBy: [{ gameWeek: 'asc' }],
+      include: this.teamInclude,
     });
-    return rows.map((r) => Game.fromPersistence(r as any));
+    return rows.map(r => this.hydrateGameWithTeams(r));
   }
 
   async findRegularSeasonGameByWeek(teamId?: number, seasonYear?: string, week?: number): Promise<Game[]> {
@@ -220,8 +234,9 @@ export class PrismaGameRepository implements IGameRepository {
     const rows = await this.prisma.game.findMany({
       where,
       orderBy: [{ gameDate: 'asc' }],
+      include: this.teamInclude,
     });
-    return rows.map((r) => Game.fromPersistence(r as any));
+    return rows.map(r => this.hydrateGameWithTeams(r));
   }
 
   async findAllGamesForSeason(teamId?: number, seasonYear?: string): Promise<Game[]> {
@@ -232,8 +247,9 @@ export class PrismaGameRepository implements IGameRepository {
     const rows = await this.prisma.game.findMany({
       where,
       orderBy: [{ gameWeek: 'asc' }, { gameDate: 'asc' }],
+      include: this.teamInclude,
     });
-    return rows.map((r) => Game.fromPersistence(r as any));
+    return rows.map(r => this.hydrateGameWithTeams(r));
   }
 
   async checkGameConflict(homeTeamId: number, awayTeamId: number, gameDate: Date, seasonYear: string): Promise<boolean> {
@@ -248,166 +264,179 @@ export class PrismaGameRepository implements IGameRepository {
     return count > 0;
   }
 
-  // ---------- ESPN upsert ----------
   /**
-   * Interface signature you pasted:
-   * upsertByKey(
-   *   { espnCompetitionId, espnEventId, seasonYear, preseason, gameWeek, homeTeamId, awayTeamId },
-   *   { seasonYear, gameWeek, preseason, gameDate, homeTeamId, awayTeamId, homeScore, awayScore, gameStatus, espnEventId, espnCompetitionId }
-   * ): Promise<Game>
+   * Helper to hydrate a Game entity with team relations
    */
- // src/infrastructure/repositories/PrismaGameRepository.ts
-
-
-// Make sure this file has:
-// import { Prisma } from '@prisma/client'
-
-async upsertByKey(
-  key: {
-    espnCompetitionId: string;
-    espnEventId: string;
-    seasonYear: string;
-    preseason: number;   // using number (1/0) to match schema
-    gameWeek: number;
-    homeTeamId: number;
-    awayTeamId: number;
-  },
-  data: {
-    readonly seasonYear: string;
-    readonly gameWeek: number;
-    readonly preseason: number;
-    readonly gameDate: Date | null;
-    readonly homeTeamId: number;
-    readonly awayTeamId: number;
-    readonly homeScore: number | null;
-    readonly awayScore: number | null;
-    readonly gameStatus: string | null;
-    readonly espnEventId: string;
-    readonly espnCompetitionId: string;
-  }
-): Promise<Game> {
-  const compId = key.espnCompetitionId || data.espnCompetitionId;
-  const evtId  = key.espnEventId       || data.espnEventId;
-
-  // keep update/create payloads aligned with your schema
-  const update: Prisma.GameUncheckedUpdateInput = {
-    seasonYear: data.seasonYear,
-    gameWeek: data.gameWeek,
-    preseason: data.preseason,
-    gameDate: (data.gameDate ?? null) as any, // ensure null not undefined for deterministic composite
-    homeTeamId: data.homeTeamId,
-    awayTeamId: data.awayTeamId,
-    homeScore: data.homeScore ?? undefined,
-    awayScore: data.awayScore ?? undefined,
-    gameStatus: (data.gameStatus as any) ?? undefined,
-    espnEventId: evtId,
-    espnCompetitionId: compId,
-  };
-
-  const create: Prisma.GameUncheckedCreateInput = {
-    seasonYear: data.seasonYear,
-    gameWeek: data.gameWeek,
-    preseason: data.preseason,
-    gameDate: (data.gameDate ?? null) as any, // see note above
-    homeTeamId: data.homeTeamId,
-    awayTeamId: data.awayTeamId,
-    homeScore: (data.homeScore ?? null) as any,
-    awayScore: (data.awayScore ?? null) as any,
-    gameStatus: (data.gameStatus as any) ?? undefined,
-    espnEventId: evtId,
-    espnCompetitionId: compId,
-  };
-
-  // helper: merge into an existing row by your composite unique
-  const mergeIntoComposite = async () => {
-    if (!data.gameDate) return null; // composite in your schema uses gameDate
-    const existing = await this.prisma.game.findFirst({
-      where: {
-        seasonYear: data.seasonYear,
-        gameDate: data.gameDate,
-        homeTeamId: data.homeTeamId,
-        awayTeamId: data.awayTeamId,
-      },
-    });
-    if (!existing) return null;
-    const row = await this.prisma.game.update({
-      where: { id: existing.id },
-      data: update,
-    });
-    return row;
-  };
-
-  // 1) Prefer espnCompetitionId (unique)
-  if (compId) {
-    try {
-      const row = await this.prisma.game.upsert({
-        where: { espnCompetitionId: compId },
-        update,
-        create,
-      });
-      return Game.fromPersistence(row as any);
-    } catch (e: any) {
-      // If the CREATE path tripped your composite unique (unique_game), merge into that row instead.
-      if (
-        e instanceof Prisma.PrismaClientKnownRequestError &&
-        e.code === 'P2002' &&
-        (
-          (Array.isArray((e.meta as any)?.target) && (e.meta as any).target.includes('unique_game')) ||
-          String(e.message).includes('unique_game')
-        )
-      ) {
-        const merged = await mergeIntoComposite();
-        if (merged) return Game.fromPersistence(merged as any);
-      }
-      throw e;
+  private hydrateGameWithTeams(row: any): Game {
+    const { homeTeam, awayTeam, ...gameData } = row;
+    const game = Game.fromPersistence(gameData as any);
+    
+    // Attach team data using setters
+    if (homeTeam) {
+      game.homeTeam = homeTeam;
     }
-  }
-
-  // 2) Next, try espnEventId (also unique in your schema)
-  if (evtId) {
-    try {
-      const row = await this.prisma.game.upsert({
-        where: { espnEventId: evtId },
-        update,
-        create,
-      });
-      return Game.fromPersistence(row as any);
-    } catch (e: any) {
-      if (
-        e instanceof Prisma.PrismaClientKnownRequestError &&
-        e.code === 'P2002' &&
-        (
-          (Array.isArray((e.meta as any)?.target) && (e.meta as any).target.includes('unique_game')) ||
-          String(e.message).includes('unique_game')
-        )
-      ) {
-        const merged = await mergeIntoComposite();
-        if (merged) return Game.fromPersistence(merged as any);
-      }
-      throw e;
+    if (awayTeam) {
+      game.awayTeam = awayTeam;
     }
+    
+    return game;
   }
 
-  // 3) No ESPN ids: try composite direct (if we have a date), else create.
-  if (data.gameDate) {
-    const existing = await this.prisma.game.findFirst({
-      where: {
-        seasonYear: data.seasonYear,
-        gameDate: data.gameDate,
-        homeTeamId: data.homeTeamId,
-        awayTeamId: data.awayTeamId,
-      },
+  // ---------- ESPN upsert ----------
+  async upsertByKey(
+    key: {
+      espnCompetitionId: string;
+      espnEventId: string;
+      seasonYear: string;
+      preseason: number;
+      gameWeek: number;
+      homeTeamId: number;
+      awayTeamId: number;
+    },
+    data: {
+      readonly seasonYear: string;
+      readonly gameWeek: number;
+      readonly preseason: number;
+      readonly gameDate: Date | null;
+      readonly homeTeamId: number;
+      readonly awayTeamId: number;
+      readonly homeScore: number | null;
+      readonly awayScore: number | null;
+      readonly gameStatus: string | null;
+      readonly espnEventId: string;
+      readonly espnCompetitionId: string;
+    }
+  ): Promise<Game> {
+    const compId = key.espnCompetitionId || data.espnCompetitionId;
+    const evtId  = key.espnEventId       || data.espnEventId;
+
+    const update: Prisma.GameUncheckedUpdateInput = {
+      seasonYear: data.seasonYear,
+      gameWeek: data.gameWeek,
+      preseason: data.preseason,
+      gameDate: (data.gameDate ?? null) as any,
+      homeTeamId: data.homeTeamId,
+      awayTeamId: data.awayTeamId,
+      homeScore: data.homeScore ?? undefined,
+      awayScore: data.awayScore ?? undefined,
+      gameStatus: (data.gameStatus as any) ?? undefined,
+      espnEventId: evtId,
+      espnCompetitionId: compId,
+    };
+
+    const create: Prisma.GameUncheckedCreateInput = {
+      seasonYear: data.seasonYear,
+      gameWeek: data.gameWeek,
+      preseason: data.preseason,
+      gameDate: (data.gameDate ?? null) as any,
+      homeTeamId: data.homeTeamId,
+      awayTeamId: data.awayTeamId,
+      homeScore: (data.homeScore ?? null) as any,
+      awayScore: (data.awayScore ?? null) as any,
+      gameStatus: (data.gameStatus as any) ?? undefined,
+      espnEventId: evtId,
+      espnCompetitionId: compId,
+    };
+
+    const mergeIntoComposite = async () => {
+      if (!data.gameDate) return null;
+      const existing = await this.prisma.game.findFirst({
+        where: {
+          seasonYear: data.seasonYear,
+          gameDate: data.gameDate,
+          homeTeamId: data.homeTeamId,
+          awayTeamId: data.awayTeamId,
+        },
+      });
+      if (!existing) return null;
+      const row = await this.prisma.game.update({
+        where: { id: existing.id },
+        data: update,
+        include: this.teamInclude,
+      });
+      return row;
+    };
+
+    // 1) Prefer espnCompetitionId (unique)
+    if (compId) {
+      try {
+        const row = await this.prisma.game.upsert({
+          where: { espnCompetitionId: compId },
+          update,
+          create,
+          include: this.teamInclude,
+        });
+        return this.hydrateGameWithTeams(row);
+      } catch (e: any) {
+        if (
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === 'P2002' &&
+          (
+            (Array.isArray((e.meta as any)?.target) && (e.meta as any).target.includes('unique_game')) ||
+            String(e.message).includes('unique_game')
+          )
+        ) {
+          const merged = await mergeIntoComposite();
+          if (merged) return this.hydrateGameWithTeams(merged);
+        }
+        throw e;
+      }
+    }
+
+    // 2) Next, try espnEventId
+    if (evtId) {
+      try {
+        const row = await this.prisma.game.upsert({
+          where: { espnEventId: evtId },
+          update,
+          create,
+          include: this.teamInclude,
+        });
+        return this.hydrateGameWithTeams(row);
+      } catch (e: any) {
+        if (
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === 'P2002' &&
+          (
+            (Array.isArray((e.meta as any)?.target) && (e.meta as any).target.includes('unique_game')) ||
+            String(e.message).includes('unique_game')
+          )
+        ) {
+          const merged = await mergeIntoComposite();
+          if (merged) return this.hydrateGameWithTeams(merged);
+        }
+        throw e;
+      }
+    }
+
+    // 3) No ESPN ids: try composite direct
+    if (data.gameDate) {
+      const existing = await this.prisma.game.findFirst({
+        where: {
+          seasonYear: data.seasonYear,
+          gameDate: data.gameDate,
+          homeTeamId: data.homeTeamId,
+          awayTeamId: data.awayTeamId,
+        },
+      });
+      const row = existing
+        ? await this.prisma.game.update({ 
+            where: { id: existing.id }, 
+            data: update,
+            include: this.teamInclude,
+          })
+        : await this.prisma.game.create({ 
+            data: create,
+            include: this.teamInclude,
+          });
+      return this.hydrateGameWithTeams(row);
+    }
+
+    // Last resort: blind create
+    const row = await this.prisma.game.create({ 
+      data: create,
+      include: this.teamInclude,
     });
-    const row = existing
-      ? await this.prisma.game.update({ where: { id: existing.id }, data: update })
-      : await this.prisma.game.create({ data: create });
-    return Game.fromPersistence(row as any);
+    return this.hydrateGameWithTeams(row);
   }
-
-  // Last resort: blind create (rare in ESPN path)
-  const row = await this.prisma.game.create({ data: create });
-  return Game.fromPersistence(row as any);
-}
-
-
 }
