@@ -2,10 +2,7 @@
 import { Request, Response, NextFunction } from 'express';
 import type { GameService } from '@/application/game/services/GameService';
 import { ApiResponse } from '@/shared/types/common';
-import {
-  GameResponseDto,
-  UpdateScoreDtoSchema,
-} from '@/application/game/dto/GameDto';
+import { GameResponseDto, UpdateScoreDtoSchema } from '@/application/game/dto/GameDto';
 import { z } from 'zod';
 import { mapGameToResponse } from '@/application/game/dto/mapGameToResponse';
 
@@ -249,6 +246,35 @@ export class GameController {
       res.json({
         success: true,
         data: dtoGames,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  
+ /****************************************************************
+  * Calculate conference record for a team in a season
+  *  (new methods added for Team Info Statistics)
+  ****************************************************************/
+
+  getTeamStatistics = async (
+    req: Request,
+    res: Response<ApiResponse<any>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = z.coerce.number().parse(req.params.teamId);
+      const seasonYear = z
+        .string()
+        .regex(/^\d{4}$/)
+        .parse(req.query.seasonYear || new Date().getFullYear().toString());
+
+      const stats = await this.gameService.getTeamStatistics(teamId, seasonYear);
+
+      res.json({
+        success: true,
+        data: stats,
       });
     } catch (error) {
       next(error);

@@ -1,5 +1,4 @@
 // src/presentation/routes/gameRoutes.ts
-// src/presentation/routes/gameRoutes.ts
 import { Router } from 'express';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
@@ -7,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import { GameController } from '../controllers/GameController';
 import { GameService } from '@/application/game/services/GameService';
 import { PrismaGameRepository } from '@/infrastructure/repositories/PrismaGameRepository';
+import { PrismaTeamRepository } from '@/infrastructure/repositories/PrismaTeamRepository';
 import { validateBody, validateParams, validateQuery } from '../middleware/validation';
 import {
   CreateGameDtoSchema,
@@ -17,10 +17,12 @@ import {
 const router = Router();
 
 /* -----------------------------------------------------------------------------
- * Dependencies
+ * Dependencies - Updated to inject both repositories
  * -------------------------------------------------------------------------- */
-const gameRepository = new PrismaGameRepository(new PrismaClient());
-const gameService = new GameService(gameRepository);
+const prismaClient = new PrismaClient();
+const gameRepository = new PrismaGameRepository(prismaClient);
+const teamRepository = new PrismaTeamRepository();
+const gameService = new GameService(gameRepository, teamRepository);
 const gameController = new GameController(gameService);
 
 /* -----------------------------------------------------------------------------
@@ -38,33 +40,24 @@ const TeamSeasonParamsSchema = z.object({
   seasonYear: z.string().regex(/^\d{4}$/, 'Season year must be a 4-digit year'),
 });
 
-// Query for list endpoints. Coerce numbers/dates coming from the URL,
-// and allow optional seasonType (1=pre, 2=regular, 3=post).
+// Query for list endpoints
 const GameQuerySchema = z
   .object({
     teamId: z.coerce.number().int().positive().optional(),
     homeTeamId: z.coerce.number().int().positive().optional(),
     awayTeamId: z.coerce.number().int().positive().optional(),
     gameWeek: z.coerce.number().int().min(0).max(25).optional(),
-
-    // keep seasonYear as a 4-digit string if your repo expects string keys
     seasonYear: z.string().regex(/^\d{4}$/, 'seasonYear must be a 4-digit year').optional(),
-
-    // optional; many list pages won’t pass it—controllers can decide defaults
     seasonType: z.coerce.number().int().min(1).max(3).optional(),
-
     gameStatus: z.string().optional(),
     gameCity: z.string().optional(),
     gameCountry: z.string().optional(),
-
     dateFrom: z.coerce.date().optional(),
     dateTo: z.coerce.date().optional(),
-
-    // pagination
     page: z.coerce.number().int().min(1).optional(),
     limit: z.coerce.number().int().min(1).max(200).optional(),
   })
-  .passthrough()
+  .passthrough();
 
 /* -----------------------------------------------------------------------------
  * Routes
@@ -80,11 +73,18 @@ router.get('/', validateQuery(GameQuerySchema), gameController.getAllGames);
 router.get('/upcoming', gameController.getUpcomingGames);
 router.get('/completed', gameController.getCompletedGames);
 
-// Team/season listing (params coerced; add a small query validator if you want week/seasonType here too)
+// ✅ NEW: Team statistics endpoint (add before the /:id route to avoid conflicts)
+router.get(
+  '/team/:teamId/statistics',
+  validateParams(z.object({ teamId: z.coerce.number().int().positive() })),
+  validateQuery(z.object({ seasonYear: z.string().regex(/^\d{4}$/).optional() }).passthrough()),
+  gameController.getTeamStatistics
+);
+
+// Team/season listing
 router.get(
   '/team/:teamId/season/:seasonYear',
   validateParams(TeamSeasonParamsSchema),
-  // optionally allow query like ?seasonType=2&week=5
   validateQuery(
     z
       .object({
