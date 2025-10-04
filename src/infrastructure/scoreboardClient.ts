@@ -19,9 +19,7 @@ export interface EspnCompetitor {
 export interface EspnCompetition {
   id: string;                 // stable competition id
   date?: string;              // ISO
-  status?: {
-    type?: { name?: string; state?: string; completed?: boolean; detail?: string }
-  };
+  status?: { type?: { name?: string; state?: string; completed?: boolean; detail?: string } };
   competitors: EspnCompetitor[];
 }
 
@@ -47,14 +45,36 @@ export class EspnScoreboardClient {
     });
   }
 
-  /** Per-week scoreboard (fast, contains competitions) */
-  async getWeekScoreboard(seasonType: SeasonType, week: number): Promise<ScoreboardResponse> {
-    const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=${seasonType}&week=${week}`;
+  /**
+   * Deterministic per-week scoreboard lookup.
+   * Always pass year to avoid ESPN's "current season" ambiguity.
+   */
+  async getWeekScoreboard(seasonType: SeasonType, week: number ): Promise<ScoreboardResponse> {
+    const now = new Date();
+    const year = now.getFullYear();
+    const url =
+      `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard` +
+      `?year=${year}&seasontype=${seasonType}&week=${week}`;
     const { data } = await this.http.get<ScoreboardResponse>(url);
     return data;
   }
 
-  /** Optional: season/type bulk (handy for backfills or cross-checking) */
+  
+    /**
+   * Deterministic per-week scoreboard lookup.
+   * Always pass year to avoid ESPN's "current season" ambiguity.
+   */
+  async getWeek(args: { year: number; seasonType: SeasonType; week: number }): Promise<ScoreboardResponse> {
+    const { year, seasonType, week } = args;
+    const url =
+      `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard` +
+      `?year=${year}&seasontype=${seasonType}&week=${week}`;
+    const { data } = await this.http.get<ScoreboardResponse>(url);
+    return data;
+  }
+  /**
+   * Bulk season/type events (useful for auditing vs per-week pulls).
+   */
   async getSeasonEvents(year: number, seasonType: SeasonType): Promise<{ items: { $ref: string }[] }> {
     const url = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/types/${seasonType}/events?limit=1000`;
     const { data } = await this.http.get(url);

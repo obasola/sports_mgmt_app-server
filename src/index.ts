@@ -5,8 +5,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { config } from 'dotenv';
-import jobsRouter from '@/routes/jobs'
 import { initScoreboardCron } from '@/jobs/scoreboardCron'
+import { buildJobsModule } from './bootstrap/jobsModule';
 
 // Load environment variables
 config();
@@ -43,7 +43,10 @@ app.use('/api/v1', apiRoutes);
 
 // Also support /api without version for convenience
 app.use('/api', apiRoutes);
-app.use('/api/jobs', jobsRouter)   // <-- mount the Jobs API
+
+const { routes: jobsRoutes } = buildJobsModule();
+app.use('/api/jobs', jobsRoutes);
+
 // Catch-all route for 404s
 app.use('*', (req, res) => {
   res.status(404).json({

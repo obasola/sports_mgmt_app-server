@@ -52,7 +52,8 @@ export class BackfillSeasonService {
     { year, seasonType, week, jobId }: { year: number; seasonType: SeasonType; week: number; jobId: number }
   ): Promise<{ processed: number; failed: number }> {
     // ESPN client API you showed earlier
-    const sb = await this.espn.getWeekScoreboard(seasonType, week)
+    const sb = await this.espn.getWeek({ year, seasonType, week })
+
     const events = sb?.events ?? []
 
     const seasonYear = String(sb?.season?.year ?? year)

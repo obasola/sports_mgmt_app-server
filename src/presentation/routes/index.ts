@@ -13,7 +13,7 @@ import { playerTeamRoutes } from './PlayerTeamRoutes';
 import { postSeasonResultRoutes } from './PostSeasonResultRoutes';
 import { gameRoutes } from './gameRoutes';
 
-import jobRoutes from './jobRoutes';
+import { buildJobRoutes } from './jobRoutes';
 
 import { scoreboardJobs } from './jobs.scoreboard'
 import { scoreboardScheduleRoutes } from './job.scoreboard.schedule';
@@ -23,7 +23,7 @@ const router = Router();
 router.use('/combine-scores', combineScoreRoutes);
 router.use('/draft-picks', draftpickRoutes);
 router.use('/games', gameRoutes);
-router.use('/jobs', jobRoutes);
+router.use('/jobs', buildJobRoutes);
 router.use('/persons', personRoutes);
 router.use('/players', playerRoutes);
 router.use('/player-awards', playerAwardRoutes);
@@ -33,7 +33,7 @@ router.use('/postseason-results', postSeasonResultRoutes);
 router.use('/schedules', scheduleRoutes);
 router.use('/teams', teamRoutes);
 router.use('/team-needs', teamNeedRoutes);
-router.use('/jobs', jobRoutes);
+router.use('/jobs', buildJobRoutes);
 router.use('/jobs/kickoff/scoreboard', scoreboardJobs)
 router.use('/jobs/scoreboard/schedule', scoreboardScheduleRoutes)
 // Future routes (uncomment as you build them)

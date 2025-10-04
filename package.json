@@ -8,7 +8,6 @@
     "build": "npm run clean && tsc -p tsconfig.json && tsc-alias -p tsconfig.json --verbose",
     "start": "node dist/index.js",
     "dev": "nodemon",
-
     "ingest": "ts-node -r tsconfig-paths/register src/cli/ingest.ts",
     "dev:espn": "ts-node -r tsconfig-paths/register src/espn/dev/try-endpoints.ts",
     "dev:ts": "ts-node -r tsconfig-paths/register src/index.ts",
@@ -36,10 +35,9 @@
     "express": "^4.21.2",
     "helmet": "^7.2.0",
     "morgan": "^1.10.0",
-
+    "node-cron": "^4.2.1",
     "p-limit": "^7.1.1",
     "yargs": "^18.0.0",
-    "node-cron": "^4.2.1",
     "zod": "^3.25.64"
   },
   "devDependencies": {
