@@ -1,82 +1,115 @@
-// src/index.ts (Main entry point)
-//import './config/moduleAlias'; // If using module-alias
+// src/index.ts
+import './config/env'; // must be first: loads .env.* via dotenv-flow
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { config } from 'dotenv';
-import { initScoreboardCron } from '@/jobs/scoreboardCron'
+import os from 'node:os';
+
+import { CONFIG, isDev } from './config/env';
+import { apiRoutes } from './presentation/routes';
+import { errorHandler } from './presentation/middleware/errorHandler';
+import { initScoreboardCron } from '@/jobs/scoreboardCron';
 import { buildJobsModule } from './bootstrap/jobsModule';
 
-// Load environment variables
-config();
-
-// Import routes
-import { apiRoutes } from './presentation/routes/index';
-import { errorHandler } from './presentation/middleware/errorHandler';
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware
+// ---- core config
+const PORT = CONFIG.port;
+const API_BASE = `/api/${CONFIG.apiVersion}`; // e.g., /api/v1.0
+
+// ---- middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173', // Vue dev server
-  credentials: true,
-}));
-app.use(morgan('combined'));
+app.use(
+  cors({
+    origin: CONFIG.corsAllowed, // supports array or single origin
+    credentials: true,
+  })
+);
+
+// quieter logs in test; verbose in dev/prod
+app.use(
+  morgan(isDev ? 'dev' : 'combined', {
+    skip: () => process.env.NODE_ENV === 'test',
+  })
+);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check route
-app.get('/health', (req, res) => {
+// ---- health
+app.get('/health', (_req, res) => {
   res.json({
-    success: true,
-    message: 'Sports Management API is running',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
+    ok: true,
+    app: CONFIG.appName,
+    env: CONFIG.appEnv,
+    nodeEnv: CONFIG.nodeEnv,
+    version: CONFIG.version,
+    apiVersion: CONFIG.apiVersion,
+    time: new Date().toISOString(),
+    pid: process.pid,
+    host: os.hostname(),
   });
 });
 
-// API routes
-app.use('/api/v1', apiRoutes);
-
-// Also support /api without version for convenience
+// ---- routes
+app.use(API_BASE, apiRoutes);
+// optional non-versioned convenience (keep if you want to support both)
 app.use('/api', apiRoutes);
 
+// Jobs module
 const { routes: jobsRoutes } = buildJobsModule();
+app.use(`${API_BASE}/jobs`, jobsRoutes);
+// optional alias:
 app.use('/api/jobs', jobsRoutes);
 
-// Catch-all route for 404s
+// ---- 404
 app.use('*', (req, res) => {
   res.status(404).json({
-    success: false,
+    ok: false,
     error: `Route ${req.originalUrl} not found`,
-    availableRoutes: [
-      'GET /health',
-      'GET /api/jobs',
-      'GET /api/jobs/:id',
-      'GET /api/teams',
-      'POST /api/teams',
-      'GET /api/teams/:id',
-      'PUT /api/teams/:id',
-      'DELETE /api/teams/:id',
-    ],
+    hint: `Try ${API_BASE}/* endpoints or /health`,
   });
 });
 
-// Error handling middleware (must be last)
+// ---- errors (keep last)
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`📋 API Base URL: http://localhost:${PORT}/api/v1`);
-  console.log(`👥 Teams endpoint: http://localhost:${PORT}/api/v1/teams`);
+// ---- start
+const server = app.listen(PORT, () => {
+  console.log(`🚀 ${CONFIG.appName} v${CONFIG.version} up on :${PORT}`);
+  console.log(`📱 APP_ENV=${CONFIG.appEnv} NODE_ENV=${CONFIG.nodeEnv}`);
+  console.log(`🔗 Health: http://localhost:${PORT}/health`);
+  console.log(`📋 API Base: http://localhost:${PORT}${API_BASE}`);
+  console.log(`🌐 CORS Allowed: ${CONFIG.corsAllowed.join(', ')}`);
 });
 
-initScoreboardCron().catch(err => console.error('cron init failed', err))
+// ---- graceful shutdown
+function shutdown(sig: string) {
+  console.log(`\n${sig} received. Shutting down...`);
+  server.close(err => {
+    if (err) {
+      console.error('Error closing server', err);
+      process.exit(1);
+    }
+    process.exit(0);
+  });
+}
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// ---- cron (gated)
+(async () => {
+  if (!CONFIG.enableCronJobs) {
+    console.log('⏸️  Cron jobs disabled (ENABLE_CRON_JOBS=false)');
+    return;
+  }
+  try {
+    await initScoreboardCron();
+    console.log(`🕒 Cron scheduled: ${CONFIG.scoreboardCron}`);
+  } catch (err) {
+    console.error('cron init failed', err);
+  }
+})();
 
 export default app;
