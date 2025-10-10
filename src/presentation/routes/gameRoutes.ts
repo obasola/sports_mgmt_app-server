@@ -17,7 +17,7 @@ import {
 const router = Router();
 
 /* -----------------------------------------------------------------------------
- * Dependencies - Updated to inject both repositories
+ * Dependencies
  * -------------------------------------------------------------------------- */
 const prismaClient = new PrismaClient();
 const gameRepository = new PrismaGameRepository(prismaClient);
@@ -40,40 +40,48 @@ const TeamSeasonParamsSchema = z.object({
   seasonYear: z.string().regex(/^\d{4}$/, 'Season year must be a 4-digit year'),
 });
 
-// Query for list endpoints
-const GameQuerySchema = z
+// Query for list endpoints (accept flat or nested ?params[...])
+const GameQueryInner = z
   .object({
     teamId: z.coerce.number().int().positive().optional(),
     homeTeamId: z.coerce.number().int().positive().optional(),
     awayTeamId: z.coerce.number().int().positive().optional(),
     gameWeek: z.coerce.number().int().min(0).max(25).optional(),
     seasonYear: z.string().regex(/^\d{4}$/, 'seasonYear must be a 4-digit year').optional(),
-    seasonType: z.coerce.number().int().min(1).max(3).optional(),
+    // UI sometimes sends `year`/`week`; keep them to pass through (the controller normalizes)
+    year: z.string().regex(/^\d{4}$/).optional(),
+    week: z.coerce.number().int().min(0).max(25).optional(),
+    // allow 0/1 for preseason flag
+    preseason: z.coerce.number().int().min(0).max(1).optional(),
     gameStatus: z.string().optional(),
     gameCity: z.string().optional(),
     gameCountry: z.string().optional(),
-    dateFrom: z.coerce.date().optional(),
-    dateTo: z.coerce.date().optional(),
+    dateFrom: z.union([z.string(), z.date()]).optional(),
+    dateTo: z.union([z.string(), z.date()]).optional(),
     page: z.coerce.number().int().min(1).optional(),
     limit: z.coerce.number().int().min(1).max(200).optional(),
   })
   .passthrough();
 
+// Query for list endpoints (accept aliases; controller will normalize)
+const GameQuerySchema = z.union([
+  GameQueryInner,
+  z.object({ params: GameQueryInner }).passthrough(),
+]);
+
+
+
 /* -----------------------------------------------------------------------------
  * Routes
  * -------------------------------------------------------------------------- */
 
-// Create
 router.post('/', validateBody(CreateGameDtoSchema), gameController.createGame);
 
-// List (uses coerced query schema)
 router.get('/', validateQuery(GameQuerySchema), gameController.getAllGames);
 
-// Convenience feeds
 router.get('/upcoming', gameController.getUpcomingGames);
 router.get('/completed', gameController.getCompletedGames);
 
-// ✅ NEW: Team statistics endpoint (add before the /:id route to avoid conflicts)
 router.get(
   '/team/:teamId/statistics',
   validateParams(z.object({ teamId: z.coerce.number().int().positive() })),
@@ -81,7 +89,6 @@ router.get(
   gameController.getTeamStatistics
 );
 
-// Team/season listing
 router.get(
   '/team/:teamId/season/:seasonYear',
   validateParams(TeamSeasonParamsSchema),
@@ -96,17 +103,13 @@ router.get(
   gameController.getTeamGames
 );
 
-// Read one
 router.get('/:id', validateParams(IdParamsSchema), gameController.getGameById);
 
-// Preseason / Regular-season convenience endpoints
 router.get('/preseason', gameController.getPreseasonGames);
 router.get('/regular-season', gameController.getRegularSeasonGames);
 
-// Update
 router.put('/:id', validateParams(IdParamsSchema), validateBody(UpdateGameDtoSchema), gameController.updateGame);
 
-// Patch score
 router.patch(
   '/:id/score',
   validateParams(IdParamsSchema),
@@ -114,7 +117,6 @@ router.patch(
   gameController.updateGameScore
 );
 
-// Delete
 router.delete('/:id', validateParams(IdParamsSchema), gameController.deleteGame);
 
 export { router as gameRoutes };

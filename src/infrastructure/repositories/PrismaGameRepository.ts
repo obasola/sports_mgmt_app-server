@@ -92,7 +92,7 @@ export class PrismaGameRepository implements IGameRepository {
       if (filters.dateFrom) (where.gameDate as any).gte = filters.dateFrom;
       if (filters.dateTo) (where.gameDate as any).lte = filters.dateTo;
     }
-
+    console.log("where params: ", where);
     return where;
   }
 
@@ -100,8 +100,11 @@ export class PrismaGameRepository implements IGameRepository {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
+    
     const where = this.buildWhere(filters);
 
+    console.log("filters: ", filters);
+    console.log("where: ", where);
     const [rows, total] = await Promise.all([
       this.prisma.game.findMany({
         where,

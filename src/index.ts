@@ -11,6 +11,8 @@ import { apiRoutes } from './presentation/routes';
 import { errorHandler } from './presentation/middleware/errorHandler';
 import { initScoreboardCron } from '@/jobs/scoreboardCron';
 import { buildJobsModule } from './bootstrap/jobsModule';
+import { useCorsFromEnv } from './presentation/middleware/cors';
+
 
 const app = express();
 
@@ -20,13 +22,7 @@ const API_BASE = `/api/${CONFIG.apiVersion}`; // e.g., /api/v1.0
 
 // ---- middleware
 app.use(helmet());
-app.use(
-  cors({
-    origin: CONFIG.corsAllowed, // supports array or single origin
-    credentials: true,
-  })
-);
-
+app.use(useCorsFromEnv());
 // quieter logs in test; verbose in dev/prod
 app.use(
   morgan(isDev ? 'dev' : 'combined', {

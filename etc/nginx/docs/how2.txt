@@ -1,0 +1,110 @@
+i. Enable site entry
+sudo ln -sf /etc/nginx/sites-available/draftproanalytics.prod.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+
+2. Installing nginx (requires disabling apache2 if running)
+Here’s the clean, production-ready way to install and verify Nginx on Ubuntu 24.04 (Noble)—plus the handful of “gotchas” that bite most people on fresh VPSes.
+
+1) Install Nginx
+sudo apt update
+sudo apt install -y nginx
+
+2) Start, enable, and check status
+sudo systemctl start nginx
+sudo systemctl enable nginx
+sudo systemctl status nginx
+
+
+You should see active (running).
+
+3) Open the firewall (UFW)
+
+If UFW is enabled (common on VPS images):
+
+sudo ufw allow 'Nginx Full'   # opens 80 and 443
+sudo ufw status
+
+
+If UFW isn’t enabled, you can skip this. (Don’t enable it unless you know your SSH port allowance.)
+
+4) Quick test
+
+From your local machine:
+
+http://<your_server_ip>/
+
+
+You should see the default “Welcome to nginx!” page.
+
+Log files (useful immediately):
+
+/var/log/nginx/access.log
+/var/log/nginx/error.log
+
+5) Set up a site (recommended layout)
+
+Nginx on Ubuntu uses sites-available + sites-enabled:
+
+# create a web root for your SPA (adjust to your project path)
+sudo mkdir -p /var/www/sports_mgmt_app_client/dist
+sudo chown -R $USER:$USER /var/www/sports_mgmt_app_client
+
+Enable it and reload:
+
+sudo ln -s /etc/nginx/sites-available/draftproanalytics.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+6) Point DNS (Namecheap → VPS)
+
+Before HTTPS, point your domain to the VPS:
+
+Add an A record for draftproanalytics.com (and optionally www) to your server’s public IP.
+
+Wait for DNS to propagate (often a few minutes; sometimes up to an hour).
+
+7) Add HTTPS (Let’s Encrypt via Certbot)
+
+Ubuntu 24.04 uses snapd for the current certbot:
+
+sudo snap install core
+sudo snap refresh core
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+
+Obtain and auto-configure TLS for your site:
+
+sudo certbot --nginx -d draftproanalytics.com -d www.draftproanalytics.com
+
+
+Follow the prompts. Certbot will:
+
+Create/adjust your server block for SSL
+
+Install the certificate
+
+Set up auto-renew (systemd timer)
+
+Test renewal:
+
+sudo certbot renew --dry-run
+
+8) Common pitfalls (quick fixes)
+
+Port already in use: sudo ss -ltnp | grep ':80\|:443'
+Stop anything else binding those ports (e.g., Apache): sudo systemctl disable --now apache2
+
+500/404 after deploy: check sudo nginx -t and tail -n 100 /var/log/nginx/error.log
+
+Firewall blocked: confirm sudo ufw status shows Nginx Full allowed
+
+Wrong web root permissions: ensure Nginx can read the files
+sudo chown -R www-data:www-data /var/www/sports_mgmt_app_client/dist (or keep owned by your user with world-readable files)
+
+9) Useful service commands
+sudo systemctl reload nginx     # zero-downtime config reload
+sudo systemctl restart nginx    # full restart
+sudo systemctl stop nginx
+sudo systemctl enable nginx
+sudo nginx -t                   # validate config syntax
