@@ -12,6 +12,7 @@ const DEFAULT: ScoreboardSchedule = {
   minute: 0,
   timezone: 'America/Chicago',
   mode: 'by-week',
+  seasonYear: '2025',
   seasonType: 2, // regular
   week: 1,
 }

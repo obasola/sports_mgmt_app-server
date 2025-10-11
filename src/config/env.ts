@@ -1,4 +1,5 @@
 // src/config/env.ts
+//process.env.NODE_ENV ??= 'development';
 import dotenvFlow from 'dotenv-flow';
 import * as env from 'env-var';
 

@@ -6,7 +6,7 @@ type JobStatusDB = "pending" | "in_progress" | "completed" | "failed" | "cancele
 
 export class PrismaJobLogger implements IJobLogger {
   constructor(private prisma: PrismaClient) {}
-
+  
   async start(opts: JobStartOptions): Promise<{ jobId: number }> {
     const job = await this.prisma.job.create({
       data: {

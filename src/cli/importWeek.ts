@@ -35,12 +35,12 @@ async function main() {
     process.exit(1)
   }
 
-  const year = parseInt(yearStr, 10)
+  const seasonYear:string = yearStr
   const seasonType = parseInt(seasonTypeStr, 10) as SeasonType
   const week = parseInt(weekStr, 10)
 
-  const result = await importWeekService.run({ seasonType, week })
-  console.log(`✅ Imported week ${week} (seasonType ${seasonType}) for ${year} — upserts=${result.upserts}, skipped=${result.skipped}`)
+  const result = await importWeekService.run({ seasonYear, seasonType, week })
+  console.log(`✅ Imported week ${week} (seasonType ${seasonType}) for ${seasonYear} — upserts=${result.upserts}, skipped=${result.skipped}`)
 }
 
 main().catch((err) => {

@@ -20,7 +20,7 @@ export class ImportNflScoresService {
   ) {}
 
   /** Primary entry used by codebase (what your callers were missing). */
-  async run(params: { seasonType: SeasonType; week: number }): Promise<{
+  async run(params: { seasonYear: string, seasonType: SeasonType; week: number }): Promise<{
     seasonYear: string;
     seasonType: SeasonType;
     week: number;
@@ -28,16 +28,16 @@ export class ImportNflScoresService {
     upserts: number;
     skipped: number;
   }> {
-    const { seasonType, week } = params;
+    const { seasonYear, seasonType, week } = params;
 
     const { jobId } = await this.job.start({
       jobType: "IMPORT_SCORES_WEEK",
-      params: { seasonType, week },
+      params: { seasonYear, seasonType, week },
     });
 
     try {
-      const sb = await this.client.getWeekScoreboard(seasonType, week);
-      const seasonYear = String(sb?.season?.year ?? "");
+      const sb = await this.client.getWeekScoreboard(seasonYear, seasonType, week);
+      //const seasonYear = String(sb?.season?.year ?? "");
       const events = sb.events ?? [];
 
       let upserts = 0;
@@ -90,13 +90,13 @@ export class ImportNflScoresService {
 
   /** Optional: some callers prefer an explicit year param. */
   async importWeek(params: {
-    year: number;
+    seasonYear: string;
     seasonType: SeasonType;
     week: number;
   }) {
     // ESPN per-week scoreboard doesn’t need year to fetch,
     // but we still return the computed seasonYear from ESPN to confirm.
-    return this.run({ seasonType: params.seasonType, week: params.week });
+    return this.run({ seasonYear: params.seasonYear, seasonType: params.seasonType, week: params.week });
   }
 
   // ------------ internals ------------

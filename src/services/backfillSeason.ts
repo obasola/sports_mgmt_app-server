@@ -3,7 +3,7 @@ import { EspnScoreboardClient, SeasonType } from "../infrastructure/scoreboardCl
 import { IGameRepository } from "../domain/game/repositories/IGameRepository";
 import { IJobLogger } from "../jobs/IJobLogger";
 
-type RunArgs   = { year: number; seasonType: SeasonType }
+type RunArgs   = { year: number; seasonType: SeasonType, week: number }
 type RunResult = { processed: number; failed: number; weeks: number[] }
 
 export class BackfillSeasonService {
@@ -13,16 +13,19 @@ export class BackfillSeasonService {
     private readonly job: IJobLogger
   ) {}
 
-  async run({ year, seasonType }: RunArgs): Promise<RunResult> {
+  async run({ year, seasonType, week }: RunArgs): Promise<RunResult> {
     const { jobId } = await this.job.start({
       jobType: 'IMPORT_NFL_SEASON',
-      params: { year, seasonType }
+      params: { year, seasonType, week }
     })
 
     try {
       await this.job.log(jobId, { message: `Starting backfill: year=${year}, seasonType=${seasonType}` })
-
-      const weekMax = seasonType === 1 ? 5 : (seasonType === 2 ? 18 : 4)
+      let weekMax = week;
+      if(!weekMax) {
+        weekMax = seasonType === 1 ? 5 : (seasonType === 2 ? 18 : 4)
+      }
+      
       let processed = 0
       let failed = 0
       const weeks: number[] = []

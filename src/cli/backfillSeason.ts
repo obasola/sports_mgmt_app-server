@@ -32,6 +32,7 @@ async function main() {
 
   const yearStr = flags.year ?? pos[0]
   const seasonTypeStr = (flags.seasonType ?? flags.season ?? pos[1])
+  const weekStr = flags.week ?? pos[2]
 
   if (!yearStr || !seasonTypeStr) {
     console.error('Usage: ts-node src/cli/backfillSeason.ts <year> <seasonType>\n       ts-node src/cli/backfillSeason.ts --year=2025 --seasonType=2')
@@ -40,8 +41,9 @@ async function main() {
 
   const year = parseInt(yearStr, 10)
   const seasonType = parseInt(seasonTypeStr, 10) as SeasonType
+  const week = parseInt(weekStr, 10)
 
-  const result = await backfillSeasonService.run({ year, seasonType })
+  const result = await backfillSeasonService.run({ year, seasonType, week })
   console.log(`✅ Backfill complete for year ${year}, seasonType ${seasonType}: processed=${result.processed}, failed=${result.failed}`)
 }
 

@@ -49,9 +49,9 @@ export class EspnScoreboardClient {
    * Deterministic per-week scoreboard lookup.
    * Always pass year to avoid ESPN's "current season" ambiguity.
    */
-  async getWeekScoreboard(seasonType: SeasonType, week: number ): Promise<ScoreboardResponse> {
+  async getWeekScoreboard(seasonYear: string, seasonType: SeasonType, week: number ): Promise<ScoreboardResponse> {
     const now = new Date();
-    const year = now.getFullYear();
+    const year = seasonYear ? Number(seasonYear) : now.getFullYear();
     const url =
       `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard` +
       `?year=${year}&seasontype=${seasonType}&week=${week}`;
@@ -80,4 +80,5 @@ export class EspnScoreboardClient {
     const { data } = await this.http.get(url);
     return data;
   }
+  
 }

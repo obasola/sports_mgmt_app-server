@@ -14,8 +14,10 @@ let task: ScheduledTask | null = null
 
 // Example usage:
 export async function runScoreboardCron() {
+  let now = new Date();
+  let year = now.getFullYear();
   await syncTeamsService.run();
-  await importWeekService.run({ seasonType: 2, week: 1 });
+  await importWeekService.run({ seasonYear: String(year), seasonType: 2, week: 1 });
   // or backfill:
   // await backfillSeasonService.run({ year: 2024, seasonType: 2 });
 }
@@ -45,6 +47,7 @@ export async function runOnce(schedule: ScoreboardSchedule) {
     // Import the configured week
     await jobLogger.log(jobId, { message: `Importing seasonType=${schedule.seasonType}, week=${schedule.week}...` });
     const result = await importWeekService.run({
+      seasonYear: schedule.seasonYear,
       seasonType: schedule.seasonType,
       week: schedule.week,
     });
