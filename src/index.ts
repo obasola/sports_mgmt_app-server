@@ -9,7 +9,7 @@ import os from 'node:os';
 import { CONFIG, isDev } from './config/env';
 import { apiRoutes } from './presentation/routes';
 import { errorHandler } from './presentation/middleware/errorHandler';
-import { initScoreboardCron } from '@/jobs/scoreboardCron';
+import { initScoreboardCron } from './jobs/scoreboardCron';
 import { buildJobsModule } from './bootstrap/jobsModule';
 import { useCorsFromEnv } from './presentation/middleware/cors';
 
