@@ -45,6 +45,7 @@ export class PlayerService {
     }
 
     const player = Player.create({
+      espnAthleteId: dto.espnAthleteId,
       firstName: dto.firstName,
       lastName: dto.lastName,
       age: dto.age,

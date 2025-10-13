@@ -33,8 +33,11 @@ export class PlayerTeam {
   }
 
   public static create(props: PlayerTeamProps): PlayerTeam {
+    if (!props.playerId || !props.teamId)
+      throw new Error('playerId and teamId are required')
     return new PlayerTeam(props);
   }
+
 
   // 🚨 CRITICAL: fromPersistence MUST match actual Prisma return types
   // Based on the error messages, the actual schema uses different field names

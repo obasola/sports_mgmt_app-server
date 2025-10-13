@@ -1,5 +1,8 @@
 // src/infrastructure/repositories/PrismaPlayerTeamRepository.ts
-import { IPlayerTeamRepository, PlayerTeamFilters } from '@/domain/playerTeam/repositories/IPlayerTeamRepository';
+import {
+  IPlayerTeamRepository,
+  PlayerTeamFilters,
+} from '@/domain/playerTeam/repositories/IPlayerTeamRepository';
 import { PlayerTeam } from '@/domain/playerTeam/entities/PlayerTeam';
 import { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 import { NotFoundError } from '@/shared/errors/AppError';
@@ -21,14 +24,17 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
       playerId: createData.playerId,
       teamId: createData.teamId,
     };
-    
+
     // Add optional fields if defined
-    if (createData.jerseyNumber !== undefined) cleanCreateData.jerseyNumber = createData.jerseyNumber;
+    if (createData.jerseyNumber !== undefined)
+      cleanCreateData.jerseyNumber = createData.jerseyNumber;
     if (createData.currentTeam !== undefined) cleanCreateData.currentTeam = createData.currentTeam;
     if (createData.startDate !== undefined) cleanCreateData.startDate = createData.startDate;
     if (createData.endDate !== undefined) cleanCreateData.endDate = createData.endDate;
-    if (createData.contractValue !== undefined) cleanCreateData.contractValue = createData.contractValue;
-    if (createData.contractLength !== undefined) cleanCreateData.contractLength = createData.contractLength;
+    if (createData.contractValue !== undefined)
+      cleanCreateData.contractValue = createData.contractValue;
+    if (createData.contractLength !== undefined)
+      cleanCreateData.contractLength = createData.contractLength;
 
     const savedPlayerTeam = await prisma.playerTeam.create({
       data: cleanCreateData,
@@ -42,7 +48,7 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
       where: { id },
       include: {
         Player: true, // ✅ Capitalized relationship name
-        Team: true,   // ✅ Capitalized relationship name
+        Team: true, // ✅ Capitalized relationship name
       },
     });
 
@@ -67,7 +73,7 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
         orderBy: { id: 'asc' },
         include: {
           Player: true, // ✅ Capitalized relationship name
-          Team: true,   // ✅ Capitalized relationship name
+          Team: true, // ✅ Capitalized relationship name
         },
       }),
       prisma.playerTeam.count({ where }),
@@ -95,16 +101,19 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
 
     // Use partial type for update since not all fields are required
     const cleanUpdateData: Partial<Prisma.PlayerTeamUncheckedUpdateInput> = {};
-    
+
     // Only include defined values
     if (updateData.playerId !== undefined) cleanUpdateData.playerId = updateData.playerId;
     if (updateData.teamId !== undefined) cleanUpdateData.teamId = updateData.teamId;
-    if (updateData.jerseyNumber !== undefined) cleanUpdateData.jerseyNumber = updateData.jerseyNumber;
+    if (updateData.jerseyNumber !== undefined)
+      cleanUpdateData.jerseyNumber = updateData.jerseyNumber;
     if (updateData.currentTeam !== undefined) cleanUpdateData.currentTeam = updateData.currentTeam;
     if (updateData.startDate !== undefined) cleanUpdateData.startDate = updateData.startDate;
     if (updateData.endDate !== undefined) cleanUpdateData.endDate = updateData.endDate;
-    if (updateData.contractValue !== undefined) cleanUpdateData.contractValue = updateData.contractValue;
-    if (updateData.contractLength !== undefined) cleanUpdateData.contractLength = updateData.contractLength;
+    if (updateData.contractValue !== undefined)
+      cleanUpdateData.contractValue = updateData.contractValue;
+    if (updateData.contractLength !== undefined)
+      cleanUpdateData.contractLength = updateData.contractLength;
 
     const updatedPlayerTeam = await prisma.playerTeam.update({
       where: { id },
@@ -176,7 +185,7 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
       },
       include: {
         Player: true, // ✅ Capitalized relationship name
-        Team: true,   // ✅ Capitalized relationship name
+        Team: true, // ✅ Capitalized relationship name
       },
       orderBy: { teamId: 'asc' },
     });
@@ -215,8 +224,8 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
   }
 
   async checkJerseyNumberAvailable(
-    teamId: number, 
-    jerseyNumber: number, 
+    teamId: number,
+    jerseyNumber: number,
     excludeId?: number
   ): Promise<boolean> {
     const where: any = {
@@ -232,6 +241,37 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
     const count = await prisma.playerTeam.count({ where });
     return count === 0;
   }
+
+  async findActiveByPlayerAndTeam(playerId: number, teamId: number): Promise<PlayerTeam | null> {
+    const row = await prisma.playerTeam.findFirst({
+      where: { playerId, teamId, currentTeam: true },
+    });
+    return row ? PlayerTeam.fromPersistence(row) : null;
+  }
+
+  async upsertCurrent(pt: PlayerTeam): Promise<PlayerTeam> {
+  const existing = await prisma.playerTeam.findFirst({
+    where: { playerId: pt.toPersistence().playerId, teamId: pt.toPersistence().teamId, currentTeam: true },
+  })
+
+  const data = {
+    playerId: pt.toPersistence().playerId!,
+    teamId: pt.toPersistence().teamId!,
+    jerseyNumber: pt.toPersistence().jerseyNumber ?? null,
+    currentTeam: true,
+    startDate: pt.toPersistence().startDate ?? new Date(),
+    endDate: pt.toPersistence().endDate ?? null,
+    //position: pt.toPersistence().position ?? null,
+  }
+
+  if (existing) {
+    const row = await prisma.playerTeam.update({ where: { id: existing.id }, data })
+    return PlayerTeam.fromPersistence(row)
+  }
+
+  const row = await prisma.playerTeam.create({ data })
+  return PlayerTeam.fromPersistence(row)
+}
 
   private buildWhereClause(filters?: PlayerTeamFilters): object {
     if (!filters) return {};

@@ -1,11 +1,14 @@
 Quick sanity test (CLI)
-# Week import (single)
+
+# Week import (single) Games
 npx ts-node src/cli/importWeek.ts 2025 2 5
 
-# Season backfill
+# Season backfill Games
 npx ts-node src/cli/backfillSeason.ts --year=2024 --seasonType=2
 
+# Single Team Players import
+npx ts-node src/cli/syncPlayers.ts --teamEspnId=12
 
-If you still don’t see rows changing, log one event payload in mapCompetition before the upsert to confirm the mapping, and temporarily add select: { id: true } to the upsert return in the repo to verify writes.
+# League-wide Player import
+npx ts-node src/cli/syncPlayers.ts
 
-If you want, send me IJobLogger and scoreboardClient typings; I’ll align those too so you’re 100% green.

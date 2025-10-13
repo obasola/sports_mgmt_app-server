@@ -10,6 +10,7 @@ export class PrismaPlayerRepository implements IPlayerRepository {
   // Define the select clause to ensure we get only the fields we need
   private readonly playerSelect = {
     id: true,
+    espnAthleteId: true,
     firstName: true,
     lastName: true,
     age: true,
@@ -78,7 +79,32 @@ export class PrismaPlayerRepository implements IPlayerRepository {
       },
     };
   }
+  async upsertByEspnId(p: Player): Promise<Player> {
+    const data = p.toPersistence();
+    if (!data.espnAthleteId) {
+      throw new Error('Cannot upsert Player without espnAthleteId');
+    }
 
+    const row = await prisma.player.upsert({
+      where: { espnAthleteId: data.espnAthleteId },
+      update: {
+        firstName: data.firstName ?? undefined,
+        lastName: data.lastName ?? undefined,
+        age: data.age ?? undefined,
+        height: data.height ?? undefined,
+        weight: data.weight ?? undefined,
+        position: data.position ?? undefined,
+        status: data.status ?? undefined,
+      },
+      create: data,
+    });
+    return Player.fromPersistence(row);
+  }
+
+  async findByEspnId(espnAthleteId: string): Promise<Player | null> {
+    const row = await prisma.player.findUnique({ where: { espnAthleteId } });
+    return row ? Player.fromPersistence(row) : null;
+  }
   async update(id: number, player: Player): Promise<Player> {
     const exists = await this.exists(id);
     if (!exists) {
@@ -390,6 +416,10 @@ export class PrismaPlayerRepository implements IPlayerRepository {
     if (!filters) return {};
 
     const where: Record<string, unknown> = {};
+
+    if (filters.espnAthleteId) {
+      where.espnAthleteId = { contains: filters.espnAthleteId };
+    }
 
     if (filters.firstName) {
       where.firstName = { contains: filters.firstName };

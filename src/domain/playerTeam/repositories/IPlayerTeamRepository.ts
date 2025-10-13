@@ -13,9 +13,11 @@ export interface PlayerTeamFilters {
 
 export interface IPlayerTeamRepository {
   save(playerTeam: PlayerTeam): Promise<PlayerTeam>;
-  findById(id: number): Promise<PlayerTeam | null>;
+  findById(id: number): Promise<PlayerTeam | null>;    
+  findActiveByPlayerAndTeam(playerId: number, teamId: number): Promise<PlayerTeam | null>
   findAll(filters?: PlayerTeamFilters, pagination?: PaginationParams): Promise<PaginatedResponse<PlayerTeam>>;
   update(id: number, playerTeam: PlayerTeam): Promise<PlayerTeam>;
+  upsertCurrent(playerTeam: PlayerTeam): Promise<PlayerTeam>
   delete(id: number): Promise<void>;
   exists(id: number): Promise<boolean>;
   

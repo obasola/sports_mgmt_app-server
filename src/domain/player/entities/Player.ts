@@ -8,8 +8,10 @@ import { PlayerPhysicals } from "../value-objects/PlayerPhysicals";
 
 export interface PlayerProps {
   id?: number;
+  espnAthleteId?: string | null | undefined
   firstName: string;
   lastName: string;
+//  fullName?: string | null
   age: number;
   height?: number;
   weight?: number;
@@ -36,8 +38,10 @@ export class Player {
 
   public static fromPersistence(data: {
     id: number;
+    espnAthleteId: string | null;
     firstName: string;
     lastName: string;
+  //  fullName?: string | null
     age: number;
     height?: number | null;
     weight?: number | null;
@@ -54,6 +58,7 @@ export class Player {
   }): Player {
     return new Player({
       id: data.id,
+      espnAthleteId: data.espnAthleteId,
       firstName: data.firstName,
       lastName: data.lastName,
       age: data.age,
@@ -77,7 +82,7 @@ export class Player {
     const name = new PlayerName(this.props.firstName, this.props.lastName);
     
     // Validate age
-    if (this.props.age < 18 || this.props.age > 50) {
+    if ((this.props.age) && this.props.age < 18 || this.props.age > 50) {
       throw new ValidationError('Player age must be between 18 and 50');
     }
 
@@ -103,6 +108,10 @@ export class Player {
   // Getters
   public get id(): number | undefined {
     return this.props.id;
+  }
+
+  get espnAthleteId() { 
+    return this.props.espnAthleteId 
   }
 
   public get firstName(): string {
@@ -257,6 +266,7 @@ export class Player {
 
   public toPersistence(): {
     id?: number;
+    espnAthleteId: string | null | undefined;
     firstName: string;
     lastName: string;
     age: number;
@@ -274,6 +284,7 @@ export class Player {
   } {
     return {
       id: this.props.id,
+      espnAthleteId: this.props.espnAthleteId,
       firstName: this.props.firstName,
       lastName: this.props.lastName,
       age: this.props.age,

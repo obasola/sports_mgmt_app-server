@@ -90,6 +90,7 @@ model Person {
 
 model Player {
   id                Int            @id @default(autoincrement())
+  espnAthleteId     String?        @unique(map: "espnAthleteId") @db.VarChar(50)
   firstName         String         @db.VarChar(45)
   lastName          String         @db.VarChar(45)
   age               Int
@@ -113,6 +114,7 @@ model Player {
   PlayerTeam        PlayerTeam[]
 
   @@index([prospectId], map: "fk_Player_Prospect")
+  @@index([espnAthleteId], map: "idx_Player_espnAthleteId")
 }
 
 model PlayerAward {

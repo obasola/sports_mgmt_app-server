@@ -180,6 +180,20 @@ router.get(
   playerController.getPositionStatistics
 );
 
+const controller = new PlayerController(playerService)
+
+const SyncQuery = z.object({ teamEspnId: z.string().regex(/^\d+$/).optional() })
+
+
+router.post('/sync', async (req, res, next) => {
+  try {
+    if (req.query.teamEspnId) SyncQuery.parse(req.query)
+    await controller.sync(req, res)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Bulk operations
 router.patch(
   '/bulk/update',

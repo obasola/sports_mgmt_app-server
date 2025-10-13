@@ -1,6 +1,10 @@
 // src/presentation/controllers/PlayerController.ts
 import { Request, Response, NextFunction } from 'express';
 import { PlayerService } from '@/application/player/services/PlayerService';
+import { PlayerSyncService } from '@/application/player/services/PlayerSyncService'
+import { EspnPlayerClient } from '@/infrastructure/espn/EspnPlayerClient'
+import { PrismaPlayerRepository } from '@/infrastructure/repositories/PrismaPlayerRepository'
+import { PrismaPlayerTeamRepository } from '@/infrastructure/repositories/PrismaPlayerTeamRepository'
 import { ApiResponse, PaginatedResponse } from '@/shared/types/common';
 import { 
   PlayerResponseDto, 
@@ -12,6 +16,8 @@ import {
   PlayerPhysicalRangeDto,
   PlayerBulkUpdateDto
 } from '@/application/player/dto/PlayerDto';
+import { PrismaJobLogger } from '@/infrastructure/repositories/PrismaJobLogger';
+import { prisma } from '@/lib/prisma';
 
 // Define the response types
 type SuccessResponse = {
@@ -28,8 +34,20 @@ type ErrorResponse = {
 type PlayersByTeamResponse = SuccessResponse | ErrorResponse;
 
 export class PlayerController {
-  
-  constructor(private readonly playerService: PlayerService) {}
+   
+  private service: PlayerSyncService
+
+  constructor(private playerService: PlayerService) {
+    const jobLogger  = new PrismaJobLogger(prisma);
+
+    this.service = new PlayerSyncService(
+      new EspnPlayerClient(),
+      new PrismaPlayerRepository(),
+      new PrismaPlayerTeamRepository(),
+      undefined,
+      jobLogger
+    )
+  }
 
   createPlayer = async (
     req: Request,
@@ -372,6 +390,20 @@ getPlayersByTeam = async (
       next(error);
     }
   };
+
+  sync = async (req: Request, res: Response) => {
+    const teamEspnId = req.query.teamEspnId
+      ? Number(req.query.teamEspnId)
+      : undefined
+    try {
+      const result = teamEspnId
+        ? await this.service.runTeam(teamEspnId)
+        : await this.service.runAllTeams()
+      res.json({ ok: true, result })
+    } catch (e: any) {
+      res.status(500).json({ ok: false, error: e.message })
+    }
+  }
 
   // Statistics endpoints
   getPlayerStatistics = async (

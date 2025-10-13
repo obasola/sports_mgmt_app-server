@@ -2,6 +2,7 @@
 import { z } from 'zod';
 
 export const CreatePlayerDtoSchema = z.object({
+  espnAthleteId: z.string().max(45, 'AthleteId cannot exceed 45 characters').optional(),
   firstName: z.string().min(1, 'First name is required').max(45, 'First name cannot exceed 45 characters'),
   lastName: z.string().min(1, 'Last name is required').max(45, 'Last name cannot exceed 45 characters'),
   age: z.number().min(18, 'Age must be at least 18').max(50, 'Age cannot exceed 50'),
@@ -21,6 +22,7 @@ export const CreatePlayerDtoSchema = z.object({
 export const UpdatePlayerDtoSchema = CreatePlayerDtoSchema.partial();
 
 export const PlayerFiltersDtoSchema = z.object({
+  espnAthleteId: z.string().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   position: z.string().optional(),

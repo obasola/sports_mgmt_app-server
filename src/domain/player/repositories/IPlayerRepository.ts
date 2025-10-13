@@ -3,6 +3,7 @@ import { Player } from '../entities/Player';
 import { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 
 export interface PlayerFilters {
+  espnAthleteId?: string;
   firstName?: string;
   lastName?: string;
   position?: string;
@@ -23,9 +24,11 @@ export interface PlayerFilters {
 
 export interface IPlayerRepository {
   save(player: Player): Promise<Player>;
-  findById(id: number): Promise<Player | null>;
+  findById(id: number): Promise<Player | null>;  
+  findByEspnId(espnAthleteId: string): Promise<Player | null>
   findAll(filters?: PlayerFilters, pagination?: PaginationParams): Promise<PaginatedResponse<Player>>;
   update(id: number, player: Player): Promise<Player>;
+  upsertByEspnId(player: Player): Promise<Player>
   delete(id: number): Promise<void>;
   exists(id: number): Promise<boolean>;
   
