@@ -19,6 +19,7 @@ import { GetJobDetailService } from '../application/jobs/services/GetJobDetailSe
 import  GetJobLogsService  from '../application/jobs/services/GetJobLogService';
 import { StreamJobLogsService } from '../application/jobs/services/StreamJobLogService';
 import { ScheduleJobService } from '../application/jobs/services/ScheduleJobService';
+import { prisma } from '../infrastructure/prisma';
 
 // Presentation
 import { JobController } from '../presentation/controllers/JobController';
@@ -28,7 +29,6 @@ import { buildJobRoutes } from '../presentation/routes/jobRoutes';
 import { JobType } from '../domain/jobs/value-objects/JobType';
 
 export function buildJobsModule() {
-  const prisma = new PrismaClient();
 
   // repos + infra singletons
   const jobRepo = new PrismaJobRepository(prisma);

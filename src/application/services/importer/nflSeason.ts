@@ -1,8 +1,7 @@
 // src/application/services/importers/nflSeason.ts
 import axios from 'axios'
 import { PrismaClient, Game } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '../../../infrastructure/prisma';
 
 export type SeasonKind = 'pre' | 'reg' | 'post'
 const SEASON_TYPE: Record<SeasonKind, number> = { pre: 1, reg: 2, post: 3 }

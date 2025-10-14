@@ -17,12 +17,10 @@ import { EspnScoreboardClient } from './scoreboardClient'
 import { ImportNflScoresService } from '../services/importNflScores'
 import { BackfillSeasonService } from '../services/backfillSeason'   // ✅ added
 import { SyncTeamsService } from '../services/syncTeams'             // ✅ added
+import { prisma } from '../infrastructure/prisma';
 
 // Job logger (Prisma impl)
 import { PrismaJobLogger } from './repositories/PrismaJobLogger'
-
-// Initialize Prisma client (single shared instance)
-const prisma = new PrismaClient()
 
 // ------------------------------------------------------------------
 // Repositories

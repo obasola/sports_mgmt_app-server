@@ -634,4 +634,5 @@ enum Game_gameStatus {
   completed
   postponed
   canceled
+  final
 }

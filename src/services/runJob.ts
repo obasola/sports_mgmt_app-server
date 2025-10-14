@@ -1,10 +1,11 @@
 import { Prisma } from '@prisma/client';
 import { JobService } from './JobService';
 
-import { PrismaClient } from '@prisma/client';
 import type { JobType, JobStatus } from '../types/job-enums';
+import { prisma as PrismaClient} from '../infrastructure/prisma';
 
-export const prisma = new PrismaClient();
+
+export const prisma = PrismaClient;
 
 export async function runJob<T>(
   job_type: JobType,

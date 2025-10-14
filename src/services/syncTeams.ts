@@ -1,5 +1,6 @@
 // src/services/syncTeams.ts
-import { PrismaClient } from '@prisma/client'
+import { prisma as PrismaClient} from '../infrastructure/prisma';
+
 import { EspnScoreboardClient } from '../infrastructure/scoreboardClient'
 import { IJobLogger } from '../jobs/IJobLogger'
 
@@ -19,7 +20,7 @@ type EspnTeamLite = {
 }
 
 export class SyncTeamsService {
-  private prisma = new PrismaClient()
+  private prisma = PrismaClient
 
   constructor(
     private readonly client: EspnScoreboardClient,

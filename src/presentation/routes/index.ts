@@ -17,9 +17,13 @@ import { buildJobRoutes } from './jobRoutes';
 
 import { scoreboardJobs } from './jobs.scoreboard'
 import { scoreboardScheduleRoutes } from './job.scoreboard.schedule';
+import standingsRoutes from './standingsRoutes';
+
+
 const router = Router();
 
 // Register all domain routes
+router.use('/standings', standingsRoutes);
 router.use('/combine-scores', combineScoreRoutes);
 router.use('/draft-picks', draftpickRoutes);
 router.use('/games', gameRoutes);

@@ -1,6 +1,4 @@
-import { PrismaClient } from '../node_modules/.prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../infrastructure/prisma';
 
 async function main() {
   const games = await prisma.game.findMany();
