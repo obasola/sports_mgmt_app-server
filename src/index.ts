@@ -1,5 +1,5 @@
-// src/index.ts
-import './config/env'; // must be first: loads .env.* via dotenv-flow
+import 'module-alias/register'; // ✅ must be first for @/... paths to resolve
+import './config/env';          // ✅ loads dotenv-flow next
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -60,6 +60,18 @@ app.use(`${API_BASE}/jobs`, jobsRoutes);
 // optional alias:
 app.use('/api/jobs', jobsRoutes);
 
+// ---- list all registered routes (debugging only)
+console.log('Registered routes:')
+;(app._router?.stack || [])
+  .filter((r: any) => r.route)
+  .forEach((r: any) => {
+    const methods = Object.keys(r.route.methods)
+      .map(m => m.toUpperCase())
+      .join(',');
+    console.log(`${methods.padEnd(10)} ${r.route.path}`);
+  });
+
+  
 // ---- 404
 app.use('*', (req, res) => {
   res.status(404).json({

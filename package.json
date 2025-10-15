@@ -69,6 +69,9 @@
   "overrides": {
     "debug": "4.3.7"
   },
+    "_moduleAliases": {
+    "@": "./dist/src"  
+  },
   "keywords": [],
   "author": "",
   "license": "ISC"
