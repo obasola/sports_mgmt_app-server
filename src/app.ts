@@ -21,7 +21,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API routes
-app.use(`/api/${process.env.API_VERSION || ''}`, apiRoutes);
+//app.use(`/api/${process.env.API_VERSION || ''}`, apiRoutes);
+app.use(`/api`, apiRoutes);
  
 // Error handling
 app.use(errorHandler);

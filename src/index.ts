@@ -18,7 +18,8 @@ const app = express();
 
 // ---- core config
 const PORT = CONFIG.port;
-const API_BASE = `/api/${CONFIG.apiVersion}`; // e.g., /api/v1.0
+//const API_BASE = `/api/${CONFIG.apiVersion}`; // e.g., /api/v1.0
+const API_BASE = `/api`; // e.g., /api
 
 // ---- middleware
 app.use(helmet());
