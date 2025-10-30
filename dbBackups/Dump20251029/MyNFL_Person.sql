@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `MyNFL` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `MyNFL`;
 -- MySQL dump 10.13  Distrib 8.0.36, for Linux (x86_64)
 --
 -- Host: localhost    Database: MyNFL
 -- ------------------------------------------------------
--- Server version	8.0.37-0ubuntu0.23.10.2
+-- Server version	8.0.42-0ubuntu0.24.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -18,44 +16,30 @@ USE `MyNFL`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `Schedule`
+-- Table structure for table `Person`
 --
 
-DROP TABLE IF EXISTS `Schedule`;
+DROP TABLE IF EXISTS `Person`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Schedule` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `teamId` int DEFAULT NULL,
-  `seasonYear` year DEFAULT NULL,
-  `oppTeamId` int NOT NULL,
-  `oppTeamConference` varchar(45) DEFAULT NULL,
-  `oppTeamDivision` varchar(45) DEFAULT NULL,
-  `scheduleWeek` int DEFAULT NULL,
-  `gameDate` date DEFAULT NULL,
-  `gameCity` varchar(45) DEFAULT NULL,
-  `gameStateProvince` varchar(45) DEFAULT NULL,
-  `gameCountry` varchar(45) DEFAULT NULL,
-  `gameLocation` varchar(75) DEFAULT NULL,
-  `wonLostFlag` varchar(1) DEFAULT NULL,
-  `homeOrAway` varchar(1) DEFAULT NULL,
-  `oppTeamScore` int DEFAULT NULL,
-  `teamScore` int DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `fk_Schedule_1_idx` (`oppTeamId`),
-  KEY `fk_Schedule_Team_idx` (`teamId`),
-  CONSTRAINT `fk_Schedule_Team` FOREIGN KEY (`teamId`) REFERENCES `Team` (`id`),
-  CONSTRAINT `fk_Schedule_Visitor` FOREIGN KEY (`oppTeamId`) REFERENCES `Team` (`id`)
+CREATE TABLE `Person` (
+  `pid` int NOT NULL AUTO_INCREMENT,
+  `userName` varchar(25) NOT NULL,
+  `emailAddress` varchar(75) NOT NULL,
+  `password` varchar(25) NOT NULL,
+  `firstName` varchar(25) NOT NULL,
+  `lastName` varchar(35) NOT NULL,
+  PRIMARY KEY (`pid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `Schedule`
+-- Dumping data for table `Person`
 --
 
-LOCK TABLES `Schedule` WRITE;
-/*!40000 ALTER TABLE `Schedule` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Schedule` ENABLE KEYS */;
+LOCK TABLES `Person` WRITE;
+/*!40000 ALTER TABLE `Person` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Person` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -67,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-11 12:51:04
+-- Dump completed on 2025-10-29 22:45:41

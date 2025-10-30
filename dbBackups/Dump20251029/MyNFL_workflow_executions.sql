@@ -16,31 +16,40 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `PlayerAward`
+-- Table structure for table `workflow_executions`
 --
 
-DROP TABLE IF EXISTS `PlayerAward`;
+DROP TABLE IF EXISTS `workflow_executions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `PlayerAward` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `playerId` int NOT NULL,
-  `awardName` varchar(45) DEFAULT NULL,
-  `yearAwarded` int DEFAULT NULL,
+CREATE TABLE `workflow_executions` (
+  `id` varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'UUID for workflow execution',
+  `workflow_id` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('PENDING','RUNNING','COMPLETED','FAILED','CANCELLED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
+  `input_data` json DEFAULT NULL,
+  `output_data` json DEFAULT NULL,
+  `current_step` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `steps_completed` int unsigned DEFAULT '0',
+  `total_steps` int unsigned NOT NULL,
+  `error_message` text COLLATE utf8mb4_unicode_ci,
+  `started_at` timestamp NULL DEFAULT NULL,
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `FK_Player_Awards_idx` (`playerId`),
-  CONSTRAINT `FK_Player_Awards` FOREIGN KEY (`playerId`) REFERENCES `Player` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `idx_workflow_id` (`workflow_id`),
+  KEY `idx_workflow_status` (`status`),
+  KEY `idx_workflow_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `PlayerAward`
+-- Dumping data for table `workflow_executions`
 --
 
-LOCK TABLES `PlayerAward` WRITE;
-/*!40000 ALTER TABLE `PlayerAward` DISABLE KEYS */;
-INSERT INTO `PlayerAward` VALUES (1,19,'Regular Season MVP',2019),(2,19,'SuperBowl MVP',2021),(3,19,'Regular Season MVP',2023),(4,19,'SuperBowl MVP',2023),(5,19,'Best NFL Player ESPY Award',2019),(6,19,'Best NFL Player ESPY Award',2023),(7,19,'AP Most Valuable Player',2018),(8,19,'AP Most Valuable Player',2019),(9,19,'AP Most Valuable Player',2023),(10,27,NULL,NULL),(11,27,NULL,NULL),(12,27,NULL,NULL);
-/*!40000 ALTER TABLE `PlayerAward` ENABLE KEYS */;
+LOCK TABLES `workflow_executions` WRITE;
+/*!40000 ALTER TABLE `workflow_executions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `workflow_executions` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -52,4 +61,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-18 10:38:52
+-- Dump completed on 2025-10-29 22:45:41

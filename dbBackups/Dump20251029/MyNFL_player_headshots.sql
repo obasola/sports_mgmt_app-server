@@ -16,38 +16,33 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `PlayerTeam`
+-- Table structure for table `player_headshots`
 --
 
-DROP TABLE IF EXISTS `PlayerTeam`;
+DROP TABLE IF EXISTS `player_headshots`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `PlayerTeam` (
+CREATE TABLE `player_headshots` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `playerId` int NOT NULL,
-  `teamId` int NOT NULL,
-  `currentTeam` tinyint(1) NOT NULL DEFAULT '0',
-  `startDate` date DEFAULT NULL,
-  `endDate` date DEFAULT NULL,
-  `jerseyNumber` int DEFAULT NULL,
-  `contractValue` int DEFAULT NULL,
-  `contractLength` int DEFAULT NULL,
+  `espn_player_id` int NOT NULL,
+  `url` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `width` smallint unsigned DEFAULT NULL,
+  `height` smallint unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `fk_PlayerTeam_Player_idx` (`playerId`),
-  KEY `fk_PlayerTeam_Team_idx` (`teamId`),
-  CONSTRAINT `fk_PlayerTeam_Player` FOREIGN KEY (`playerId`) REFERENCES `Player` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_PlayerTeam_Team` FOREIGN KEY (`teamId`) REFERENCES `Team` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `idx_headshots_player` (`espn_player_id`),
+  CONSTRAINT `player_headshots_ibfk_1` FOREIGN KEY (`espn_player_id`) REFERENCES `espn_players` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `PlayerTeam`
+-- Dumping data for table `player_headshots`
 --
 
-LOCK TABLES `PlayerTeam` WRITE;
-/*!40000 ALTER TABLE `PlayerTeam` DISABLE KEYS */;
-INSERT INTO `PlayerTeam` VALUES (1,19,78,0,NULL,NULL,NULL,NULL,NULL),(2,22,78,0,NULL,NULL,NULL,NULL,NULL),(3,25,78,0,NULL,NULL,NULL,NULL,NULL),(4,26,78,0,NULL,NULL,NULL,NULL,NULL),(5,28,78,0,NULL,NULL,NULL,NULL,NULL),(6,45,92,1,'2025-09-01',NULL,NULL,NULL,NULL),(7,19,78,1,NULL,NULL,NULL,NULL,NULL),(8,27,78,1,NULL,NULL,NULL,NULL,NULL);
-/*!40000 ALTER TABLE `PlayerTeam` ENABLE KEYS */;
+LOCK TABLES `player_headshots` WRITE;
+/*!40000 ALTER TABLE `player_headshots` DISABLE KEYS */;
+/*!40000 ALTER TABLE `player_headshots` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -59,4 +54,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-18 10:38:52
+-- Dump completed on 2025-10-29 22:45:40

@@ -16,30 +16,34 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `Person`
+-- Table structure for table `player_metadata`
 --
 
-DROP TABLE IF EXISTS `Person`;
+DROP TABLE IF EXISTS `player_metadata`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Person` (
-  `pid` int NOT NULL AUTO_INCREMENT,
-  `userName` varchar(25) NOT NULL,
-  `emailAddress` varchar(75) NOT NULL,
-  `password` varchar(25) NOT NULL,
-  `firstName` varchar(25) NOT NULL,
-  `lastName` varchar(35) NOT NULL,
-  PRIMARY KEY (`pid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `player_metadata` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `espn_player_id` int NOT NULL,
+  `meta_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `meta_value` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_player_meta` (`espn_player_id`,`meta_key`),
+  KEY `idx_metadata_player` (`espn_player_id`),
+  KEY `idx_metadata_key` (`meta_key`),
+  CONSTRAINT `player_metadata_ibfk_1` FOREIGN KEY (`espn_player_id`) REFERENCES `espn_players` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `Person`
+-- Dumping data for table `player_metadata`
 --
 
-LOCK TABLES `Person` WRITE;
-/*!40000 ALTER TABLE `Person` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Person` ENABLE KEYS */;
+LOCK TABLES `player_metadata` WRITE;
+/*!40000 ALTER TABLE `player_metadata` DISABLE KEYS */;
+/*!40000 ALTER TABLE `player_metadata` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -51,4 +55,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-18 10:38:52
+-- Dump completed on 2025-10-29 22:45:41

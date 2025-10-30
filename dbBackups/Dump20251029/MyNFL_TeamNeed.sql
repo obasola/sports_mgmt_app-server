@@ -16,45 +16,34 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `DraftPick`
+-- Table structure for table `TeamNeed`
 --
 
-DROP TABLE IF EXISTS `DraftPick`;
+DROP TABLE IF EXISTS `TeamNeed`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `DraftPick` (
+CREATE TABLE `TeamNeed` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `round` int NOT NULL,
-  `pickNumber` int NOT NULL,
-  `draftYear` int NOT NULL,
-  `currentTeamId` int NOT NULL,
-  `prospectId` int DEFAULT NULL,
-  `playerId` int DEFAULT NULL,
-  `used` tinyint(1) NOT NULL DEFAULT '0',
+  `teamId` int NOT NULL,
+  `position` varchar(10) NOT NULL,
+  `priority` int NOT NULL DEFAULT '1',
   `createdAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `originalTeam` int DEFAULT NULL,
+  `draftYear` year DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_draft_pick` (`draftYear`,`round`,`pickNumber`),
-  KEY `idx_draftpick_currentteam` (`currentTeamId`,`draftYear`),
-  KEY `idx_draftpick_originalteam` (`draftYear`),
-  KEY `idx_draftpick_used` (`used`),
-  KEY `fk_DraftPick_Prospect_idx` (`prospectId`),
-  KEY `fk_DraftPick_Player_idx` (`playerId`),
-  CONSTRAINT `fk_DraftPick_CurrentTeam` FOREIGN KEY (`currentTeamId`) REFERENCES `Team` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `fk_DraftPick_Player` FOREIGN KEY (`playerId`) REFERENCES `Player` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_DraftPick_Prospect` FOREIGN KEY (`prospectId`) REFERENCES `Prospect` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `unique_team_position` (`teamId`,`position`),
+  KEY `fk_TeamNeed_Team_idx` (`teamId`),
+  CONSTRAINT `fk_TeamNeed_Team` FOREIGN KEY (`teamId`) REFERENCES `Team` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `DraftPick`
+-- Dumping data for table `TeamNeed`
 --
 
-LOCK TABLES `DraftPick` WRITE;
-/*!40000 ALTER TABLE `DraftPick` DISABLE KEYS */;
-INSERT INTO `DraftPick` VALUES (1,1,1,2025,89,NULL,NULL,1,'2025-04-25 00:59:11','2025-04-25 00:59:11',NULL),(3,1,2,2025,76,NULL,NULL,1,'2025-04-25 01:30:48','2025-04-25 01:30:48',69),(4,1,9,2025,92,NULL,45,1,'2025-05-06 09:08:46','2025-05-06 09:08:46',92);
-/*!40000 ALTER TABLE `DraftPick` ENABLE KEYS */;
+LOCK TABLES `TeamNeed` WRITE;
+/*!40000 ALTER TABLE `TeamNeed` DISABLE KEYS */;
+/*!40000 ALTER TABLE `TeamNeed` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -66,4 +55,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-18 10:38:52
+-- Dump completed on 2025-10-29 22:45:41

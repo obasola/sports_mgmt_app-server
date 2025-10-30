@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `MyNFL` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `MyNFL`;
 -- MySQL dump 10.13  Distrib 8.0.36, for Linux (x86_64)
 --
 -- Host: localhost    Database: MyNFL
 -- ------------------------------------------------------
--- Server version	8.0.37-0ubuntu0.23.10.2
+-- Server version	8.0.42-0ubuntu0.24.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -18,8 +16,29 @@ USE `MyNFL`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Dumping routines for database 'MyNFL'
+-- Table structure for table `AppSetting`
 --
+
+DROP TABLE IF EXISTS `AppSetting`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `AppSetting` (
+  `key` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `value` json NOT NULL,
+  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `AppSetting`
+--
+
+LOCK TABLES `AppSetting` WRITE;
+/*!40000 ALTER TABLE `AppSetting` DISABLE KEYS */;
+INSERT INTO `AppSetting` VALUES ('scoreboard.schedule','{\"days\": [\"SUN\", \"MON\", \"THU\", \"SAT\"], \"hour\": 0, \"mode\": \"by-date\", \"week\": 1, \"minute\": 0, \"enabled\": true, \"timezone\": \"America/Chicago\", \"seasonType\": 2}','2025-10-06 08:53:28');
+/*!40000 ALTER TABLE `AppSetting` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -30,4 +49,4 @@ USE `MyNFL`;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-11 12:51:04
+-- Dump completed on 2025-10-29 22:45:41

@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `MyNFL` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `MyNFL`;
 -- MySQL dump 10.13  Distrib 8.0.36, for Linux (x86_64)
 --
 -- Host: localhost    Database: MyNFL
 -- ------------------------------------------------------
--- Server version	8.0.37-0ubuntu0.23.10.2
+-- Server version	8.0.42-0ubuntu0.24.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -18,31 +16,32 @@ USE `MyNFL`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `PlayerAward`
+-- Table structure for table `roles`
 --
 
-DROP TABLE IF EXISTS `PlayerAward`;
+DROP TABLE IF EXISTS `roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `PlayerAward` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `playerId` int NOT NULL,
-  `awardName` varchar(45) DEFAULT NULL,
-  `yearAwarded` int DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK_Player_Awards_idx` (`playerId`),
-  CONSTRAINT `FK_Player_Awards` FOREIGN KEY (`playerId`) REFERENCES `Player` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `roles` (
+  `rid` int NOT NULL AUTO_INCREMENT,
+  `roleName` varchar(25) NOT NULL,
+  `description` varchar(100) DEFAULT NULL,
+  `isActive` tinyint(1) DEFAULT '1',
+  `createdAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`rid`),
+  UNIQUE KEY `roleName` (`roleName`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `PlayerAward`
+-- Dumping data for table `roles`
 --
 
-LOCK TABLES `PlayerAward` WRITE;
-/*!40000 ALTER TABLE `PlayerAward` DISABLE KEYS */;
-INSERT INTO `PlayerAward` VALUES (1,19,'Regular Season MVP',2019),(2,19,'SuperBowl MVP',2021),(3,19,'Regular Season MVP',2023),(4,19,'SuperBowl MVP',2023),(5,19,'Best NFL Player ESPY Award',2019),(6,19,'Best NFL Player ESPY Award',2023),(7,19,'AP Most Valuable Player',2018),(8,19,'AP Most Valuable Player',2019),(9,19,'AP Most Valuable Player',2023),(10,27,NULL,NULL),(11,27,NULL,NULL),(12,27,NULL,NULL);
-/*!40000 ALTER TABLE `PlayerAward` ENABLE KEYS */;
+LOCK TABLES `roles` WRITE;
+/*!40000 ALTER TABLE `roles` DISABLE KEYS */;
+INSERT INTO `roles` VALUES (1,'public','General public access',1,'2025-08-05 16:39:16','2025-08-05 16:39:16'),(2,'dev','Developer access',1,'2025-08-05 16:39:16','2025-08-05 16:39:16'),(3,'qa','QA Tester access',1,'2025-08-05 16:39:16','2025-08-05 16:39:16'),(4,'admin','Administrator access',1,'2025-08-05 16:39:16','2025-08-05 16:39:16');
+/*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -54,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-11 12:51:04
+-- Dump completed on 2025-10-29 22:45:41

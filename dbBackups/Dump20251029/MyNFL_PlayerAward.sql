@@ -16,34 +16,31 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `CombineScore`
+-- Table structure for table `PlayerAward`
 --
 
-DROP TABLE IF EXISTS `CombineScore`;
+DROP TABLE IF EXISTS `PlayerAward`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `CombineScore` (
+CREATE TABLE `PlayerAward` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `fortyTime` float DEFAULT NULL,
-  `tenYardSplit` float DEFAULT NULL,
-  `twentyYardShuttle` float DEFAULT NULL,
-  `threeCone` float DEFAULT NULL,
-  `verticalLeap` float DEFAULT NULL,
-  `playerId` int DEFAULT NULL,
-  `broadJump` float(5,2) DEFAULT NULL,
+  `playerId` int NOT NULL,
+  `awardName` varchar(45) DEFAULT NULL,
+  `yearAwarded` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `fk_Combine_Score_1_idx` (`playerId`),
-  CONSTRAINT `fk_Combine_Score_1` FOREIGN KEY (`playerId`) REFERENCES `Player` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `FK_Player_Awards_idx` (`playerId`),
+  CONSTRAINT `FK_Player_Awards` FOREIGN KEY (`playerId`) REFERENCES `Player` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `CombineScore`
+-- Dumping data for table `PlayerAward`
 --
 
-LOCK TABLES `CombineScore` WRITE;
-/*!40000 ALTER TABLE `CombineScore` DISABLE KEYS */;
-/*!40000 ALTER TABLE `CombineScore` ENABLE KEYS */;
+LOCK TABLES `PlayerAward` WRITE;
+/*!40000 ALTER TABLE `PlayerAward` DISABLE KEYS */;
+INSERT INTO `PlayerAward` VALUES (1,19,'Regular Season MVP',2019),(2,19,'SuperBowl MVP',2021),(3,19,'Regular Season MVP',2023),(4,19,'SuperBowl MVP',2023),(5,19,'Best NFL Player ESPY Award',2019),(6,19,'Best NFL Player ESPY Award',2023),(7,19,'AP Most Valuable Player',2018),(8,19,'AP Most Valuable Player',2019),(9,19,'AP Most Valuable Player',2023),(10,27,NULL,NULL),(11,27,NULL,NULL),(12,27,NULL,NULL);
+/*!40000 ALTER TABLE `PlayerAward` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -55,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-18 10:38:52
+-- Dump completed on 2025-10-29 22:45:41
