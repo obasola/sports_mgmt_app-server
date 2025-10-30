@@ -4,9 +4,9 @@ import {
   SeasonType,
   EspnEvent,
   EspnCompetition,
-} from "../infrastructure/scoreboardClient";
-import { IGameRepository } from "../domain/game/repositories/IGameRepository";
-import { IJobLogger } from "../jobs/IJobLogger";
+} from '../infrastructure/scoreboardClient';
+import { IGameRepository } from '../domain/game/repositories/IGameRepository';
+import { IJobLogger } from '../jobs/IJobLogger';
 
 /**
  * Imports a single week (by seasonType + week) from ESPN Scoreboard API
@@ -20,45 +20,60 @@ export class ImportNflScoresService {
   ) {}
 
   /** Primary entry used by codebase (what your callers were missing). */
-  async run(params: { seasonYear: string, seasonType: SeasonType; week: number }): Promise<{
+  async run(params: { seasonYear: string; seasonType: SeasonType; week: number }): Promise<{
     seasonYear: string;
     seasonType: SeasonType;
     week: number;
     totalEvents: number;
     upserts: number;
     skipped: number;
+    scoreChanges: { homeTeam: string; homeScore: number; awayTeam: string; awayScore: number }[];
   }> {
     const { seasonYear, seasonType, week } = params;
-
     const { jobId } = await this.job.start({
-      jobType: "IMPORT_SCORES_WEEK",
+      jobType: 'IMPORT_SCORES_WEEK',
       params: { seasonYear, seasonType, week },
     });
 
     try {
       const sb = await this.client.getWeekScoreboard(seasonYear, seasonType, week);
-      //const seasonYear = String(sb?.season?.year ?? "");
       const events = sb.events ?? [];
 
       let upserts = 0;
       let skipped = 0;
+      const scoreChanges: {
+        homeTeam: string;
+        homeScore: number;
+        awayTeam: string;
+        awayScore: number;
+      }[] = [];
 
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
         for (const comp of event.competitions ?? []) {
-          const ok = await this.importCompetition(
-            event,
-            comp,
-            seasonType,
-            seasonYear,
-            week
-          );
-          ok ? upserts++ : skipped++;
-        }
-        if ((i + 1) % 4 === 0) {
-          await this.job.log(jobId, {
-            message: `Processed ${i + 1}/${events.length} events...`,
-          });
+          const result = await this.importCompetition(event, comp, seasonType, seasonYear, week);
+          if (result.ok) {
+            upserts++;
+            if (result.scoreChanged) {
+              scoreChanges.push({
+                homeTeam: result.homeName ? result.homeName : '',
+                homeScore: result.homeScore ? result.homeScore : 0,
+                awayTeam: result.awayName ? result.awayName : '',
+                awayScore: result.awayScore ? result.awayScore : 0,
+              });
+              // now log results
+              if (scoreChanges.length) {
+                await this.job.log(jobId, {
+                 // level: 'info',
+                  message: `Score changes: ${scoreChanges
+                    .map((g) => `${g.homeTeam} ${g.homeScore}-${g.awayScore} ${g.awayTeam}`)
+                    .join('; ')}`,
+                });
+              }
+            }
+          } else {
+            skipped++;
+          }
         }
       }
 
@@ -70,7 +85,6 @@ export class ImportNflScoresService {
         upserts,
         skipped,
       });
-
       return {
         seasonYear,
         seasonType,
@@ -78,89 +92,61 @@ export class ImportNflScoresService {
         totalEvents: events.length,
         upserts,
         skipped,
+        scoreChanges,
       };
     } catch (err: any) {
-      await this.job.fail(jobId, err?.message ?? "Import week failed", {
-        seasonType,
-        week,
-      });
+      await this.job.fail(jobId, err?.message ?? 'Import week failed', { seasonType, week });
       throw err;
     }
   }
 
   /** Optional: some callers prefer an explicit year param. */
-  async importWeek(params: {
-    seasonYear: string;
-    seasonType: SeasonType;
-    week: number;
-  }) {
+  async importWeek(params: { seasonYear: string; seasonType: SeasonType; week: number }) {
     // ESPN per-week scoreboard doesn’t need year to fetch,
     // but we still return the computed seasonYear from ESPN to confirm.
-    return this.run({ seasonYear: params.seasonYear, seasonType: params.seasonType, week: params.week });
+    return this.run({
+      seasonYear: params.seasonYear,
+      seasonType: params.seasonType,
+      week: params.week,
+    });
   }
 
   // ------------ internals ------------
 
-   private async importCompetition(
+  private async importCompetition(
     event: EspnEvent,
     comp: EspnCompetition,
     seasonType: SeasonType,
     seasonYear: string,
     week: number,
     jobId?: number
-  ): Promise<boolean> {
-    const home = comp.competitors.find((c) => c.homeAway === "home");
-    const away = comp.competitors.find((c) => c.homeAway === "away");
-    if (!home || !away) {
-      await this.job.log?.(jobId === undefined ? 0 : jobId, { message: `Skip event=${event.id}: missing home/away` });
-      return false;
-    }
+  ): Promise<{
+    ok: boolean;
+    scoreChanged?: boolean | null;
+    homeName?: string;
+    homeScore?: number;
+    awayName?: string;
+    awayScore?: number;
+  }> {
+    const home = comp.competitors.find((c) => c.homeAway === 'home');
+    const away = comp.competitors.find((c) => c.homeAway === 'away');
+    if (!home || !away) return { ok: false };
 
-    // Explicitly narrow unknown -> number|null
-    const homeIdFromEspn = (await this.repo.findTeamIdByEspnTeamId(home.team.id)) as number | null;
-    const homeIdFromAbbr =
-      home.team.abbreviation != null
-        ? ((await this.repo.findTeamIdByAbbrev(home.team.abbreviation)) as number | null)
-        : null;
-    const homeId = homeIdFromEspn ?? homeIdFromAbbr;
+    const homeId =
+      (await this.repo.findTeamIdByEspnTeamId(home.team.id)) ??
+      (await this.repo.findTeamIdByAbbrev(home.team.abbreviation));
+    const awayId =
+      (await this.repo.findTeamIdByEspnTeamId(away.team.id)) ??
+      (await this.repo.findTeamIdByAbbrev(away.team.abbreviation));
+    if (!homeId || !awayId) return { ok: false };
 
-    const awayIdFromEspn = (await this.repo.findTeamIdByEspnTeamId(away.team.id)) as number | null;
-    const awayIdFromAbbr =
-      away.team.abbreviation != null
-        ? ((await this.repo.findTeamIdByAbbrev(away.team.abbreviation)) as number | null)
-        : null;
-    const awayId = awayIdFromEspn ?? awayIdFromAbbr;
+    const newHomeScore = home.score ? Number(home.score) : null;
+    const newAwayScore = away.score ? Number(away.score) : null;
 
-    if (homeId == null || awayId == null) {
-      await this.job.log?.(jobId === undefined ? 0 : jobId, {
-        message: `Skip (team mapping missing) event=${event.id} comp=${comp.id} home=${home.team.id}/${home.team.abbreviation} away=${away.team.id}/${away.team.abbreviation}`,
-      });
-      return false;
-    }
-
-    // After the null-guard, make TS happy with concrete numbers
-    const homeIdNum: number = homeId;
-    const awayIdNum: number = awayId;
-
-    // Normalize ESPN status -> your enum
-    const rawName = comp.status?.type?.name?.toLowerCase() ?? "";
-    const rawState = comp.status?.type?.state?.toLowerCase() ?? "";
-    const completed = !!comp.status?.type?.completed;
-    const gameStatus:
-      | "scheduled"
-      | "in_progress"
-      | "completed"
-      | "postponed"
-      | "canceled" =
-      completed || rawName === "status_final" || rawName.includes("final")
-        ? "completed"
-        : rawState.includes("in") || rawName.includes("in")
-        ? "in_progress"
-        : rawName.includes("post") || rawState.includes("post")
-        ? "postponed"
-        : rawName.includes("cancel") || rawState.includes("cancel")
-        ? "canceled"
-        : "scheduled";
+    // Retrieve previous scores (if any)
+    const prev = await this.repo.findByEspnCompetitionId(comp.id);
+    const scoreChanged =
+      prev && (prev.homeScore !== newHomeScore || prev.awayScore !== newAwayScore);
 
     await this.repo.upsertByKey(
       {
@@ -169,31 +155,31 @@ export class ImportNflScoresService {
         seasonYear,
         preseason: seasonType,
         gameWeek: week,
-        homeTeamId: homeIdNum,   // <- concrete number
-        awayTeamId: awayIdNum,   // <- concrete number
+        homeTeamId: homeId,
+        awayTeamId: awayId,
       },
       {
         seasonYear,
         gameWeek: week,
         preseason: seasonType,
         gameDate: comp.date ? new Date(comp.date) : null,
-        homeTeamId: homeIdNum,   // <- concrete number
-        awayTeamId: awayIdNum,   // <- concrete number
-        homeScore: home.score != null ? Number(home.score) : null,
-        awayScore: away.score != null ? Number(away.score) : null,
-        gameStatus,
+        homeTeamId: homeId,
+        awayTeamId: awayId,
+        homeScore: newHomeScore,
+        awayScore: newAwayScore,
+        gameStatus: comp.status?.type?.completed ? 'completed' : 'scheduled',
         espnEventId: event.id,
         espnCompetitionId: comp.id,
-        // Optional venue fields if your schema supports them:
-        // gameLocation: comp.venue?.fullName ?? null,
-        // gameCity: comp.venue?.address?.city ?? null,
-        // gameStateProvince: comp.venue?.address?.state ?? null,
-        // gameCountry: comp.venue?.address?.country ?? 'USA',
       }
     );
 
-    return true;
+    return {
+      ok: true,
+      scoreChanged,
+      homeName: home.team.displayName,
+      homeScore: newHomeScore ?? 0,
+      awayName: away.team.displayName,
+      awayScore: newAwayScore ?? 0,
+    };
   }
-
-
 }

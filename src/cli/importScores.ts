@@ -1,36 +1,37 @@
-// /src/cli/importScores.ts
 /* eslint-disable no-console */
-import "dotenv/config";
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
+// src/cli/importScores.ts
+import 'dotenv/config';
+import { importWeekService } from '../infrastructure/dependencies';
 
-import { importWeekService } from "../infrastructure/dependencies";
+const [seasonYear, seasonTypeStr, weekStr] = process.argv.slice(2);
+if (!seasonYear || !seasonTypeStr || !weekStr) {
+  console.error('Usage: importScores <year> <seasonType> <week>');
+  process.exit(1);
+}
 
-type SeasonType = 1 | 2 | 3;
-
+const seasonType = Number(seasonTypeStr) as 1 | 2 | 3;
+const week = Number(weekStr);
 
 (async () => {
-  const argv = await yargs(hideBin(process.argv))
-    .option("seasonYear", { type: "string", demandOption: true, description: "Year to use" })
-    .option("seasonType", { type: "number", demandOption: true, description: "1=pre, 2=reg, 3=post" })
-    .option("week",       { type: "number", demandOption: true, description: "Week number (1-20)" })
-    .strict()
-    .parse();
-
-  const seasonYear = argv.seasonYear;
-  const seasonType = Number(argv.seasonType) as SeasonType;
-  const week = Number(argv.week);
-
-  // ...parse args you already have...
   try {
-    console.time("importScores");
+    console.time('importScores');
     const res = await importWeekService.run({ seasonYear, seasonType, week });
-    console.timeEnd("importScores");
+    console.timeEnd('importScores');
+    if (res.scoreChanges?.length) {
+      console.log('\n🏈 Score updates this week:');
+      for (const g of res.scoreChanges) {
+        console.log(`${g.homeTeam}: ${g.homeScore} -vs- ${g.awayTeam}: ${g.awayScore}`);
+      }
+      console.log('');
+    } else {
+      console.log('\n(No score changes detected.)\n');
+    }
+
     console.log(JSON.stringify(res, null, 2));
+
     process.exit(0);
   } catch (err: any) {
-    console.error("import failed:", err?.message ?? err);
+    console.error('❌ import failed:', err?.message ?? err);
     process.exit(1);
   }
 })();
-

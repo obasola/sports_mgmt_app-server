@@ -8,7 +8,7 @@ import { playerRoutes } from './playerRoutes';
 import { playerAwardRoutes } from './playerAwardRoutes';
 import { combineScoreRoutes } from './combineScoreRoutes';
 import { prospectRoutes } from './prospectRoutes';
-import { draftpickRoutes } from './draftPickRoutes';
+
 import { scheduleRoutes } from './scheduleRoutes';
 import { teamNeedRoutes } from './TeamNeedRoutes';
 import { playerTeamRoutes } from './PlayerTeamRoutes';
@@ -16,20 +16,49 @@ import { postSeasonResultRoutes } from './PostSeasonResultRoutes';
 import { gameRoutes } from './gameRoutes';
 
 import { buildJobRoutes } from './jobRoutes';
+import { JobController } from '../controllers/JobController'
+
+// Import your job-related services from DI container
+import { QueueJobService } from '../../application/jobs/services/QueueJobService';
+import { RunJobService } from '../../application/jobs/services/RunJobService';
+import { CancelJobService } from '../../application/jobs/services/CancelJobService';
+import { ListJobsService } from '../../application/jobs/services/ListJobService';
+import { GetJobDetailService } from '../../application/jobs/services/GetJobDetailService';
+import GetJobLogsService from '../../application/jobs/services/GetJobLogService';
+import { ScheduleJobService } from '../../application/jobs/services/ScheduleJobService';
+//
+import {
+  queueJobService,
+  runJobService,
+  cancelJobService,
+  listJobsService,
+  getJobDetailService,
+  getJobLogsService,
+  scheduleJobService
+} from '@/infrastructure/dependencies'
 
 import { scoreboardJobs } from './jobs.scoreboard'
 import { scoreboardScheduleRoutes } from './job.scoreboard.schedule';
 import standingsRoutes from './standingsRoutes';
+import { teamStandingsRoutes }  from './teamStandingsRoutes';
+import { buildScoreboardRouter } from '../controllers/ScoreboardController';
 
-
+const jobController = new JobController(
+  queueJobService,
+  runJobService,
+  cancelJobService,
+  listJobsService,
+  getJobDetailService,
+  getJobLogsService,
+  scheduleJobService
+)
 const router = Router();
 
 // Register all domain routes
 router.use('/standings', standingsRoutes);
 router.use('/combine-scores', combineScoreRoutes);
-router.use('/draft-picks', draftpickRoutes);
+
 router.use('/games', gameRoutes);
-router.use('/jobs', buildJobRoutes);
 router.use('/persons', personRoutes);
 router.use('/players', playerRoutes);
 router.use('/player-awards', playerAwardRoutes);
@@ -37,11 +66,15 @@ router.use('/player-teams', playerTeamRoutes);
 router.use('/prospects', prospectRoutes);
 router.use('/postseason-results', postSeasonResultRoutes);
 router.use('/schedules', scheduleRoutes);
+router.use('/standings', standingsRoutes);
+router.use('/teamStandings', teamStandingsRoutes);
 router.use('/teams', teamRoutes);
 router.use('/team-needs', teamNeedRoutes);
-router.use('/jobs', buildJobRoutes);
+router.use('/jobs', buildJobRoutes(jobController))
 router.use('/jobs/kickoff/scoreboard', scoreboardJobs)
 router.use('/jobs/scoreboard/schedule', scoreboardScheduleRoutes)
+router.use('/scoreboard', buildScoreboardRouter()) // <— add this line
+
 // Future routes (uncomment as you build them)
 // 
 
@@ -134,11 +167,7 @@ router.get('/', (req, res) => {
           'PATCH /combine-scores/:id/metrics/:metric - Update specific metric',
         ],
       },
-      draftPicks: {
-        base: '/draft-picks',
-        methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        description: 'Manage sports team draftPicks',
-      },
+
       schedule: {
         base: '/schedules',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],

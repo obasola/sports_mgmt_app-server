@@ -20,6 +20,11 @@
 export enum JobType {
   SYNC_TEAMS = 'syncTeams',
   BACKFILL_SEASON = 'backfillSeason',
+
+  PF_DRAFT_SCRAPER = 'PF_DRAFT_SCRAPER',
+  ESPN_PLAYER_IMPORT = 'ESPN_PLAYER_IMPORT',
+  NFL_STATS_IMPORT = 'NFL_STATS_IMPORT',
+  IMPORT_SCORES_WEEK = 'IMPORT_SCORES_WEEK', // ← add this
 }
 
 

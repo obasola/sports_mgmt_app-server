@@ -83,7 +83,9 @@ export class PlayerSyncService {
           teamId: localTeam.id,
           jerseyNumber: athlete.jersey ? Number(athlete.jersey) : undefined,
           currentTeam: true, // active row
-          startDate: new Date(),
+          isActive: true,
+          startYear: 0,
+          endYear: 0,
           // endDate: null,
           contractValue: undefined, // leave for manual enrichment
           contractLength: undefined,

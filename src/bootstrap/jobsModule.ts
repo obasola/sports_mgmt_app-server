@@ -1,4 +1,5 @@
 // ==========================
+// src/bootstrap/jobModule.ts
 // File: src/bootstrap/jobsModule.ts
 // ==========================
 import { PrismaClient } from '@prisma/client';
@@ -16,10 +17,11 @@ import { RunJobService } from '../application/jobs/services/RunJobService';
 import { CancelJobService } from '../application/jobs/services/CancelJobService';
 import { ListJobsService } from '../application/jobs/services/ListJobService';
 import { GetJobDetailService } from '../application/jobs/services/GetJobDetailService';
-import  GetJobLogsService  from '../application/jobs/services/GetJobLogService';
+import GetJobLogsService from '../application/jobs/services/GetJobLogService';
 import { StreamJobLogsService } from '../application/jobs/services/StreamJobLogService';
 import { ScheduleJobService } from '../application/jobs/services/ScheduleJobService';
 import { prisma } from '../infrastructure/prisma';
+import { importWeekService } from '../infrastructure/dependencies'; // add at top if not present
 
 // Presentation
 import { JobController } from '../presentation/controllers/JobController';
@@ -29,7 +31,6 @@ import { buildJobRoutes } from '../presentation/routes/jobRoutes';
 import { JobType } from '../domain/jobs/value-objects/JobType';
 
 export function buildJobsModule() {
-
   // repos + infra singletons
   const jobRepo = new PrismaJobRepository(prisma);
   const logRepo = new PrismaJobLogRepository(prisma);
@@ -42,7 +43,7 @@ export function buildJobsModule() {
     await ctx.log('info', 'Invoking SyncTeamsService...');
     if (await ctx.shouldCancel?.()) return { code: 'canceled' };
     // TODO: call your real SyncTeamsService here
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
     await ctx.log('info', 'SyncTeams completed');
     return { code: 'ok', data: { synced: true } };
   });
@@ -52,9 +53,48 @@ export function buildJobsModule() {
     await ctx.log('info', `Backfilling season year=${p.seasonYear ?? 'n/a'}`);
     if (await ctx.shouldCancel?.()) return { code: 'canceled' };
     // TODO: call your real BackfillSeasonService here
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
     await ctx.log('info', 'BackfillSeason completed');
     return { code: 'ok', data: { year: p.seasonYear, games: 256 } };
+  });
+
+  // inside buildJobsModule()
+
+  runner.register(JobType.IMPORT_SCORES_WEEK, async (payload, ctx) => {
+    // Defensive parse from payload
+    const { year, seasonType, week } = (payload ?? {}) as {
+      year?: number;
+      seasonType?: 1 | 2 | 3;
+      week?: number;
+    };
+
+    await ctx.log(
+      'info',
+      `Starting score import for ${year} seasonType=${seasonType} week=${week}`
+    );
+    if (await ctx.shouldCancel?.()) return { code: 'canceled' };
+
+    // Run the same logic used in CLI
+    const result = await importWeekService.run({
+      seasonYear: String(year),
+      seasonType: seasonType ?? 2,
+      week: week ?? 1,
+    });
+
+    if (result.scoreChanges?.length) {
+      const summary = result.scoreChanges
+        .map((g) => `${g.homeTeam} ${g.homeScore}-${g.awayScore} ${g.awayTeam}`)
+        .join('; ');
+      await ctx.log('info', `🏈 Score changes: ${summary}`);
+    } else {
+      await ctx.log('info', 'No score changes detected.');
+    }
+
+    await ctx.log(
+      'info',
+      `✅ Completed import: upserts=${result.upserts}, skipped=${result.skipped}`
+    );
+    return { code: 'ok', data: result };
   });
 
   // application services

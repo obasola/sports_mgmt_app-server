@@ -7,16 +7,17 @@ const BaseCreatePlayerTeamDtoSchema = z.object({
   teamId: z.number().positive('Team ID is required'),
   jerseyNumber: z.number().min(0, 'Jersey number cannot be negative').max(99, 'Jersey number cannot exceed 99').optional(),
   currentTeam: z.boolean().default(true),
-  startDate: z.string().transform((str) => new Date(str)).optional(),
-  endDate: z.string().transform((str) => new Date(str)).optional(),
+  isActive: z.boolean().default(true),
+  startYear: z.number().optional(),
+  endYear: z.number().optional(),
   contractValue: z.number().min(0, 'Contract value cannot be negative').optional(),
   contractLength: z.number().min(1, 'Contract length must be at least 1 year').max(10, 'Contract length cannot exceed 10 years').optional(),
 });
 
 // ✅ Create schema with refinement
 export const CreatePlayerTeamDtoSchema = BaseCreatePlayerTeamDtoSchema.refine((data) => {
-  if (data.startDate && data.endDate) {
-    return new Date(data.startDate) <= new Date(data.endDate);
+  if (data.startYear && data.endYear) {
+    return new Date(data.startYear) <= new Date(data.endYear);
   }
   return true;
 }, {
@@ -55,8 +56,9 @@ export interface PlayerTeamResponseDto {
   teamId: number;
   jerseyNumber: number | null;
   currentTeam: boolean;
-  startDate: string | null; // ISO date string for API responses
-  endDate: string | null; // ISO date string for API responses
+  isActive: boolean,
+  startYear: number | null; // ISO date string for API responses
+  endYear: number | null; // ISO date string for API responses
   contractValue: number | null;
   contractLength: number | null;
   isContractActive: boolean; // Computed field

@@ -39,6 +39,8 @@ model DraftPick {
   createdAt                                DateTime?  @default(now()) @db.Timestamp(0)
   updatedAt                                DateTime?  @default(now()) @db.Timestamp(0)
   originalTeam                             Int?
+  position                                 String?    @db.VarChar(45)
+  college                                  String?    @db.VarChar(255)
   Team                                     Team       @relation(fields: [currentTeamId], references: [id], map: "fk_DraftPick_CurrentTeam")
   Player                                   Player?    @relation(fields: [playerId], references: [id], map: "fk_DraftPick_Player")
   Prospect_DraftPick_prospectIdToProspect  Prospect?  @relation("DraftPick_prospectIdToProspect", fields: [prospectId], references: [id], map: "fk_DraftPick_Prospect")
@@ -128,17 +130,18 @@ model PlayerAward {
 }
 
 model PlayerTeam {
-  id             Int       @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   playerId       Int
   teamId         Int
-  currentTeam    Boolean   @default(false)
-  startDate      DateTime? @db.Date
-  endDate        DateTime? @db.Date
+  currentTeam    Boolean @default(false)
   jerseyNumber   Int?
   contractValue  Int?
   contractLength Int?
-  Player         Player    @relation(fields: [playerId], references: [id], onDelete: Cascade, map: "fk_PlayerTeam_Player")
-  Team           Team      @relation(fields: [teamId], references: [id], onDelete: Cascade, map: "fk_PlayerTeam_Team")
+  startYear      Int?
+  endYear        Int?
+  isActive       Int?    @db.TinyInt
+  Player         Player  @relation(fields: [playerId], references: [id], onDelete: Cascade, map: "fk_PlayerTeam_Player")
+  Team           Team    @relation(fields: [teamId], references: [id], onDelete: Cascade, map: "fk_PlayerTeam_Team")
 
   @@index([playerId], map: "fk_PlayerTeam_Player_idx")
   @@index([teamId], map: "fk_PlayerTeam_Team_idx")
@@ -529,6 +532,54 @@ model JobLog {
   @@index([jobId])
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Jobs {
+  id             Int       @id @default(autoincrement())
+  type           String    @db.VarChar(50)
+  status         String    @default("PENDING") @db.VarChar(20)
+  progress       Int?      @default(0)
+  totalItems     Int?      @default(0)
+  processedItems Int?      @default(0)
+  parameters     Json?
+  result         Json?
+  error          String?   @db.Text
+  createdBy      String?   @db.VarChar(100)
+  createdAt      DateTime  @default(now()) @db.DateTime(0)
+  startedAt      DateTime? @db.DateTime(0)
+  completedAt    DateTime? @db.DateTime(0)
+  updatedAt      DateTime  @default(now()) @db.DateTime(0)
+
+  @@index([createdAt], map: "idx_created_at")
+  @@index([status], map: "idx_status")
+  @@index([type], map: "idx_type")
+  @@index([type, status], map: "idx_type_status")
+}
+
+model espn_draft_picks {
+  id                    Int       @id @default(autoincrement())
+  espn_id               String    @unique(map: "espn_id") @db.VarChar(255)
+  year                  Int
+  round                 Int
+  overall_pick          Int
+  team_espn_id          String    @db.VarChar(255)
+  player_espn_id        String?   @db.VarChar(255)
+  player_name           String    @db.VarChar(255)
+  position              String    @db.VarChar(10)
+  college               String?   @db.VarChar(255)
+  is_compensatory       Boolean?  @default(false)
+  is_forfeited          Boolean?  @default(false)
+  original_team_espn_id String?   @db.VarChar(255)
+  notes                 String?   @db.Text
+  is_active             Boolean?  @default(true)
+  last_sync_at          DateTime? @db.DateTime(0)
+  created_at            DateTime? @default(now()) @db.DateTime(0)
+  updated_at            DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([player_espn_id], map: "idx_player")
+  @@index([team_espn_id], map: "idx_team")
+  @@index([year, round, overall_pick], map: "idx_year_round_pick")
+}
+
 enum data_processing_jobs_job_type {
   PLAYER_SYNC
   TEAM_SYNC
@@ -634,5 +685,4 @@ enum Game_gameStatus {
   completed
   postponed
   canceled
-  final
 }

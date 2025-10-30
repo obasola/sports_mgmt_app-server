@@ -13,7 +13,10 @@ export class TeamStanding {
     public divisionWins = 0,
     public divisionLosses = 0,
     public conferenceWins = 0,
-    public conferenceLosses = 0
+    public conferenceLosses = 0,
+    public pct = 0
+ 
+  
   ) {}
 
   get winPct() {

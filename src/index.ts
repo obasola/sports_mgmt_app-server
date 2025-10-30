@@ -57,8 +57,7 @@ app.use('/api', apiRoutes);
 // Jobs module
 const { routes: jobsRoutes } = buildJobsModule();
 app.use(`${API_BASE}/jobs`, jobsRoutes);
-// optional alias:
-app.use('/api/jobs', jobsRoutes);
+
 
 // ---- list all registered routes (debugging only)
 console.log('Registered routes:')

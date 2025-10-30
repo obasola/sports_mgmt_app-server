@@ -1,8 +1,8 @@
 // src/infrastructure/repositories/PrismaGameRepository.ts
-import { PrismaClient, Prisma } from "@prisma/client";
-import { Game } from "../../domain/game/entities/Game";
-import type { IGameRepository, GameFilters } from "../../domain/game/repositories/IGameRepository";
-import type { PaginationParams, PaginatedResponse } from "@/shared/types/common";
+import { PrismaClient, Prisma } from '@prisma/client';
+import { Game } from '../../domain/game/entities/Game';
+import type { IGameRepository, GameFilters } from '../../domain/game/repositories/IGameRepository';
+import type { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export class PrismaGameRepository implements IGameRepository {
@@ -53,14 +53,16 @@ export class PrismaGameRepository implements IGameRepository {
   }
 
   async findById(id: number): Promise<Game | null> {
-    const row = await this.prisma.game.findUnique({ 
+    const row = await this.prisma.game.findUnique({
       where: { id },
       include: this.teamInclude,
     });
     return row ? this.hydrateGameWithTeams(row) : null;
   }
 
-  async findByIdWithTeams(id: number): Promise<{ game: Game; homeTeam: any; awayTeam: any } | null> {
+  async findByIdWithTeams(
+    id: number
+  ): Promise<{ game: Game; homeTeam: any; awayTeam: any } | null> {
     const row = await this.prisma.game.findUnique({
       where: { id },
       include: this.teamInclude,
@@ -83,7 +85,8 @@ export class PrismaGameRepository implements IGameRepository {
     if (filters.preseason != null) where.preseason = filters.preseason;
     if (filters.homeTeamId != null) where.homeTeamId = filters.homeTeamId;
     if (filters.awayTeamId != null) where.awayTeamId = filters.awayTeamId;
-    if (filters.teamId != null) where.OR = [{ homeTeamId: filters.teamId }, { awayTeamId: filters.teamId }];
+    if (filters.teamId != null)
+      where.OR = [{ homeTeamId: filters.teamId }, { awayTeamId: filters.teamId }];
     if (filters.gameStatus) where.gameStatus = filters.gameStatus as any;
     if (filters.gameCity) where.gameCity = { contains: filters.gameCity };
     if (filters.gameCountry) where.gameCountry = { contains: filters.gameCountry };
@@ -92,19 +95,22 @@ export class PrismaGameRepository implements IGameRepository {
       if (filters.dateFrom) (where.gameDate as any).gte = filters.dateFrom;
       if (filters.dateTo) (where.gameDate as any).lte = filters.dateTo;
     }
-    console.log("where params: ", where);
+    console.log('where params: ', where);
     return where;
   }
 
-  async findAll(filters?: GameFilters, pagination?: PaginationParams): Promise<PaginatedResponse<Game>> {
+  async findAll(
+    filters?: GameFilters,
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<Game>> {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
-    
+
     const where = this.buildWhere(filters);
 
-    console.log("filters: ", filters);
-    console.log("where: ", where);
+    console.log('filters: ', filters);
+    console.log('where: ', where);
     const [rows, total] = await Promise.all([
       this.prisma.game.findMany({
         where,
@@ -117,7 +123,7 @@ export class PrismaGameRepository implements IGameRepository {
     ]);
 
     return {
-      data: rows.map(r => this.hydrateGameWithTeams(r)),
+      data: rows.map((r) => this.hydrateGameWithTeams(r)),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     };
   }
@@ -163,16 +169,20 @@ export class PrismaGameRepository implements IGameRepository {
       orderBy: [{ gameWeek: 'asc' }, { gameDate: 'asc' }],
       include: this.teamInclude,
     });
-    return rows.map(r => this.hydrateGameWithTeams(r));
+    return rows.map((r) => this.hydrateGameWithTeams(r));
   }
 
-  async findByTeamSeasonWeek(teamId: number, seasonYear: string, gameWeek: number): Promise<Game[]> {
+  async findByTeamSeasonWeek(
+    teamId: number,
+    seasonYear: string,
+    gameWeek: number
+  ): Promise<Game[]> {
     const rows = await this.prisma.game.findMany({
       where: { seasonYear, gameWeek, OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }] },
       orderBy: [{ gameDate: 'asc' }],
       include: this.teamInclude,
     });
-    return rows.map(r => this.hydrateGameWithTeams(r));
+    return rows.map((r) => this.hydrateGameWithTeams(r));
   }
 
   async findUpcomingGames(teamId?: number, limit = 10): Promise<Game[]> {
@@ -186,7 +196,7 @@ export class PrismaGameRepository implements IGameRepository {
       take: limit,
       include: this.teamInclude,
     });
-    return rows.map(r => this.hydrateGameWithTeams(r));
+    return rows.map((r) => this.hydrateGameWithTeams(r));
   }
 
   async findCompletedGames(teamId?: number, limit = 10): Promise<Game[]> {
@@ -199,7 +209,7 @@ export class PrismaGameRepository implements IGameRepository {
       take: limit,
       include: this.teamInclude,
     });
-    return rows.map(r => this.hydrateGameWithTeams(r));
+    return rows.map((r) => this.hydrateGameWithTeams(r));
   }
 
   async findPreseasonGames(teamId?: number, seasonYear?: number): Promise<Game[]> {
@@ -212,7 +222,7 @@ export class PrismaGameRepository implements IGameRepository {
       orderBy: [{ gameDate: 'asc' }],
       include: this.teamInclude,
     });
-    return rows.map(r => this.hydrateGameWithTeams(r));
+    return rows.map((r) => this.hydrateGameWithTeams(r));
   }
 
   async findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
@@ -225,10 +235,14 @@ export class PrismaGameRepository implements IGameRepository {
       orderBy: [{ gameWeek: 'asc' }],
       include: this.teamInclude,
     });
-    return rows.map(r => this.hydrateGameWithTeams(r));
+    return rows.map((r) => this.hydrateGameWithTeams(r));
   }
 
-  async findRegularSeasonGameByWeek(teamId?: number, seasonYear?: string, week?: number): Promise<Game[]> {
+  async findRegularSeasonGameByWeek(
+    teamId?: number,
+    seasonYear?: string,
+    week?: number
+  ): Promise<Game[]> {
     const where: Prisma.GameWhereInput = { preseason: 0 };
     if (teamId != null) (where as any).OR = [{ homeTeamId: teamId }, { awayTeamId: teamId }];
     if (seasonYear != null) (where as any).seasonYear = seasonYear;
@@ -239,7 +253,7 @@ export class PrismaGameRepository implements IGameRepository {
       orderBy: [{ gameDate: 'asc' }],
       include: this.teamInclude,
     });
-    return rows.map(r => this.hydrateGameWithTeams(r));
+    return rows.map((r) => this.hydrateGameWithTeams(r));
   }
 
   async findAllGamesForSeason(teamId?: number, seasonYear?: string): Promise<Game[]> {
@@ -252,10 +266,15 @@ export class PrismaGameRepository implements IGameRepository {
       orderBy: [{ gameWeek: 'asc' }, { gameDate: 'asc' }],
       include: this.teamInclude,
     });
-    return rows.map(r => this.hydrateGameWithTeams(r));
+    return rows.map((r) => this.hydrateGameWithTeams(r));
   }
 
-  async checkGameConflict(homeTeamId: number, awayTeamId: number, gameDate: Date, seasonYear: string): Promise<boolean> {
+  async checkGameConflict(
+    homeTeamId: number,
+    awayTeamId: number,
+    gameDate: Date,
+    seasonYear: string
+  ): Promise<boolean> {
     const count = await this.prisma.game.count({
       where: {
         seasonYear,
@@ -273,7 +292,7 @@ export class PrismaGameRepository implements IGameRepository {
   private hydrateGameWithTeams(row: any): Game {
     const { homeTeam, awayTeam, ...gameData } = row;
     const game = Game.fromPersistence(gameData as any);
-    
+
     // Attach team data using setters
     if (homeTeam) {
       game.homeTeam = homeTeam;
@@ -281,8 +300,18 @@ export class PrismaGameRepository implements IGameRepository {
     if (awayTeam) {
       game.awayTeam = awayTeam;
     }
-    
+
     return game;
+  }
+  /**
+   * Find a game by ESPN competition ID (unique key).
+   */
+  async findByEspnCompetitionId(espnCompetitionId: string): Promise<Game | null> {
+    const row = await this.prisma.game.findUnique({
+      where: { espnCompetitionId },
+      include: this.teamInclude,
+    });
+    return row ? this.hydrateGameWithTeams(row) : null;
   }
 
   // ---------- ESPN upsert ----------
@@ -311,7 +340,7 @@ export class PrismaGameRepository implements IGameRepository {
     }
   ): Promise<Game> {
     const compId = key.espnCompetitionId || data.espnCompetitionId;
-    const evtId  = key.espnEventId       || data.espnEventId;
+    const evtId = key.espnEventId || data.espnEventId;
 
     const update: Prisma.GameUncheckedUpdateInput = {
       seasonYear: data.seasonYear,
@@ -374,10 +403,9 @@ export class PrismaGameRepository implements IGameRepository {
         if (
           e instanceof Prisma.PrismaClientKnownRequestError &&
           e.code === 'P2002' &&
-          (
-            (Array.isArray((e.meta as any)?.target) && (e.meta as any).target.includes('unique_game')) ||
-            String(e.message).includes('unique_game')
-          )
+          ((Array.isArray((e.meta as any)?.target) &&
+            (e.meta as any).target.includes('unique_game')) ||
+            String(e.message).includes('unique_game'))
         ) {
           const merged = await mergeIntoComposite();
           if (merged) return this.hydrateGameWithTeams(merged);
@@ -400,10 +428,9 @@ export class PrismaGameRepository implements IGameRepository {
         if (
           e instanceof Prisma.PrismaClientKnownRequestError &&
           e.code === 'P2002' &&
-          (
-            (Array.isArray((e.meta as any)?.target) && (e.meta as any).target.includes('unique_game')) ||
-            String(e.message).includes('unique_game')
-          )
+          ((Array.isArray((e.meta as any)?.target) &&
+            (e.meta as any).target.includes('unique_game')) ||
+            String(e.message).includes('unique_game'))
         ) {
           const merged = await mergeIntoComposite();
           if (merged) return this.hydrateGameWithTeams(merged);
@@ -423,12 +450,12 @@ export class PrismaGameRepository implements IGameRepository {
         },
       });
       const row = existing
-        ? await this.prisma.game.update({ 
-            where: { id: existing.id }, 
+        ? await this.prisma.game.update({
+            where: { id: existing.id },
             data: update,
             include: this.teamInclude,
           })
-        : await this.prisma.game.create({ 
+        : await this.prisma.game.create({
             data: create,
             include: this.teamInclude,
           });
@@ -436,7 +463,7 @@ export class PrismaGameRepository implements IGameRepository {
     }
 
     // Last resort: blind create
-    const row = await this.prisma.game.create({ 
+    const row = await this.prisma.game.create({
       data: create,
       include: this.teamInclude,
     });

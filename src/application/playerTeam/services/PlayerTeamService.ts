@@ -38,8 +38,9 @@ export class PlayerTeamService {
       teamId: dto.teamId,
       jerseyNumber: dto.jerseyNumber,
       currentTeam: dto.currentTeam,
-      startDate: dto.startDate,
-      endDate: dto.endDate,
+      isActive: true,
+      startYear: dto.startYear,
+      endYear: dto.endYear,
       contractValue: dto.contractValue,
       contractLength: dto.contractLength,
     });
@@ -104,8 +105,8 @@ export class PlayerTeamService {
     } else if (dto.currentTeam === false) {
       existingPlayerTeam.removeAsCurrentTeam();
     }
-    if (dto.endDate !== undefined) {
-      existingPlayerTeam.extendContract(dto.endDate, dto.contractValue);
+    if (dto.endYear !== undefined) {
+      existingPlayerTeam.extendContract(dto.endYear, dto.contractValue);
     }
 
     const updatedPlayerTeam = await this.playerTeamRepository.update(id, existingPlayerTeam);
@@ -166,8 +167,9 @@ export class PlayerTeamService {
     newTeamId: number, 
     transferData: {
       jerseyNumber?: number;
-      startDate?: Date;
-      endDate?: Date;
+      startYear: number;
+      endYear: number;
+      isActive: boolean,
       contractValue?: number;
       contractLength?: number;
     }
@@ -184,11 +186,12 @@ export class PlayerTeamService {
       playerId,
       teamId: newTeamId,
       jerseyNumber: transferData.jerseyNumber,
-      startDate: transferData.startDate,
-      endDate: transferData.endDate,
+      startYear: transferData.startYear,
+      endYear: transferData.endYear,
       contractValue: transferData.contractValue,
       contractLength: transferData.contractLength,
       currentTeam: true,
+      isActive: true,
     };
 
     return this.createPlayerTeam(transferDto);
@@ -201,8 +204,9 @@ export class PlayerTeamService {
       teamId: playerTeam.teamId!,
       jerseyNumber: playerTeam.jerseyNumber || null,
       currentTeam: playerTeam.currentTeam || false,
-      startDate: playerTeam.startDate?.toISOString() || null,
-      endDate: playerTeam.endDate?.toISOString() || null,
+      isActive:playerTeam.isActive,
+      startYear: playerTeam.startYear || null,
+      endYear: playerTeam.endYear || null,
       contractValue: playerTeam.contractValue || null,
       contractLength: playerTeam.contractLength || null,
       isContractActive: playerTeam.isContractActive(),

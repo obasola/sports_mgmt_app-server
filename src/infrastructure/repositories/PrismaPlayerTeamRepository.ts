@@ -10,49 +10,77 @@ import { prisma } from '../database/prisma';
 import { Prisma } from '@prisma/client';
 
 export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
+  /**
+   * Convert Prisma data (with null) to Domain entity format (with undefined)
+   * This handles the mismatch between database null and TypeScript undefined
+   */
+  private convertToDomain(data: any): Parameters<typeof PlayerTeam.fromPersistence>[0] {
+    return {
+      ...data,
+      isActive: data.isActive === 1, // Convert TinyInt to boolean
+      startYear: data.startYear ?? undefined, // Convert null to undefined
+      endYear: data.endYear ?? undefined, // Convert null to undefined
+      jerseyNumber: data.jerseyNumber ?? undefined,
+      contractValue: data.contractValue ?? undefined,
+      contractLength: data.contractLength ?? undefined,
+    };
+  }
+
+  /**
+   * Convert domain entity to Prisma format
+   */
+  private convertToPrisma(data: any): any {
+    return {
+      ...data,
+      isActive: data.isActive ? 1 : 0, // Convert boolean to TinyInt
+      startYear: data.startYear ?? null, // Convert undefined to null
+      endYear: data.endYear ?? null, // Convert undefined to null
+      jerseyNumber: data.jerseyNumber ?? null,
+      contractValue: data.contractValue ?? null,
+      contractLength: data.contractLength ?? null,
+    };
+  }
+
   async save(playerTeam: PlayerTeam): Promise<PlayerTeam> {
     const data = playerTeam.toPersistence();
     const { id, ...createData } = data;
 
-    // Build create data with required fields, ensuring they exist
+    // Build create data with required fields
     if (!createData.playerId || !createData.teamId) {
       throw new Error('playerId and teamId are required for creating PlayerTeam');
     }
 
-    // Use proper Prisma type for create data
     const cleanCreateData: Prisma.PlayerTeamUncheckedCreateInput = {
       playerId: createData.playerId,
       teamId: createData.teamId,
+      jerseyNumber: createData.jerseyNumber ?? null,
+      currentTeam: createData.currentTeam ?? false,
+      startYear: createData.startYear ?? null,
+      endYear: createData.endYear ?? null,
+      contractValue: createData.contractValue ?? null,
+      contractLength: createData.contractLength ?? null,
+      isActive: createData.isActive ? 1 : 0,
     };
-
-    // Add optional fields if defined
-    if (createData.jerseyNumber !== undefined)
-      cleanCreateData.jerseyNumber = createData.jerseyNumber;
-    if (createData.currentTeam !== undefined) cleanCreateData.currentTeam = createData.currentTeam;
-    if (createData.startDate !== undefined) cleanCreateData.startDate = createData.startDate;
-    if (createData.endDate !== undefined) cleanCreateData.endDate = createData.endDate;
-    if (createData.contractValue !== undefined)
-      cleanCreateData.contractValue = createData.contractValue;
-    if (createData.contractLength !== undefined)
-      cleanCreateData.contractLength = createData.contractLength;
 
     const savedPlayerTeam = await prisma.playerTeam.create({
       data: cleanCreateData,
     });
 
-    return PlayerTeam.fromPersistence(savedPlayerTeam);
+    return PlayerTeam.fromPersistence(this.convertToDomain(savedPlayerTeam));
   }
 
   async findById(id: number): Promise<PlayerTeam | null> {
     const playerTeam = await prisma.playerTeam.findUnique({
       where: { id },
       include: {
-        Player: true, // ✅ Capitalized relationship name
-        Team: true, // ✅ Capitalized relationship name
+        Player: true,
+        Team: true,
       },
     });
 
-    return playerTeam ? PlayerTeam.fromPersistence(playerTeam) : null;
+    if (!playerTeam) return null;
+
+    return PlayerTeam.fromPersistence(this.convertToDomain(playerTeam));
   }
 
   async findAll(
@@ -72,15 +100,17 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
         take: limit,
         orderBy: { id: 'asc' },
         include: {
-          Player: true, // ✅ Capitalized relationship name
-          Team: true, // ✅ Capitalized relationship name
+          Player: true,
+          Team: true,
         },
       }),
       prisma.playerTeam.count({ where }),
     ]);
 
     return {
-      data: playerTeams.map((playerTeam) => PlayerTeam.fromPersistence(playerTeam)),
+      data: playerTeams.map((playerTeam) =>
+        PlayerTeam.fromPersistence(this.convertToDomain(playerTeam))
+      ),
       pagination: {
         page,
         limit,
@@ -99,28 +129,27 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
     const data = playerTeam.toPersistence();
     const { id: _, ...updateData } = data;
 
-    // Use partial type for update since not all fields are required
     const cleanUpdateData: Partial<Prisma.PlayerTeamUncheckedUpdateInput> = {};
 
-    // Only include defined values
     if (updateData.playerId !== undefined) cleanUpdateData.playerId = updateData.playerId;
     if (updateData.teamId !== undefined) cleanUpdateData.teamId = updateData.teamId;
     if (updateData.jerseyNumber !== undefined)
-      cleanUpdateData.jerseyNumber = updateData.jerseyNumber;
+      cleanUpdateData.jerseyNumber = updateData.jerseyNumber ?? null;
     if (updateData.currentTeam !== undefined) cleanUpdateData.currentTeam = updateData.currentTeam;
-    if (updateData.startDate !== undefined) cleanUpdateData.startDate = updateData.startDate;
-    if (updateData.endDate !== undefined) cleanUpdateData.endDate = updateData.endDate;
+    if (updateData.isActive !== undefined) cleanUpdateData.isActive = updateData.isActive ? 1 : 0;
+    if (updateData.startYear !== undefined) cleanUpdateData.startYear = updateData.startYear ?? null;
+    if (updateData.endYear !== undefined) cleanUpdateData.endYear = updateData.endYear ?? null;
     if (updateData.contractValue !== undefined)
-      cleanUpdateData.contractValue = updateData.contractValue;
+      cleanUpdateData.contractValue = updateData.contractValue ?? null;
     if (updateData.contractLength !== undefined)
-      cleanUpdateData.contractLength = updateData.contractLength;
+      cleanUpdateData.contractLength = updateData.contractLength ?? null;
 
     const updatedPlayerTeam = await prisma.playerTeam.update({
       where: { id },
       data: cleanUpdateData,
     });
 
-    return PlayerTeam.fromPersistence(updatedPlayerTeam);
+    return PlayerTeam.fromPersistence(this.convertToDomain(updatedPlayerTeam));
   }
 
   async delete(id: number): Promise<void> {
@@ -146,24 +175,28 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
     const playerTeams = await prisma.playerTeam.findMany({
       where: { playerId },
       include: {
-        Team: true, // ✅ Capitalized relationship name
+        Team: true,
       },
-      orderBy: { startDate: 'desc' },
+      orderBy: { startYear: 'desc' },
     });
 
-    return playerTeams.map((playerTeam) => PlayerTeam.fromPersistence(playerTeam));
+    return playerTeams.map((playerTeam) =>
+      PlayerTeam.fromPersistence(this.convertToDomain(playerTeam))
+    );
   }
 
   async findByTeamId(teamId: number): Promise<PlayerTeam[]> {
     const playerTeams = await prisma.playerTeam.findMany({
       where: { teamId },
       include: {
-        Player: true, // ✅ Capitalized relationship name
+        Player: true,
       },
       orderBy: { jerseyNumber: 'asc' },
     });
 
-    return playerTeams.map((playerTeam) => PlayerTeam.fromPersistence(playerTeam));
+    return playerTeams.map((playerTeam) =>
+      PlayerTeam.fromPersistence(this.convertToDomain(playerTeam))
+    );
   }
 
   async findByPlayerAndTeam(playerId: number, teamId: number): Promise<PlayerTeam[]> {
@@ -172,10 +205,12 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
         playerId,
         teamId,
       },
-      orderBy: { startDate: 'desc' },
+      orderBy: { startYear: 'desc' },
     });
 
-    return playerTeams.map((playerTeam) => PlayerTeam.fromPersistence(playerTeam));
+    return playerTeams.map((playerTeam) =>
+      PlayerTeam.fromPersistence(this.convertToDomain(playerTeam))
+    );
   }
 
   async findCurrentTeamContracts(): Promise<PlayerTeam[]> {
@@ -184,13 +219,15 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
         currentTeam: true,
       },
       include: {
-        Player: true, // ✅ Capitalized relationship name
-        Team: true, // ✅ Capitalized relationship name
+        Player: true,
+        Team: true,
       },
       orderBy: { teamId: 'asc' },
     });
 
-    return playerTeams.map((playerTeam) => PlayerTeam.fromPersistence(playerTeam));
+    return playerTeams.map((playerTeam) =>
+      PlayerTeam.fromPersistence(this.convertToDomain(playerTeam))
+    );
   }
 
   async findCurrentTeamForPlayer(playerId: number): Promise<PlayerTeam | null> {
@@ -200,12 +237,14 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
         currentTeam: true,
       },
       include: {
-        Team: true, // ✅ Capitalized relationship name
+        Team: true,
       },
-      orderBy: { startDate: 'desc' },
+      orderBy: { startYear: 'desc' },
     });
 
-    return playerTeam ? PlayerTeam.fromPersistence(playerTeam) : null;
+    if (!playerTeam) return null;
+
+    return PlayerTeam.fromPersistence(this.convertToDomain(playerTeam));
   }
 
   async findPlayersForCurrentTeam(teamId: number): Promise<PlayerTeam[]> {
@@ -215,12 +254,14 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
         currentTeam: true,
       },
       include: {
-        Player: true, // ✅ Capitalized relationship name
+        Player: true,
       },
       orderBy: { jerseyNumber: 'asc' },
     });
 
-    return playerTeams.map((playerTeam) => PlayerTeam.fromPersistence(playerTeam));
+    return playerTeams.map((playerTeam) =>
+      PlayerTeam.fromPersistence(this.convertToDomain(playerTeam))
+    );
   }
 
   async checkJerseyNumberAvailable(
@@ -246,32 +287,51 @@ export class PrismaPlayerTeamRepository implements IPlayerTeamRepository {
     const row = await prisma.playerTeam.findFirst({
       where: { playerId, teamId, currentTeam: true },
     });
-    return row ? PlayerTeam.fromPersistence(row) : null;
+
+    if (!row) return null;
+
+    return PlayerTeam.fromPersistence(this.convertToDomain(row));
   }
 
   async upsertCurrent(pt: PlayerTeam): Promise<PlayerTeam> {
-  const existing = await prisma.playerTeam.findFirst({
-    where: { playerId: pt.toPersistence().playerId, teamId: pt.toPersistence().teamId, currentTeam: true },
-  })
+    const existing = await prisma.playerTeam.findFirst({
+      where: {
+        playerId: pt.toPersistence().playerId,
+        teamId: pt.toPersistence().teamId,
+        currentTeam: true,
+      },
+    });
 
-  const data = {
-    playerId: pt.toPersistence().playerId!,
-    teamId: pt.toPersistence().teamId!,
-    jerseyNumber: pt.toPersistence().jerseyNumber ?? null,
-    currentTeam: true,
-    startDate: pt.toPersistence().startDate ?? new Date(),
-    endDate: pt.toPersistence().endDate ?? null,
-    //position: pt.toPersistence().position ?? null,
+    const persistence = pt.toPersistence();
+
+    // Convert startYear - handle number, Date, or undefined
+    let startYearValue: number | null = null;
+    if (persistence.startYear !== undefined) {
+      // startYear is already a number or undefined from the entity
+      startYearValue = persistence.startYear ?? null;
+    }
+
+    const data: Prisma.PlayerTeamUncheckedCreateInput = {
+      playerId: persistence.playerId!,
+      teamId: persistence.teamId!,
+      jerseyNumber: persistence.jerseyNumber ?? null,
+      currentTeam: true,
+      startYear: startYearValue,
+      endYear: persistence.endYear ?? null,
+      isActive: persistence.isActive ? 1 : 0,
+    };
+
+    if (existing) {
+      const row = await prisma.playerTeam.update({
+        where: { id: existing.id },
+        data: data as Prisma.PlayerTeamUncheckedUpdateInput,
+      });
+      return PlayerTeam.fromPersistence(this.convertToDomain(row));
+    }
+
+    const row = await prisma.playerTeam.create({ data });
+    return PlayerTeam.fromPersistence(this.convertToDomain(row));
   }
-
-  if (existing) {
-    const row = await prisma.playerTeam.update({ where: { id: existing.id }, data })
-    return PlayerTeam.fromPersistence(row)
-  }
-
-  const row = await prisma.playerTeam.create({ data })
-  return PlayerTeam.fromPersistence(row)
-}
 
   private buildWhereClause(filters?: PlayerTeamFilters): object {
     if (!filters) return {};

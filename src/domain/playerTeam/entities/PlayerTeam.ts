@@ -7,8 +7,9 @@ export interface PlayerTeamProps {
   teamId?: number;
   jerseyNumber?: number;
   currentTeam?: boolean; // ✅ Matches actual schema
-  startDate?: Date; // ✅ Matches actual schema
-  endDate?: Date; // ✅ Matches actual schema
+  isActive: boolean;
+  startYear: number | undefined;
+  endYear: number | undefined;
   contractValue?: number; // ✅ Matches actual schema
   contractLength?: number; // ✅ Matches actual schema
   // Relationship data (optional, loaded via includes)
@@ -21,7 +22,7 @@ export interface PlayerTeamProps {
   Team?: {
     id: number;
     name: string;
-    city?: string;        // Optional since it can be null in database
+    city?: string; // Optional since it can be null in database
     conference?: string;
     division?: string;
   };
@@ -33,11 +34,9 @@ export class PlayerTeam {
   }
 
   public static create(props: PlayerTeamProps): PlayerTeam {
-    if (!props.playerId || !props.teamId)
-      throw new Error('playerId and teamId are required')
+    if (!props.playerId || !props.teamId) throw new Error('playerId and teamId are required');
     return new PlayerTeam(props);
   }
-
 
   // 🚨 CRITICAL: fromPersistence MUST match actual Prisma return types
   // Based on the error messages, the actual schema uses different field names
@@ -47,8 +46,9 @@ export class PlayerTeam {
     teamId: number;
     jerseyNumber: number | null;
     currentTeam: boolean;
-    startDate: Date | null;
-    endDate: Date | null;
+    isActive: boolean;
+    startYear: number | undefined;
+    endYear: number | undefined;
     contractValue: number | null;
     contractLength: number | null;
     // Optional relationship data from includes (capitalized names)
@@ -62,11 +62,11 @@ export class PlayerTeam {
     Team?: {
       id: number;
       name: string;
-      city: string | null;        // ✅ Actually nullable in your schema
-      state?: string | null;      // ✅ Additional field in your schema
+      city: string | null; // ✅ Actually nullable in your schema
+      state?: string | null; // ✅ Additional field in your schema
       conference?: string | null; // ✅ Actually nullable in your schema
-      division?: string | null;   // ✅ Actually nullable in your schema
-      stadium?: string | null;    // ✅ Additional field in your schema
+      division?: string | null; // ✅ Actually nullable in your schema
+      stadium?: string | null; // ✅ Additional field in your schema
       scheduleId?: number | null; // ✅ Additional field in your schema
     } | null;
   }): PlayerTeam {
@@ -76,24 +76,29 @@ export class PlayerTeam {
       teamId: data.teamId,
       jerseyNumber: data.jerseyNumber || undefined,
       currentTeam: data.currentTeam,
-      startDate: data.startDate || undefined,
-      endDate: data.endDate || undefined,
+      isActive: data.isActive,
+      startYear: data.startYear || undefined,
+      endYear: data.endYear || undefined,
       contractValue: data.contractValue || undefined,
       contractLength: data.contractLength || undefined,
       // Convert relationship data (capitalized field names)
-      Player: data.Player ? {
-        id: data.Player.id,
-        firstName: data.Player.firstName,
-        lastName: data.Player.lastName,
-        position: data.Player.position || undefined,
-      } : undefined,
-      Team: data.Team ? {
-        id: data.Team.id,
-        name: data.Team.name,
-        city: data.Team.city || undefined,           // Handle nullable city
-        conference: data.Team.conference || undefined,
-        division: data.Team.division || undefined,
-      } : undefined,
+      Player: data.Player
+        ? {
+            id: data.Player.id,
+            firstName: data.Player.firstName,
+            lastName: data.Player.lastName,
+            position: data.Player.position || undefined,
+          }
+        : undefined,
+      Team: data.Team
+        ? {
+            id: data.Team.id,
+            name: data.Team.name,
+            city: data.Team.city || undefined, // Handle nullable city
+            conference: data.Team.conference || undefined,
+            division: data.Team.division || undefined,
+          }
+        : undefined,
     });
   }
 
@@ -101,7 +106,7 @@ export class PlayerTeam {
     if (this.props.playerId && this.props.playerId <= 0) {
       throw new ValidationError('Player ID must be positive');
     }
-    
+
     if (this.props.teamId && this.props.teamId <= 0) {
       throw new ValidationError('Team ID must be positive');
     }
@@ -118,8 +123,7 @@ export class PlayerTeam {
       throw new ValidationError('Contract length must be positive');
     }
 
-    if (this.props.startDate && this.props.endDate && 
-        this.props.startDate > this.props.endDate) {
+    if (this.props.startYear && this.props.endYear && this.props.startYear > this.props.endYear) {
       throw new ValidationError('Contract start date cannot be after end date');
     }
   }
@@ -144,13 +148,16 @@ export class PlayerTeam {
   public get currentTeam(): boolean | undefined {
     return this.props.currentTeam;
   }
-
-  public get startDate(): Date | undefined {
-    return this.props.startDate;
+  public get isActive(): boolean  {
+    return this.props.isActive;
   }
 
-  public get endDate(): Date | undefined {
-    return this.props.endDate;
+  public get startYear(): number | undefined {
+    return this.props.startYear;
+  }
+
+  public get endYear(): number | undefined {
+    return this.props.endYear;
   }
 
   public get contractValue(): number | undefined {
@@ -161,11 +168,15 @@ export class PlayerTeam {
     return this.props.contractLength;
   }
 
-  public get player(): { id: number; firstName: string; lastName: string; position?: string } | undefined {
+  public get player():
+    | { id: number; firstName: string; lastName: string; position?: string }
+    | undefined {
     return this.props.Player;
   }
 
-  public get team(): { id: number; name: string; city?: string; conference?: string; division?: string } | undefined {
+  public get team():
+    | { id: number; name: string; city?: string; conference?: string; division?: string }
+    | undefined {
     return this.props.Team;
   }
 
@@ -185,25 +196,25 @@ export class PlayerTeam {
     this.props.currentTeam = false;
   }
 
-  public extendContract(newEndDate: Date, newValue?: number): void {
-    if (this.props.startDate && newEndDate <= this.props.startDate) {
+  public extendContract(newEndYear: number, newValue?: number): void {
+    if (this.props.startYear && newEndYear <= this.props.startYear) {
       throw new ValidationError('Contract end date must be after start date');
     }
-    this.props.endDate = newEndDate;
+    this.props.endYear = newEndYear;
     if (newValue !== undefined) {
       this.props.contractValue = newValue;
     }
   }
 
   public isContractActive(): boolean {
-    if (!this.props.startDate || !this.props.endDate) {
+    if (!this.props.startYear || !this.props.endYear) {
       return this.props.currentTeam || false;
     }
-    
-    const now = new Date();
-    return now >= this.props.startDate && 
-           now <= this.props.endDate && 
-           (this.props.currentTeam || false);
+
+    const now = 0;
+    return (
+      now >= this.props.startYear && now <= this.props.endYear && (this.props.currentTeam || false)
+    );
   }
 
   // 🔧 toPersistence: Convert entity back to Prisma format
@@ -214,8 +225,9 @@ export class PlayerTeam {
     teamId?: number;
     jerseyNumber?: number;
     currentTeam?: boolean;
-    startDate?: Date;
-    endDate?: Date;
+    isActive?: boolean;
+    startYear: number | undefined;
+    endYear: number | undefined;
     contractValue?: number;
     contractLength?: number;
   } {
@@ -225,8 +237,9 @@ export class PlayerTeam {
       teamId: this.props.teamId,
       jerseyNumber: this.props.jerseyNumber,
       currentTeam: this.props.currentTeam,
-      startDate: this.props.startDate,
-      endDate: this.props.endDate,
+      isActive: this.props.isActive,
+      startYear: this.props.startYear,
+      endYear: this.props.endYear,
       contractValue: this.props.contractValue,
       contractLength: this.props.contractLength,
       // Relationship data is excluded - handled by Prisma relations

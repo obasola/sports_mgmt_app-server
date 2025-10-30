@@ -14,6 +14,9 @@
     "dev:ts": "ts-node -r tsconfig-paths/register src/index.ts",
     "dev:debug": "nodemon --inspect --exec 'ts-node -r tsconfig-paths/register' src/index.ts",
     "import:nfl": "tsx src/scripts/import-nfl-season.ts",
+    "import:draft": "tsx src/cli/import-draft.ts",
+    "import:draft:year": "tsx src/cli/import-draft.ts",
+    "scrape:draft": "ts-node src/cli/scrapeDraftPicks.ts",
     "test:routes": "ts-node -r tsconfig-paths/register src/test/testRoutes.ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
@@ -31,17 +34,22 @@
   "dependencies": {
     "@prisma/client": "^6.15.0",
     "axios": "^1.11.0",
+    "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.6.1",
+    "dotenv-flow": "^4.1.0",
+    "env-var": "^7.5.0",
     "express": "^4.21.2",
     "helmet": "^7.2.0",
     "morgan": "^1.10.0",
     "node-cron": "^4.2.1",
     "p-limit": "^7.1.1",
-    "yargs": "^18.0.0",
+    "yargs": "^17.7.2",
     "zod": "^3.25.64"
   },
   "devDependencies": {
+    "@types/cheerio": "^0.22.35",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.23",
     "@types/jest": "^29.5.8",
@@ -69,10 +77,14 @@
   "overrides": {
     "debug": "4.3.7"
   },
-    "_moduleAliases": {
-    "@": "./dist/src"  
+  "_moduleAliases": {
+    "@": "./dist/src"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "// EXAMPLE USAGE": {
+    "// Import current year draft": "npm run import:draft",
+    "// Import specific year draft": "npm run import:draft:year 2024"
+  }
 }

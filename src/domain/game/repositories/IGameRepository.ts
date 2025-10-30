@@ -87,4 +87,11 @@ export interface IGameRepository {
     homeTeam: any; 
     awayTeam: any;
   } | null>;
+
+  /**
+   * Fetch a single game by its ESPN competition ID.
+   * Used for ESPN sync comparisons (detecting score changes, etc.).
+   */
+  findByEspnCompetitionId(espnCompetitionId: string): Promise<Game | null>;
+
 }
