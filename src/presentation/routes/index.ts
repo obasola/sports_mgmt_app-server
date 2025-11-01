@@ -42,6 +42,7 @@ import { scoreboardScheduleRoutes } from './job.scoreboard.schedule';
 import standingsRoutes from './standingsRoutes';
 import { teamStandingsRoutes }  from './teamStandingsRoutes';
 import { buildScoreboardRouter } from '../controllers/ScoreboardController';
+import draftPickRoutes from './draftPickRoute'; // ADD THIS
 
 const jobController = new JobController(
   queueJobService,
@@ -57,6 +58,7 @@ const router = Router();
 // Register all domain routes
 router.use('/standings', standingsRoutes);
 router.use('/combine-scores', combineScoreRoutes);
+router.use('/draftpicks', draftPickRoutes); // ADD THIS LINE
 
 router.use('/games', gameRoutes);
 router.use('/persons', personRoutes);
@@ -206,6 +208,7 @@ router.get('/', (req, res) => {
       'DELETE /schedules/:id - Delete schedule',
     ],
     documentation: 'Coming soon...',
+    
   });
 });
 

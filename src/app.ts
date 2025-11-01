@@ -36,4 +36,19 @@ app.use('*', (req, res) => {
   });
 });
 
+// Add this debug logging
+app._router.stack.forEach((middleware: any) => {
+  if (middleware.route) {
+    console.log('📍 Route:', middleware.route.path);
+  } else if (middleware.name === 'router') {
+    middleware.handle.stack.forEach((handler: any) => {
+      if (handler.route) {
+        console.log('📍 Router Route:', handler.route.path);
+      }
+    });
+  }
+});
+
+console.log('🔍 All routes registered. Testing endpoint...');
+console.log('🧪 Test: curl http://localhost:5000/api/draftpicks/relations/team/1/year/2025');
 export { app };
