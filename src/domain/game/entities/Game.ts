@@ -11,7 +11,7 @@ export interface GameProps {
   id?: number;
   seasonYear: string;
   gameWeek?: number;
-  preseason?: number;
+  seasonType?: number;
   gameDate?: Date;
   homeTeamId: number;
   awayTeamId: number;
@@ -45,12 +45,12 @@ export class Game {
       throw new Error('Home team and away team cannot be the same');
     }
 
-    if (props.gameWeek !== undefined && (props.gameWeek < 0 || props.gameWeek > 25)) {
-      throw new Error('Game week must be between 0 and 25');
+    if (props.gameWeek !== undefined && (props.gameWeek < 0 || props.gameWeek > 22)) {
+      throw new Error('Game week must be between 1 and 22');
     }
 
-    if (props.preseason !== undefined && (props.preseason < 0 || props.preseason > 20)) {
-      throw new Error('Preseason week must be between 0 and 20');
+    if (props.seasonType !== undefined && (props.seasonType < 1 || props.seasonType > 3)) {
+      throw new Error('Preseason week must be between 1 and 3');
     }
 
     return new Game(props);
@@ -69,8 +69,8 @@ export class Game {
     return this.props.gameWeek;
   }
 
-  get preseason(): number | undefined {
-    return this.props.preseason;
+  get seasonType(): number | undefined {
+    return this.props.seasonType;
   }
 
   get gameDate(): Date | undefined {
@@ -189,7 +189,7 @@ export class Game {
   }
 
   isPreseason(): boolean {
-    return this.props.preseason !== undefined && this.props.preseason > 0;
+    return this.props.seasonType !== undefined && this.props.seasonType === 1;
   }
 
   isRegularSeason(): boolean {
@@ -202,7 +202,7 @@ export class Game {
       id: this.props.id,
       seasonYear: this.props.seasonYear,
       gameWeek: this.props.gameWeek,
-      preseason: this.props.preseason,
+      seasonType: this.props.seasonType,
       gameDate: this.props.gameDate,
       homeTeamId: this.props.homeTeamId,
       awayTeamId: this.props.awayTeamId,
@@ -225,7 +225,7 @@ export class Game {
       id: this.props.id,
       seasonYear: this.props.seasonYear,
       gameWeek: this.props.gameWeek,
-      preseason: this.props.preseason,
+      seasonType: this.props.seasonType,
       gameDate: this.props.gameDate,
       homeTeamId: this.props.homeTeamId,
       awayTeamId: this.props.awayTeamId,
@@ -250,7 +250,7 @@ export class Game {
       id: data.id,
       seasonYear: data.seasonYear,
       gameWeek: data.gameWeek,
-      preseason: data.preseason,
+      seasonType: data.seasonType,
       gameDate: data.gameDate ? new Date(data.gameDate) : undefined,
       homeTeamId: data.homeTeamId,
       awayTeamId: data.awayTeamId,

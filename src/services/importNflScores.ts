@@ -51,6 +51,9 @@ export class ImportNflScoresService {
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
         for (const comp of event.competitions ?? []) {
+          console.log("===================================")
+          console.log("(src/services/importNflScores.ts) Year: "+seasonYear)
+          console.log("===================================")
           const result = await this.importCompetition(event, comp, seasonType, seasonYear, week);
           if (result.ok) {
             upserts++;
@@ -153,7 +156,7 @@ export class ImportNflScoresService {
         espnCompetitionId: comp.id,
         espnEventId: event.id,
         seasonYear,
-        preseason: seasonType,
+        seasonType: seasonType,
         gameWeek: week,
         homeTeamId: homeId,
         awayTeamId: awayId,
@@ -161,7 +164,7 @@ export class ImportNflScoresService {
       {
         seasonYear,
         gameWeek: week,
-        preseason: seasonType,
+        seasonType: seasonType,
         gameDate: comp.date ? new Date(comp.date) : null,
         homeTeamId: homeId,
         awayTeamId: awayId,

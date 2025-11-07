@@ -5,7 +5,7 @@ import type { PaginationParams, PaginatedResponse } from '@/shared/types/common'
 export interface GameFilters {
   seasonYear?: string;
   gameWeek?: number;
-  preseason?: number;
+  seasonType?: number;
   homeTeamId?: number;
   awayTeamId?: number;
   teamId?: number; // Either home or away
@@ -61,7 +61,7 @@ export interface IGameRepository {
       espnCompetitionId: string;
       espnEventId: string;
       seasonYear: string;
-      preseason: number;
+      seasonType: number;
       gameWeek: number;
       homeTeamId: number;
       awayTeamId: number;
@@ -69,7 +69,7 @@ export interface IGameRepository {
     data: {
       readonly seasonYear: string;
       readonly gameWeek: number;
-      readonly preseason: number;
+      readonly seasonType: number;
       readonly gameDate: Date | null;
       readonly homeTeamId: number;
       readonly awayTeamId: number;

@@ -46,7 +46,7 @@ export class GameService {
     const game = Game.create({
       seasonYear: dto.seasonYear,
       gameWeek: dto.gameWeek,
-      preseason: dto.preseason,
+      seasonType: dto.seasonType,
       gameDate: dto.gameDate ? new Date(dto.gameDate) : undefined,
       homeTeamId: dto.homeTeamId,
       awayTeamId: dto.awayTeamId,
@@ -86,7 +86,7 @@ export class GameService {
   }
 
   /**
-   * Get preseason games
+   * Get seasonType games
    * Repository now returns Games with team relations loaded
    */
   async getPreseasonGames(teamId?: number, preseasonWeek?: number): Promise<Game[]> {
@@ -157,7 +157,7 @@ export class GameService {
       id: existingGame.id,
       seasonYear: existingGame.seasonYear,
       gameWeek: dto.gameWeek ?? existingGame.gameWeek,
-      preseason: dto.preseason ?? existingGame.preseason,
+      seasonType: dto.seasonType ?? existingGame.seasonType,
       gameDate: dto.gameDate ? new Date(dto.gameDate) : existingGame.gameDate,
       homeTeamId: existingGame.homeTeamId,
       awayTeamId: existingGame.awayTeamId,
@@ -214,7 +214,7 @@ export class GameService {
   }
 
   /**
-   * Get all games for a season (preseason + regular + playoffs)
+   * Get all games for a season (seasonType + regular + playoffs)
    * Repository now returns Games with team relations loaded
    */
   async getAllSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {

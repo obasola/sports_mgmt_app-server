@@ -1,6 +1,7 @@
 // src/infrastructure/queue/InProcessJobRunner.ts
 import { Job } from '../../domain/jobs/entities/Job';
 import { JobType } from '../../domain/jobs/value-objects/JobType';
+import { ScoreboardSyncService, ScoreboardSyncResult} from '@/application/scoreboard/services/ScoreboardSyncService'
 
 export type RunResult = { code?: string; result?: Record<string, unknown> };
 
@@ -17,11 +18,40 @@ export class InProcessJobRunner {
   register(type: JobType, handler: JobHandler) {
     this.handlers.set(type, handler);
   }
-
+  /*
   async run(job: Job, ctx: RunnerContext): Promise<RunResult> {
     const handler = this.handlers.get(job.type as JobType);
     if (!handler) throw new Error(`No handler for type ${job.type}`);
+    
     return handler(job, ctx);
+  }
+    */
+async run(job: Job, ctx: RunnerContext): Promise<RunResult> {
+    switch (job.type) {
+      case 'SCOREBOARD_SYNC': {
+          const [, , yearArg, typeArg, weekArg] = job.payload as any;
+          const svc = new ScoreboardSyncService();
+          const year = Number(yearArg);
+          const seasonType = Number(typeArg) as 1 | 2 | 3;
+          const week = Number(weekArg);
+        try {
+          //const result: ScoreboardSyncResult = await svc.runWeek(year, seasonType as 1 | 2 | 3, week)
+            const result = await svc.runWeek({
+              seasonYear: String(yearArg),
+              seasonType: Number(typeArg) as 1 | 2 | 3,
+              week: Number(weekArg),
+            });
+          await svc.dispose()
+          return { code: 'OK', result: result as unknown as Record<string, unknown> }
+        } catch (err) {
+          await svc.dispose()
+          throw err
+        }
+      }
+
+      default:
+        throw new Error(`Unsupported job type: ${job.type}`)
+    }
   }
 }
 // --- Example handler registrations (plug in your real imports/services) ------

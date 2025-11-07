@@ -7,11 +7,11 @@ export class PrismaStandingsRepository implements IStandingsRepository {
   constructor(private prisma: PrismaClient) {}
 
   async getCompletedGames(year: number, seasonType: number): Promise<GameProps[]> {
-    const preseason = 0 // exclude preseason
+    
     return this.prisma.game.findMany({
       where: {
         seasonYear: String(year),
-        preseason,
+        seasonType,
         gameStatus: Game_gameStatus.completed,
         //seasonType
       },

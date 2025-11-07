@@ -11,7 +11,7 @@ export interface GameWithTeams {
   id: number
   seasonYear: string
   gameWeek?: number
-  preseason?: number
+  seasonType?: number
   gameDate?: Date
   homeTeamId: number
   awayTeamId: number

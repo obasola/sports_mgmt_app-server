@@ -20,10 +20,10 @@ select g.seasonYear, g.gameWeek,
  (select t.name from Team t where t.id = g.homeTeamId) as homeTeam,
  g.homeScore,
  g.gameStatus
- from Game g where g.preseason = 0 and (g.homeTeamId =78 or g.awayTeamId = 78)
+ from Game g where g.seasonType = 2 and (g.homeTeamId =78 or g.awayTeamId = 78)
  order by g.gameDate
 
 
 UPDATE Game
 SET gameWeek = 0
-WHERE preseason = 1 AND gameWeek <> 0;
+WHERE seasonType = 1 AND gameWeek <> 0;

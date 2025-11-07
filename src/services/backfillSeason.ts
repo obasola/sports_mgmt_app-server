@@ -86,7 +86,7 @@ export class BackfillSeasonService {
             espnCompetitionId: comp.id,
             espnEventId: event.id,
             seasonYear,
-            preseason: (sbSeasonType === 1 ? 1 : 0) as unknown as SeasonType, // cast 0/1 to SeasonType to satisfy types
+            seasonType: (sbSeasonType === 1 ? 1 : 0) as unknown as SeasonType, // cast 0/1 to SeasonType to satisfy types
             gameWeek: weekForDb,
             homeTeamId,
             awayTeamId,
@@ -117,8 +117,7 @@ export class BackfillSeasonService {
     payload: {
       readonly seasonYear: string
       readonly gameWeek: number
-      readonly preseason: SeasonType
-      readonly seasonType: SeasonType | null
+      readonly seasonType: SeasonType 
       readonly gameDate: Date | null
       readonly homeTeamId: number
       readonly awayTeamId: number
@@ -157,8 +156,7 @@ export class BackfillSeasonService {
     const payload = {
       seasonYear,
       gameWeek: week,
-      preseason: (seasonType === 1 ? 1 : 0) as unknown as SeasonType, // cast to match IGameRepository type
-
+ 
       seasonType: seasonType ?? null,   // if your schema has this
       gameDate: comp?.date ? new Date(comp.date) : null,
 

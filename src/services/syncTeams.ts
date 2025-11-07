@@ -59,7 +59,7 @@ export class SyncTeamsService {
     // Weeks: usually week 1 contains all teams (especially regular season).
     const probes: Array<{ st: 1 | 2 | 3; wk: number }> = [
       { st: 2, wk: 1 }, // regular season week 1 (usually enough)
-      { st: 1, wk: 1 }, // preseason week 1 (fallback)
+      { st: 1, wk: 1 }, // seasonType week 1 (fallback)
       { st: 3, wk: 1 }, // postseason week 1 (fallback)
     ]
 

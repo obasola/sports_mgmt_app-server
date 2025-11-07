@@ -59,7 +59,7 @@ function different(existing: Game, dto: Partial<Game>): boolean {
   // Compare only the fields you actually set in dto
   return (
     (existing.gameWeek ?? null) !== (dto.gameWeek ?? null) ||
-    (existing.preseason ?? null) !== (dto.preseason ?? null) ||
+    (existing.seasonType ?? null) !== (dto.seasonType ?? null) ||
     (existing.gameLocation ?? null) !== (dto.gameLocation ?? null) ||
     (existing.gameCity ?? null) !== (dto.gameCity ?? null) ||
     (existing.gameStateProvince ?? null) !== (dto.gameStateProvince ?? null) ||
@@ -156,7 +156,7 @@ export async function importNflSeason(params: ImportParams): Promise<ImportResul
           const dto = {
             seasonYear: String(year),
             gameWeek: ev?.week?.number ?? comp?.week?.number ?? null,
-            preseason: st === 1 ? 1 : 0,
+            seasonType: st === 1 ? 1 : 0,
             gameDate,
             homeTeamId, awayTeamId,
             gameLocation: venue?.fullName ?? null,

@@ -54,7 +54,7 @@ export const GameWeekRange = {
 } as const;
 
 /**
- * Type guard for preseason week
+ * Type guard for seasonType week
  */
 export function isPreseasonWeek(week: number): boolean {
   return week >= GameWeekRange.PRESEASON_MIN && week <= GameWeekRange.PRESEASON_MAX;

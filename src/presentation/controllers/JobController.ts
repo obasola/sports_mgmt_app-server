@@ -33,22 +33,29 @@ export class JobController {
     private readonly scheduler: ScheduleJobService
   ) {}
 
-  
-  
   // POST /jobs
-  queue = async (req: Request, res: Response) => {
-    const job = await this.queueJob.execute(req.body);
-    if (req.body?.autoStart) {
-      await runJobAdapter(this.runJob, job.id!);
-    }
-    res.status(201).json(this.toDto(job));
-  };
+// JobController.queue (fixed)
+queue = async (req: Request, res: Response) => {
+  const job = await this.queueJob.execute(req.body);
+
+  if (req.body?.autoStart) {
+    // fire-and-forget (don’t await)
+    runJobAdapter(this.runJob, job.id!).catch(err =>
+      console.error(`Job ${job.id} failed to start:`, err)
+    );
+  }
+
+  // respond immediately so UI sees the new job
+  res.status(201).json(this.toDto(job));
+};
+
 
   // POST /jobs/:id/run
-  run = async (req: Request, res: Response) => {
-    await runJobAdapter(this.runJob, Number(req.params.id));
-    res.status(202).json({ ok: true });
-  };
+run = async (req: Request, res: Response) => {
+  // no await here
+  runJobAdapter(this.runJob, Number(req.params.id)).catch(console.error);
+  res.status(202).json({ ok: true });
+};
 
   // POST /jobs/:id/cancel
   cancel = async (req: Request, res: Response) => {

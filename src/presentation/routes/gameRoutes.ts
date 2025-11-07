@@ -51,8 +51,8 @@ const GameQueryInner = z
     // UI sometimes sends `year`/`week`; keep them to pass through (the controller normalizes)
     year: z.string().regex(/^\d{4}$/).optional(),
     week: z.coerce.number().int().min(0).max(25).optional(),
-    // allow 0/1 for preseason flag
-    preseason: z.coerce.number().int().min(0).max(1).optional(),
+    // allow 0/1 for seasonType flag
+    seasonType: z.coerce.number().int().min(0).max(1).optional(),
     gameStatus: z.string().optional(),
     gameCity: z.string().optional(),
     gameCountry: z.string().optional(),
@@ -105,7 +105,7 @@ router.get(
 
 router.get('/:id', validateParams(IdParamsSchema), gameController.getGameById);
 
-router.get('/preseason', gameController.getPreseasonGames);
+router.get('/seasonType', gameController.getPreseasonGames);
 router.get('/regular-season', gameController.getRegularSeasonGames);
 
 router.put('/:id', validateParams(IdParamsSchema), validateBody(UpdateGameDtoSchema), gameController.updateGame);

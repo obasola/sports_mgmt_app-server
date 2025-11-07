@@ -33,7 +33,7 @@ export class PrismaGameRepository implements IGameRepository {
       data: {
         seasonYear: data.seasonYear!,
         gameWeek: data.gameWeek ?? null,
-        preseason: data.preseason ?? null,
+        seasonType: data.seasonType ?? null,
         gameDate: data.gameDate ?? null,
         homeTeamId: data.homeTeamId!,
         awayTeamId: data.awayTeamId!,
@@ -82,7 +82,7 @@ export class PrismaGameRepository implements IGameRepository {
 
     if (filters.seasonYear) where.seasonYear = filters.seasonYear;
     if (filters.gameWeek != null) where.gameWeek = filters.gameWeek;
-    if (filters.preseason != null) where.preseason = filters.preseason;
+    if (filters.seasonType != null) where.seasonType = filters.seasonType;
     if (filters.homeTeamId != null) where.homeTeamId = filters.homeTeamId;
     if (filters.awayTeamId != null) where.awayTeamId = filters.awayTeamId;
     if (filters.teamId != null)
@@ -135,7 +135,7 @@ export class PrismaGameRepository implements IGameRepository {
       data: {
         seasonYear: data.seasonYear ?? undefined,
         gameWeek: data.gameWeek ?? undefined,
-        preseason: data.preseason ?? undefined,
+        seasonType: data.seasonType ?? undefined,
         gameDate: data.gameDate ?? undefined,
         homeTeamId: data.homeTeamId ?? undefined,
         awayTeamId: data.awayTeamId ?? undefined,
@@ -213,7 +213,7 @@ export class PrismaGameRepository implements IGameRepository {
   }
 
   async findPreseasonGames(teamId?: number, seasonYear?: number): Promise<Game[]> {
-    const where: Prisma.GameWhereInput = { preseason: 1 };
+    const where: Prisma.GameWhereInput = { seasonType: 1 };
     if (teamId != null) (where as any).OR = [{ homeTeamId: teamId }, { awayTeamId: teamId }];
     if (seasonYear != null) (where as any).seasonYear = String(seasonYear);
 
@@ -226,7 +226,7 @@ export class PrismaGameRepository implements IGameRepository {
   }
 
   async findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
-    const where: Prisma.GameWhereInput = { preseason: 0 };
+    const where: Prisma.GameWhereInput = { seasonType: 2 };
     if (teamId != null) (where as any).OR = [{ homeTeamId: teamId }, { awayTeamId: teamId }];
     if (seasonYear != null) (where as any).seasonYear = seasonYear;
 
@@ -243,7 +243,7 @@ export class PrismaGameRepository implements IGameRepository {
     seasonYear?: string,
     week?: number
   ): Promise<Game[]> {
-    const where: Prisma.GameWhereInput = { preseason: 0 };
+    const where: Prisma.GameWhereInput = { seasonType: 2 };
     if (teamId != null) (where as any).OR = [{ homeTeamId: teamId }, { awayTeamId: teamId }];
     if (seasonYear != null) (where as any).seasonYear = seasonYear;
     if (week != null) (where as any).gameWeek = week;
@@ -320,7 +320,7 @@ export class PrismaGameRepository implements IGameRepository {
       espnCompetitionId: string;
       espnEventId: string;
       seasonYear: string;
-      preseason: number;
+      seasonType: number;
       gameWeek: number;
       homeTeamId: number;
       awayTeamId: number;
@@ -328,7 +328,7 @@ export class PrismaGameRepository implements IGameRepository {
     data: {
       readonly seasonYear: string;
       readonly gameWeek: number;
-      readonly preseason: number;
+      readonly seasonType: number;
       readonly gameDate: Date | null;
       readonly homeTeamId: number;
       readonly awayTeamId: number;
@@ -343,9 +343,9 @@ export class PrismaGameRepository implements IGameRepository {
     const evtId = key.espnEventId || data.espnEventId;
 
     const update: Prisma.GameUncheckedUpdateInput = {
-      seasonYear: data.seasonYear,
+      seasonYear: String(data.seasonYear),
       gameWeek: data.gameWeek,
-      preseason: data.preseason,
+      seasonType: data.seasonType,
       gameDate: (data.gameDate ?? null) as any,
       homeTeamId: data.homeTeamId,
       awayTeamId: data.awayTeamId,
@@ -357,9 +357,9 @@ export class PrismaGameRepository implements IGameRepository {
     };
 
     const create: Prisma.GameUncheckedCreateInput = {
-      seasonYear: data.seasonYear,
+      seasonYear: String(data.seasonYear),
       gameWeek: data.gameWeek,
-      preseason: data.preseason,
+      seasonType: data.seasonType,
       gameDate: (data.gameDate ?? null) as any,
       homeTeamId: data.homeTeamId,
       awayTeamId: data.awayTeamId,

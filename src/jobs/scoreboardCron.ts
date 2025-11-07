@@ -68,6 +68,7 @@ export async function runOnce(schedule: ScoreboardSchedule) {
 }
 
 export async function initScoreboardCron() {
+  console.log("initializing scoreboardScheduler")
   const s = await getSchedule()
   await rescheduleCron(s)
 }

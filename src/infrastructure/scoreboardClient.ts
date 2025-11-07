@@ -55,9 +55,9 @@ export class EspnScoreboardClient {
   const year = seasonYear ? Number(seasonYear) : now.getFullYear();
   const url =
     `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard` +
-    `?year=${year}&seasontype=${seasonType}&week=${week}`;
+    `?seasonYear=${year}&seasontype=${seasonType}&week=${week}`;
 
-  console.log("Fetching:", url);
+  console.log("(src/infrastructure/scoreboardClient.ts) Fetching:", url);
 
   try {
     const { data } = await this.http.get<ScoreboardResponse>(url);

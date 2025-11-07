@@ -9,7 +9,7 @@ export function mapGameToResponse(game: Game): GameResponseDto {
     id: plain.id!,
     seasonYear: plain.seasonYear!,
     gameWeek: plain.gameWeek,
-    preseason: plain.preseason,
+    seasonType: plain.seasonType,
     gameDate: plain.gameDate ? plain.gameDate.toISOString() : undefined,
 
     homeTeamId: plain.homeTeamId!,

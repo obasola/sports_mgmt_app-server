@@ -10,7 +10,7 @@ export interface TeamBasic {
 export interface GameWithTeams {
   id: number;
   seasonYear: string;
-  preseason: boolean;
+  seasonType: number;
   gameWeek?: number;
   gameStatus: Game_gameStatus;
   gameDate?: Date;

@@ -14,7 +14,7 @@ type ControllerGameFilters = {
   awayTeamId?: number;
   gameWeek?: number;
   seasonYear?: string;
-  preseason?: number;
+  seasonType?: number;
   gameStatus?: GameStatus;
   gameCity?: string;
   gameCountry?: string;
@@ -65,7 +65,7 @@ function normalizeFilters(qAny: Record<string, any>): ControllerGameFilters {
   if (gameWeek != null) out.gameWeek = Number(gameWeek);
   if (seasonYear != null) out.seasonYear = String(seasonYear);
 
-  if (q.preseason != null) out.preseason = Number(q.preseason);
+  if (q.seasonType != null) out.seasonType = Number(q.seasonType);
 
   out.gameStatus = toStatus(q.gameStatus);
 

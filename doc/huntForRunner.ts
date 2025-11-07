@@ -411,7 +411,7 @@ export class ImportNflScoresService {
         espnCompetitionId: comp.id,
         espnEventId: event.id,
         seasonYear,
-        preseason: seasonType,
+        seasonType: seasonType,
         gameWeek: week,
         homeTeamId: homeId,
         awayTeamId: awayId,
@@ -419,7 +419,7 @@ export class ImportNflScoresService {
       {
         seasonYear,
         gameWeek: week,
-        preseason: seasonType,
+        seasonType: seasonType,
         gameDate: comp.date ? new Date(comp.date) : null,
         homeTeamId: homeId,
         awayTeamId: awayId,

@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const CreateGameDtoSchema = z.object({
   seasonYear: z.string().regex(/^\d{4}$/, 'Season year must be a 4-digit year'),
   gameWeek: z.coerce.number().min(0, 'Game week must be at least 1 WHEN NOT PRESEASON').max(20, 'Game week cannot exceed 20').optional(),
-  preseason: z.coerce.number().min(0, 'Preseason must be 0 or 1').max(20, 'Preseason cannot exceed 20').optional(),
+  seasonType: z.coerce.number().int().min(1).max(3),
   gameDate: z.string().transform((str) => new Date(str)).optional(),
   homeTeamId: z.coerce.number().positive('Home team ID is required'),
   awayTeamId: z.coerce.number().positive('Away team ID is required'),
@@ -30,7 +30,7 @@ export const UpdateGameDtoSchema = CreateGameDtoSchema._def.schema.partial().omi
 export const GameFiltersDtoSchema = z.object({
   seasonYear: z.string().regex(/^\d{4}$/).optional(),
   gameWeek: z.number().min(1).max(20).optional(),
-  preseason: z.number().min(1).max(20).optional(),
+  seasonType: z.coerce.number().int().min(1).max(3).optional(),
   homeTeamId: z.number().positive().optional(),
   awayTeamId: z.number().positive().optional(),
   teamId: z.number().positive().optional(),
@@ -74,7 +74,7 @@ export interface GameResponseDto {
   id: number;
   seasonYear: string;
   gameWeek?: number;
-  preseason?: number;
+  seasonType?: number;
   gameDate?: string;
   homeTeamId: number;
   awayTeamId: number;

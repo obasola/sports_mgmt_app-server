@@ -1,21 +1,21 @@
--- Totals by preseason flag
-SELECT preseason, COUNT(*) AS cnt
+-- Totals by seasonType flag
+SELECT seasonType, COUNT(*) AS cnt
 FROM Game
 WHERE seasonYear = '2025'
-GROUP BY preseason;
--- Expect: preseason=1 ~49; preseason=0 =272
+GROUP BY seasonType;
+-- Expect: seasonType=1 ~49; seasonType=0 =272
 
--- Totals by week (preseason)
+-- Totals by week (seasonType)
 SELECT gameWeek, COUNT(*) AS cnt
 FROM Game
-WHERE seasonYear = '2025' AND preseason = 1
+WHERE seasonYear = '2025' AND seasonType = 1
 GROUP BY gameWeek
 ORDER BY gameWeek;
 
 -- Totals by week (regular season)
 SELECT gameWeek, COUNT(*) AS cnt
 FROM Game
-WHERE seasonYear = '2025' AND preseason = 0
+WHERE seasonYear = '2025' AND seasonType = 0
 GROUP BY gameWeek
 ORDER BY gameWeek;
 

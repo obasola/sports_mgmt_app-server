@@ -19,6 +19,7 @@
 // src/domain/jobs/value-objects/JobType.ts
 export enum JobType {
   SYNC_TEAMS = 'syncTeams',
+  SCOREBOARD_SYNC = 'SCOREBOARD_SYNC',
   BACKFILL_SEASON = 'backfillSeason',
 
   PF_DRAFT_SCRAPER = 'PF_DRAFT_SCRAPER',

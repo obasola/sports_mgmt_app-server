@@ -28,7 +28,7 @@ CREATE TABLE `Game` (
   `id` int NOT NULL AUTO_INCREMENT,
   `seasonYear` varchar(4) NOT NULL,
   `gameWeek` tinyint DEFAULT NULL,
-  `preseason` tinyint DEFAULT NULL,
+  `seasonType` tinyint DEFAULT NULL,
   `gameDate` datetime DEFAULT NULL,
   `homeTeamId` int NOT NULL,
   `awayTeamId` int NOT NULL,

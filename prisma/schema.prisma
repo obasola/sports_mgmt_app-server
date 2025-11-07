@@ -58,7 +58,6 @@ model Game {
   id                Int             @id @default(autoincrement())
   seasonYear        String          @db.VarChar(4)
   gameWeek          Int?            @db.TinyInt
-  preseason         Int?            @db.TinyInt
   gameDate          DateTime?       @db.DateTime(0)
   homeTeamId        Int
   awayTeamId        Int
@@ -73,6 +72,7 @@ model Game {
   updatedAt         DateTime?       @default(now()) @db.Timestamp(0)
   espnEventId       String?         @unique @db.VarChar(255)
   espnCompetitionId String?         @unique @db.VarChar(255)
+  seasonType        Int?            @default(2) @db.TinyInt
   homeTeam          Team            @relation("Game_homeTeamIdToTeam", fields: [homeTeamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Game_ibfk_1")
   awayTeam          Team            @relation("Game_awayTeamIdToTeam", fields: [awayTeamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Game_ibfk_2")
 
