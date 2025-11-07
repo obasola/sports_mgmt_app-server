@@ -326,147 +326,84 @@ export class PrismaGameRepository implements IGameRepository {
       awayTeamId: number;
     },
     data: {
-      readonly seasonYear: string;
-      readonly gameWeek: number;
-      readonly seasonType: number;
-      readonly gameDate: Date | null;
-      readonly homeTeamId: number;
-      readonly awayTeamId: number;
-      readonly homeScore: number | null;
-      readonly awayScore: number | null;
-      readonly gameStatus: string | null;
-      readonly espnEventId: string;
-      readonly espnCompetitionId: string;
+      seasonYear: string;
+      gameWeek: number;
+      seasonType: number;
+      gameDate: Date | null;
+      homeTeamId: number;
+      awayTeamId: number;
+      homeScore: number | null;
+      awayScore: number | null;
+      gameStatus: any;
+      espnEventId: string;
+      espnCompetitionId: string;
     }
   ): Promise<Game> {
-    const compId = key.espnCompetitionId || data.espnCompetitionId;
-    const evtId = key.espnEventId || data.espnEventId;
+    const compId = key.espnCompetitionId;
 
-    const update: Prisma.GameUncheckedUpdateInput = {
-      seasonYear: String(data.seasonYear),
+    if (!data.homeTeamId || !data.awayTeamId) {
+      console.warn(
+        `⚠️ [GameRepo] Skipping upsert for competition=${compId} — missing team mapping.`,
+        { homeTeamId: data.homeTeamId, awayTeamId: data.awayTeamId }
+      );
+      //throw new Error(`Missing team mapping for competition=${compId}`);
+      // ✅ just skip and return null
+      return null as any;
+    }
+
+    const baseFields = {
+      seasonYear: data.seasonYear,
       gameWeek: data.gameWeek,
       seasonType: data.seasonType,
-      gameDate: (data.gameDate ?? null) as any,
-      homeTeamId: data.homeTeamId,
-      awayTeamId: data.awayTeamId,
-      homeScore: data.homeScore ?? undefined,
-      awayScore: data.awayScore ?? undefined,
-      gameStatus: (data.gameStatus as any) ?? undefined,
-      espnEventId: evtId,
-      espnCompetitionId: compId,
+      gameDate: data.gameDate,
+      homeScore: data.homeScore,
+      awayScore: data.awayScore,
+      gameStatus: data.gameStatus,
+      espnEventId: data.espnEventId,
+      espnCompetitionId: data.espnCompetitionId,
     };
 
-    const create: Prisma.GameUncheckedCreateInput = {
-      seasonYear: String(data.seasonYear),
-      gameWeek: data.gameWeek,
-      seasonType: data.seasonType,
-      gameDate: (data.gameDate ?? null) as any,
-      homeTeamId: data.homeTeamId,
-      awayTeamId: data.awayTeamId,
-      homeScore: (data.homeScore ?? null) as any,
-      awayScore: (data.awayScore ?? null) as any,
-      gameStatus: (data.gameStatus as any) ?? undefined,
-      espnEventId: evtId,
-      espnCompetitionId: compId,
-    };
-
-    const mergeIntoComposite = async () => {
-      if (!data.gameDate) return null;
-      const existing = await this.prisma.game.findFirst({
-        where: {
-          seasonYear: data.seasonYear,
-          gameDate: data.gameDate,
-          homeTeamId: data.homeTeamId,
-          awayTeamId: data.awayTeamId,
-        },
-      });
-      if (!existing) return null;
-      const row = await this.prisma.game.update({
-        where: { id: existing.id },
-        data: update,
-        include: this.teamInclude,
-      });
-      return row;
-    };
-
-    // 1) Prefer espnCompetitionId (unique)
-    if (compId) {
-      try {
-        const row = await this.prisma.game.upsert({
-          where: { espnCompetitionId: compId },
-          update,
-          create,
-          include: this.teamInclude,
-        });
-        return this.hydrateGameWithTeams(row);
-      } catch (e: any) {
-        if (
-          e instanceof Prisma.PrismaClientKnownRequestError &&
-          e.code === 'P2002' &&
-          ((Array.isArray((e.meta as any)?.target) &&
-            (e.meta as any).target.includes('unique_game')) ||
-            String(e.message).includes('unique_game'))
-        ) {
-          const merged = await mergeIntoComposite();
-          if (merged) return this.hydrateGameWithTeams(merged);
-        }
-        throw e;
-      }
-    }
-
-    // 2) Next, try espnEventId
-    if (evtId) {
-      try {
-        const row = await this.prisma.game.upsert({
-          where: { espnEventId: evtId },
-          update,
-          create,
-          include: this.teamInclude,
-        });
-        return this.hydrateGameWithTeams(row);
-      } catch (e: any) {
-        if (
-          e instanceof Prisma.PrismaClientKnownRequestError &&
-          e.code === 'P2002' &&
-          ((Array.isArray((e.meta as any)?.target) &&
-            (e.meta as any).target.includes('unique_game')) ||
-            String(e.message).includes('unique_game'))
-        ) {
-          const merged = await mergeIntoComposite();
-          if (merged) return this.hydrateGameWithTeams(merged);
-        }
-        throw e;
-      }
-    }
-
-    // 3) No ESPN ids: try composite direct
-    if (data.gameDate) {
-      const existing = await this.prisma.game.findFirst({
-        where: {
-          seasonYear: data.seasonYear,
-          gameDate: data.gameDate,
-          homeTeamId: data.homeTeamId,
-          awayTeamId: data.awayTeamId,
-        },
-      });
-      const row = existing
-        ? await this.prisma.game.update({
-            where: { id: existing.id },
-            data: update,
-            include: this.teamInclude,
-          })
-        : await this.prisma.game.create({
-            data: create,
-            include: this.teamInclude,
-          });
-      return this.hydrateGameWithTeams(row);
-    }
-
-    // Last resort: blind create
-    const row = await this.prisma.game.create({
-      data: create,
-      include: this.teamInclude,
+    const record = await this.prisma.game.upsert({
+      where: { espnCompetitionId: compId },
+      update: {
+        ...baseFields,
+        homeTeam: { connect: { id: data.homeTeamId } },
+        awayTeam: { connect: { id: data.awayTeamId } },
+      },
+      create: {
+        ...baseFields,
+        homeTeam: { connect: { id: data.homeTeamId } },
+        awayTeam: { connect: { id: data.awayTeamId } },
+      },
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+      },
     });
-    return this.hydrateGameWithTeams(row);
+
+    // ✅ Convert Prisma record → Domain entity
+    return this.toDomain(record);
   }
+
+  // -----------------------------------------------
+  // Mapper
+  // -----------------------------------------------
+  private toDomain(record: any): Game {
+    return Game.create({
+      id: record.id,
+      espnEventId: record.espnEventId,
+      espnCompetitionId: record.espnCompetitionId,
+      seasonYear: record.seasonYear,
+      gameWeek: record.gameWeek,
+      seasonType: record.seasonType,
+      gameDate: record.gameDate,
+      homeTeamId: record.homeTeamId,
+      awayTeamId: record.awayTeamId,
+      homeScore: record.homeScore,
+      awayScore: record.awayScore,
+      gameStatus: record.gameStatus,
+      // add any additional props your Game entity constructor expects
+    });
+  }
+  
 }

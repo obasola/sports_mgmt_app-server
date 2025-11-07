@@ -51,9 +51,9 @@ export class ImportNflScoresService {
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
         for (const comp of event.competitions ?? []) {
-          console.log("===================================")
-          console.log("(src/services/importNflScores.ts) Year: "+seasonYear)
-          console.log("===================================")
+          console.log('===================================');
+          console.log('(src/services/importNflScores.ts) Year: ' + seasonYear);
+          console.log('===================================');
           const result = await this.importCompetition(event, comp, seasonType, seasonYear, week);
           if (result.ok) {
             upserts++;
@@ -67,7 +67,7 @@ export class ImportNflScoresService {
               // now log results
               if (scoreChanges.length) {
                 await this.job.log(jobId, {
-                 // level: 'info',
+                  // level: 'info',
                   message: `Score changes: ${scoreChanges
                     .map((g) => `${g.homeTeam} ${g.homeScore}-${g.awayScore} ${g.awayTeam}`)
                     .join('; ')}`,
@@ -150,6 +150,13 @@ export class ImportNflScoresService {
     const prev = await this.repo.findByEspnCompetitionId(comp.id);
     const scoreChanged =
       prev && (prev.homeScore !== newHomeScore || prev.awayScore !== newAwayScore);
+
+    if (!homeId || !awayId) {
+      console.warn(
+        `⚠️ Skipping ${comp.id} — missing team mapping. home=${home?.team?.abbreviation}, away=${away?.team?.abbreviation}`
+      );
+      return { ok: false };
+    }
 
     await this.repo.upsertByKey(
       {

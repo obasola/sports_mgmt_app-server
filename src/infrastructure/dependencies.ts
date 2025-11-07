@@ -70,7 +70,7 @@ const jobLogRepository = new PrismaJobLogRepository(prismaClient)
 const draftService = new DraftService(prospectRepository, teamNeedRepository)
 const importWeekService = new ImportNflScoresService(espnClient, gameRepository, jobLogger)
 const backfillSeasonService = new BackfillSeasonService(espnClient, gameRepository, jobLogger)
-const syncTeamsService = new SyncTeamsService(espnClient, teamRepository, jobLogger)
+const syncTeamsService = new SyncTeamsService(jobLogger)
 
 // ───────────────────────────────────────────────────────────────
 // 4️⃣ Instantiate Job Application Services
