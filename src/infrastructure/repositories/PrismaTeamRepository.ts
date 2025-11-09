@@ -53,6 +53,14 @@ export class PrismaTeamRepository implements ITeamRepository {
     };
   }
 
+  async findAllTeamNameAndIds(): Promise<any[]> {
+    // Get Id/Name value pairs for dropdown select list
+    const teams = await prisma.$queryRaw`
+      SELECT id, name FROM Team ORDER BY name ASC`;
+
+    return teams as any[];
+  }
+
   async update(id: number, team: Team): Promise<Team> {
     const exists = await this.exists(id);
     if (!exists) throw new NotFoundError('Team', id);
@@ -230,7 +238,9 @@ export class PrismaTeamRepository implements ITeamRepository {
 
     for (const input of inputs) {
       const before = await prisma.team.findFirst({
-        where: { OR: [{ espnTeamId: input.espnTeamId }, { abbreviation: input.abbreviation ?? '' }] },
+        where: {
+          OR: [{ espnTeamId: input.espnTeamId }, { abbreviation: input.abbreviation ?? '' }],
+        },
       });
 
       if (before) {

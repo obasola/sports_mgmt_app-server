@@ -88,7 +88,7 @@ router.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       combineScores: '/combine-scores',
-      draftPicks: '/draft-picks',
+      draftPicks: '/draftpicks',
       jobs: '/jobs',
       persons: '/persons',
       players: '/players',
@@ -115,6 +115,11 @@ router.get('/', (req, res) => {
         base: '/teamNeeds',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         description: 'Manage sports team needs',
+      },
+      draftpicks: {
+        base: '/draftpicks',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team draft picks',
       },
       games: {
         base: '/games',

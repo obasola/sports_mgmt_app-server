@@ -40,6 +40,7 @@ export interface ITeamRepository {
   save(team: Team): Promise<Team>;
   findById(id: number): Promise<Team | null>;
   findAll(filters?: TeamFilters, pagination?: PaginationParams): Promise<PaginatedResponse<Team>>;
+  findAllTeamNameAndIds(): Promise<any[]>;
   update(id: number, team: Team): Promise<Team>;
   delete(id: number): Promise<void>;
   exists(id: number): Promise<boolean>;

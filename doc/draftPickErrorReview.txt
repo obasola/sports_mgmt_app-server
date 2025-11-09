@@ -1,0 +1,830 @@
+// src/presentation/routes/draftPickRoutes.ts
+import { Router } from 'express';
+import { DraftPickController } from '../controllers/DraftPickController';
+import { DraftPickService } from '../../application/draftPick/services/DraftPickService';
+import { PrismaDraftPickRepository } from '../../infrastructure/repositories/PrismaDraftPickRepository';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+const draftPickRepository = new PrismaDraftPickRepository(prisma);
+const draftPickService = new DraftPickService(draftPickRepository);
+const draftPickController = new DraftPickController(draftPickService);
+
+const router = Router();
+
+// Logging middleware
+router.use((req, res, next) => {
+  console.log(`📡 Draft Pick API: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+router.get('/test', (req, res) => {
+  res.json({ 
+    ok: true, 
+    message: 'Draft Pick routes are working!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ===== SPECIFIC ROUTES FIRST (before dynamic :id routes) =====
+router.get('/relations/all', draftPickController.fetchAllWithRelations);
+router.get('/relations/year/:year', draftPickController.fetchByYear);
+router.get('/relations/team/:teamId/year/:year', draftPickController.fetchByTeamAndYear);
+
+// ===== CRUD endpoints with dynamic IDs LAST =====
+router.post('/', draftPickController.create);
+router.get('/', draftPickController.findAll);
+router.get('/:id', draftPickController.findById);
+router.put('/:id', draftPickController.update);
+router.delete('/:id', draftPickController.delete);
+
+console.log('✅ Draft Pick routes registered');
+
+export default router;
+
+// src/presentation/routes/index.ts
+import 'module-alias/register';
+
+import { Router } from 'express';
+import { teamRoutes } from './teamRoutes';
+import { personRoutes } from './personRoutes';
+import { playerRoutes } from './playerRoutes';
+import { playerAwardRoutes } from './playerAwardRoutes';
+import { combineScoreRoutes } from './combineScoreRoutes';
+import { prospectRoutes } from './prospectRoutes';
+
+import { scheduleRoutes } from './scheduleRoutes';
+import { teamNeedRoutes } from './TeamNeedRoutes';
+import { playerTeamRoutes } from './PlayerTeamRoutes';
+import { postSeasonResultRoutes } from './PostSeasonResultRoutes';
+import { gameRoutes } from './gameRoutes';
+
+import { buildJobRoutes } from './jobRoutes';
+import { JobController } from '../controllers/JobController'
+
+// Import your job-related services from DI container
+import { QueueJobService } from '../../application/jobs/services/QueueJobService';
+import { RunJobService } from '../../application/jobs/services/RunJobService';
+import { CancelJobService } from '../../application/jobs/services/CancelJobService';
+import { ListJobsService } from '../../application/jobs/services/ListJobService';
+import { GetJobDetailService } from '../../application/jobs/services/GetJobDetailService';
+import GetJobLogsService from '../../application/jobs/services/GetJobLogService';
+import { ScheduleJobService } from '../../application/jobs/services/ScheduleJobService';
+//
+import {
+  queueJobService,
+  runJobService,
+  cancelJobService,
+  listJobsService,
+  getJobDetailService,
+  getJobLogsService,
+  scheduleJobService
+} from '@/infrastructure/dependencies'
+
+import { scoreboardJobs } from './jobs.scoreboard'
+import { scoreboardScheduleRoutes } from './job.scoreboard.schedule';
+import standingsRoutes from './standingsRoutes';
+import { teamStandingsRoutes }  from './teamStandingsRoutes';
+import { buildScoreboardRouter } from '../controllers/ScoreboardController';
+import draftPickRoutes from './draftPickRoute'; // ADD THIS
+
+const jobController = new JobController(
+  queueJobService,
+  runJobService,
+  cancelJobService,
+  listJobsService,
+  getJobDetailService,
+  getJobLogsService,
+  scheduleJobService
+)
+const router = Router();
+
+// Register all domain routes
+router.use('/standings', standingsRoutes);
+router.use('/combine-scores', combineScoreRoutes);
+router.use('/draftpicks', draftPickRoutes); // ADD THIS LINE
+
+router.use('/games', gameRoutes);
+router.use('/persons', personRoutes);
+router.use('/players', playerRoutes);
+router.use('/player-awards', playerAwardRoutes);
+router.use('/player-teams', playerTeamRoutes);
+router.use('/prospects', prospectRoutes);
+router.use('/postseason-results', postSeasonResultRoutes);
+router.use('/schedules', scheduleRoutes);
+router.use('/standings', standingsRoutes);
+router.use('/teamStandings', teamStandingsRoutes);
+router.use('/teams', teamRoutes);
+router.use('/team-needs', teamNeedRoutes);
+router.use('/jobs', buildJobRoutes(jobController))
+router.use('/jobs/kickoff/scoreboard', scoreboardJobs)
+router.use('/jobs/scoreboard/schedule', scoreboardScheduleRoutes)
+router.use('/scoreboard', buildScoreboardRouter()) // <— add this line
+
+// Future routes (uncomment as you build them)
+// 
+
+// Health check for API
+router.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Sports Management API v1 is running',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      combineScores: '/combine-scores',
+      draftPicks: '/draftpicks',
+      jobs: '/jobs',
+      persons: '/persons',
+      players: '/players',
+      playerAwards: '/player-awards',
+      playerTeams: '/player-teams',            
+      postSeason: '/postseason-results',
+      prospects: '/prospects',
+      schedules: '/schedules',
+      teams: '/teams',
+      teamNeeds: '/teamNeeds',
+      // Add other endpoints as you build them
+    },
+  });
+});
+
+// API info route
+router.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Sports Management API v1',
+    version: '1.0.0',
+    availableEndpoints: {
+      teamNeeds: {
+        base: '/teamNeeds',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team needs',
+      },
+      draftpicks: {
+        base: '/draftpicks',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team draft picks',
+      },
+      games: {
+        base: '/games',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team games',
+      },
+      teams: {
+        base: '/teams',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports teams',
+      },
+      prospect: {
+        base: '/prospect',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team prospects',
+      },
+      person: {
+        base: '/person',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports authorized persons',
+      },
+      player: {
+        base: '/players',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team players',
+      },
+      playerAwards: {
+        base: '/player-awards',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team playerAwards',
+      },
+      playerTeams: {
+        base: '/player-teams',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team player-teams',
+      },
+      postSeason: {
+        base: '/postseason-results',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team post season result',
+      },
+      combineScores: {
+        base: '/combine-scores',
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+        description: 'Manage player combine scores and athletic metrics',
+        specialEndpoints: [
+          'GET /combine-scores/player/:playerId - Get scores by player',
+          'POST /combine-scores/players/batch - Get scores for multiple players',
+          'GET /combine-scores/top-performers - Get top performers by metric',
+          'GET /combine-scores/athletic-score-range - Filter by athletic score',
+          'GET /combine-scores/rankings/athletic - Overall athletic rankings',
+          'PATCH /combine-scores/:id/metrics/:metric - Update specific metric',
+        ],
+      },
+
+      schedule: {
+        base: '/schedules',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        description: 'Manage sports team schedules',
+      },
+    },
+    endpoints: [
+      'GET /teams - Get all teams',
+      'POST /teams - Create a team',
+      'GET /teams/:id - Get team by ID',
+      'PUT /teams/:id - Update team',
+      'DELETE /teams/:id - Delete team',
+
+      'GET /teamNeeds - Get all teamNeed',
+      'POST /teamNeeds - Create a teamNeed',
+      'GET /teamNeeds/:id - Get teamNeed by ID',
+      'PUT /teamNeeds/:id - Update teamNeed',
+      'DELETE /teamNeeds/:id - Delete teamNeed',
+
+      'GET /players - Get all players',
+      'POST /players - Create a player',
+      'GET /players/:id - Get player by ID',
+      'PUT /players/:id - Update player',
+      'DELETE /players/:id - Delete player',
+
+      'GET /player-awards - Get all playerAwards',
+      'POST /player-awards - Create a playerAward',
+      'GET /player-awards/:id - Get playerAward by ID',
+      'PUT /player-awards/:id - Update playerAward',
+      'DELETE /player-awards/:id - Delete playerAward',
+
+      'GET /schedules - Get all schedules',
+      'POST /schedules - Create a schedule',
+      'GET /schedules/:id - Get schedule by ID',
+      'PUT /schedules/:id - Update schedule',
+      'DELETE /schedules/:id - Delete schedule',
+    ],
+    documentation: 'Coming soon...',
+    
+  });
+});
+
+export { router as apiRoutes };
+
+<!-- src/components/draftPick/DraftPickList.vue -->
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Button from 'primevue/button'
+import Dropdown from 'primevue/dropdown'
+import Card from 'primevue/card'
+import { useDraftPickStore } from '@/stores/draftPickStore'
+import { useTeamStore } from '@/stores/teamStore'
+import { teamService } from '@/services/teamService'
+import AppLayout from '@/components/ui/AppLayout.vue'
+
+const router = useRouter()
+const draftPickStore = useDraftPickStore()
+const teamStore = useTeamStore()
+
+const filterYear = ref<number | undefined>(undefined)
+const filterTeam = ref<number | undefined>(undefined)
+
+const yearOptions = ref<{ label: string; value: number }[]>([])
+const teamOptions = ref<{ label: string; value: number }[]>([])
+
+const initializeYearOptions = (): void => {
+  const currentYear = new Date().getFullYear()
+  const years = [{ label: 'All Years', value: 0 }]
+  for (let i = currentYear + 5; i >= currentYear - 20; i--) {
+    years.push({ label: i.toString(), value: i })
+  }
+  yearOptions.value = years
+}
+
+const loadTeams = async (): Promise<void> => {
+  try {
+    // Use Pinia store for caching and fallback
+    await teamStore.fetchAll()
+    const apiTeams = await teamService.getTeamNames()
+    teamOptions.value = [
+      { label: 'All Teams', value: 0 },
+      ...apiTeams.map(team => ({ label: team.name, value: team.id }))
+    ]
+  } catch (error) {
+    console.error('❌ Failed to load teams:', error)
+  }
+}
+
+const loadDraftPicks = async (): Promise<void> => {
+  try {
+    if (filterTeam.value && filterTeam.value > 0 && filterYear.value && filterYear.value > 0) {
+      await draftPickStore.fetchByTeamAndYear(filterTeam.value, filterYear.value)
+    } else if (filterYear.value && filterYear.value > 0) {
+      await draftPickStore.fetchByYear(filterYear.value)
+    } else {
+      await draftPickStore.fetchAllWithRelations()
+    }
+  } catch (error) {
+    console.error('❌ Failed to load draft picks:', error)
+  }
+}
+
+const filteredPicks = ref<any[]>([])
+
+const applyTeamFilter = () => {
+  alert("Selected Team: "+filterTeam.value+" Selected Year: "+filterYear.value)
+  if (filterTeam.value && filterTeam.value > 0) {
+    // find the team name corresponding to the selected teamId
+    const selectedTeam = teamOptions.value.find(t => t.value === filterTeam.value)
+    const teamName = selectedTeam ? selectedTeam.label : undefined
+    if(filterYear.value && filterYear.value > 0) {
+      draftPickStore.fetchByTeamAndYear(filterTeam.value, filterYear.value)
+      filteredPicks.value = draftPickStore.draftPicksWithRelations
+    }else 
+    if (teamName) {
+      filteredPicks.value = draftPickStore.draftPicksWithRelations.filter(
+        pick => pick.team?.toLowerCase() === teamName.toLowerCase()
+      )
+    } else {
+      filteredPicks.value = draftPickStore.draftPicksWithRelations
+    }
+  } else {
+    filteredPicks.value = draftPickStore.draftPicksWithRelations
+  }
+}
+
+
+const applyFilters = async (): Promise<void> => {
+  await loadDraftPicks()
+  applyTeamFilter()
+}
+
+const clearFilters = async (): Promise<void> => {
+  filterYear.value = undefined
+  filterTeam.value = undefined
+  await loadDraftPicks()
+  applyTeamFilter()
+}
+
+const refresh = async (): Promise<void> => {
+  await loadDraftPicks()
+  applyTeamFilter()
+}
+
+const viewDraftPick = (draftYear: number, round: number, pickNumber: number): void => {
+  router.push(`/draftpicks/${draftYear}/${round}/${pickNumber}?mode=read`)
+}
+
+const editDraftPick = (draftYear: number, round: number, pickNumber: number): void => {
+  router.push(`/draftpicks/${draftYear}/${round}/${pickNumber}?mode=edit`)
+}
+
+const createDraftPick = (): void => {
+  router.push('/draftpicks/create')
+}
+
+onMounted(async () => {
+  initializeYearOptions()
+  await loadTeams()
+  await loadDraftPicks()
+  applyTeamFilter()
+})
+</script>
+
+<template>
+  <Card class="draft-picks-container">
+    <template #title>
+      <div class="page-header">
+        <h2>Draft Picks Management</h2>
+        <Button 
+          @click="createDraftPick" 
+          icon="pi pi-plus" 
+          label="Create Draft Pick"
+          class="p-button-success"
+        />
+      </div>
+    </template>
+
+    <template #content>
+      <div class="filters-section">
+        <div class="filter-row">
+          <div class="filter-item">
+            <label for="yearFilter">Year</label>
+            <Dropdown 
+              id="yearFilter"
+              v-model="filterYear" 
+              :options="yearOptions" 
+              optionLabel="label" 
+              optionValue="value"
+              placeholder="All Years"
+            />
+          </div>
+
+          <div class="filter-item">
+            <label for="teamFilter">Team</label>
+            <Dropdown 
+              id="teamFilter"
+              v-model="filterTeam" 
+              :options="teamOptions" 
+              optionLabel="label" 
+              optionValue="value"
+              placeholder="All Teams"
+              @change="applyTeamFilter"
+            />
+          </div>
+
+          <div class="filter-actions">
+            <Button 
+              @click="applyFilters" 
+              icon="pi pi-filter" 
+              label="Apply"
+              class="p-button-primary"
+            />
+            <Button 
+              @click="clearFilters" 
+              icon="pi pi-filter-slash" 
+              label="Clear"
+              class="p-button-secondary"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div v-if="draftPickStore.loading" class="loading-message">
+        <i class="pi pi-spin pi-spinner"></i> Loading draft picks...
+      </div>
+
+      <div v-else-if="draftPickStore.error" class="error-message">
+        <i class="pi pi-exclamation-triangle"></i> {{ draftPickStore.error }}
+      </div>
+
+      <div v-else-if="filteredPicks.length === 0" class="empty-message">
+        <i class="pi pi-info-circle"></i> No draft picks found. Create your first draft pick!
+      </div>
+
+      <DataTable 
+        v-else
+        :value="filteredPicks" 
+        :paginator="true"
+        :rows="25"
+        :rowsPerPageOptions="[10, 25, 50, 100]"
+        class="draft-picks-table"
+        responsiveLayout="scroll"
+        sortField="draftYear"
+        :sortOrder="-1"
+      >
+        <Column field="draftYear" header="Year" sortable />
+        <Column field="round" header="Round" sortable />
+        <Column field="pickNumber" header="Pick #" sortable />
+        <Column field="team.name" header="Team" sortable>
+          <template #body="{ data }">{{ data.team?.name || '-' }}</template>
+        </Column>
+        <Column field="player" header="Player" sortable>
+          <template #body="{ data }">
+            <span v-if="data.player">{{ data.player }}</span>
+            <span v-else class="text-muted">Not selected</span>
+          </template>
+        </Column>
+        <Column field="position" header="Position" sortable>
+          <template #body="{ data }">
+            <span v-if="data.position">{{ data.position }}</span>
+            <span v-else>-</span>
+          </template>
+        </Column>
+        <Column header="Actions" :exportable="false">
+          <template #body="{ data }">
+            <div class="action-buttons">
+              <Button 
+                @click="viewDraftPick(data.draftYear, data.round, data.pickNumber)" 
+                icon="pi pi-eye" 
+                class="p-button-info p-button-sm"
+                v-tooltip="'View'"
+              />
+              <Button 
+                @click="editDraftPick(data.draftYear, data.round, data.pickNumber)" 
+                icon="pi pi-pencil" 
+                class="p-button-warning p-button-sm"
+                v-tooltip="'Edit'"
+              />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
+
+      <div v-if="filteredPicks.length > 0" class="table-summary">
+        <span>Total Draft Picks: <strong>{{ filteredPicks.length }}</strong></span>
+      </div>
+    </template>
+  </Card>
+</template>
+
+<style scoped>
+/* Existing styles remain unchanged */
+</style>
+
+// src/services/draftPickApiService.ts
+import axios, { AxiosInstance } from 'axios'
+import type {
+  DraftPick,
+  DraftPickWithRelations,
+  CreateDraftPickData,
+  UpdateDraftPickData,
+} from '../domain/entities/draftPick'
+
+export class DraftPickApiService {
+  private readonly api: AxiosInstance
+  private readonly baseUrl: string = '/draftpicks'
+
+  constructor(apiInstance: AxiosInstance) {
+    this.api = apiInstance
+  }
+
+  async create(data: CreateDraftPickData): Promise<DraftPick> {
+    const response = await this.api.post<DraftPick>(this.baseUrl, data)
+    return response.data
+  }
+
+  async findById(id: number): Promise<DraftPick> {
+    const response = await this.api.get<DraftPick>(`${this.baseUrl}/${id}`)
+    return response.data
+  }
+
+  async findAll(filters?: {
+    draftYear?: number
+    currentTeamId?: number
+    used?: boolean
+    round?: number
+  }): Promise<DraftPick[]> {
+    const params = new URLSearchParams()
+    if (filters?.draftYear !== undefined) {
+      params.append('draftYear', filters.draftYear.toString())
+    }
+    if (filters?.currentTeamId !== undefined) {
+      params.append('currentTeamId', filters.currentTeamId.toString())
+    }
+    if (filters?.used !== undefined) {
+      params.append('used', filters.used.toString())
+    }
+    if (filters?.round !== undefined) {
+      params.append('round', filters.round.toString())
+    }
+
+    const response = await this.api.get<DraftPick[]>(`${this.baseUrl}?${params.toString()}`)
+    return response.data
+  }
+
+  async update(id: number, data: UpdateDraftPickData): Promise<DraftPick> {
+    const response = await this.api.put<DraftPick>(`${this.baseUrl}/${id}`, data)
+    return response.data
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.api.delete(`${this.baseUrl}/${id}`)
+  }
+
+  async fetchAllWithRelations(): Promise<DraftPickWithRelations[]> {
+    const response = await this.api.get<DraftPickWithRelations[]>(`${this.baseUrl}/relations/all`)
+    return response.data
+  }
+
+  async fetchByYear(year: number): Promise<DraftPickWithRelations[]> {
+    const response = await this.api.get<DraftPickWithRelations[]>(
+      `${this.baseUrl}/relations/year/${year}`
+    )
+    return response.data
+  }
+
+  async fetchByTeamAndYear(teamId: number, year: number): Promise<DraftPickWithRelations[]> {
+    try {
+      const url = `${this.baseUrl}/relations/team/${teamId}/year/${year}`
+      alert(`📡 (src/services/draftPickApiService.ts) Calling: ${url}`)
+      console.log(`📡 Calling: ${url}`)
+
+      const response = await this.api.get<DraftPickWithRelations[]>(url)
+
+      console.log('📊 Response type:', typeof response.data)
+      console.log('📊 Is Array:', Array.isArray(response.data))
+
+      // Check if we got HTML instead of JSON
+      if (typeof response.data === 'string') {
+        console.error('❌ Received HTML instead of JSON!')
+        console.error('This means the API endpoint does not exist on the server.')
+        throw new Error('API endpoint not found - received HTML instead of JSON')
+      }
+
+      if (!Array.isArray(response.data)) {
+        console.error('❌ Invalid response format:', response.data)
+        throw new Error('Expected array response')
+      }
+
+      console.log(`✅ Received ${response.data.length} draft picks`)
+      return response.data
+    } catch (error: any) {
+      console.error('❌ API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+      })
+      throw error
+    }
+  }
+}
+
+// Export singleton instance
+export const draftPickApiService = new DraftPickApiService(axios)
+
+// src/stores/draftPickStore.ts
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import type { DraftPick, DraftPickWithRelations, CreateDraftPickData, UpdateDraftPickData } from '@/domain/entities/draftPick';
+import { draftPickApiService } from '@/services/draftPickApiService';
+
+export const useDraftPickStore = defineStore('draftPick', () => {
+  const draftPicks = ref<DraftPick[]>([]);
+  const draftPicksWithRelations = ref<DraftPickWithRelations[]>([]);
+  const currentDraftPick = ref<DraftPick | null>(null);
+  const loading = ref<boolean>(false);
+  const error = ref<string | null>(null);
+
+  const isLoading = computed(() => loading.value);
+  const hasError = computed(() => error.value !== null);
+
+
+  const handleError = (err: any, operation: string): void => {
+    console.error(`Error during ${operation}:`, err);
+    error.value = err?.response?.data?.message || err?.message || `Failed to ${operation}`;
+  };
+
+  const clearError = (): void => {
+    error.value = null;
+  };
+
+  const reset = (): void => {
+    draftPicks.value = [];
+    draftPicksWithRelations.value = [];
+    currentDraftPick.value = null;
+    error.value = null;
+    loading.value = false;
+  };
+
+// Getters
+  const getDraftPickById = computed(() => {
+    return (id: number) => draftPicks.value.find((item) => item.id === id)
+  })
+
+  const getDraftPicksByYear = computed(() => {
+    return (year: number) => draftPicks.value.filter((item) => item.draftYear === year)
+  })
+
+  const getDraftPicksByTeam = computed(() => {
+    return (teamId: number) => draftPicks.value.filter((item) => item.currentTeamId === teamId)
+  })
+
+  const getDraftPicksByRound = computed(() => {
+    return (round: number) => draftPicks.value.filter((item) => item.round === round)
+  })
+
+const fetchAll = async (filters?: {
+    draftYear?: number;
+    currentTeamId?: number;
+    used?: boolean;
+    round?: number;
+  }): Promise<DraftPick[]> => {
+    loading.value = true;
+    clearError();
+    try {
+      draftPicks.value = await draftPickApiService.findAll(filters);
+      return draftPicks.value;
+    } catch (err) {
+      handleError(err, 'fetch draft picks');
+      return [];
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchById = async (id: number): Promise<void> => {
+    loading.value = true;
+    clearError();
+    try {
+      currentDraftPick.value = await draftPickApiService.findById(id);
+    } catch (err) {
+      handleError(err, 'fetch draft pick');
+      currentDraftPick.value = null;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+    const fetchAllWithRelations = async (): Promise<void> => {
+    loading.value = true;
+    clearError();
+    try {
+      draftPicksWithRelations.value = await draftPickApiService.fetchAllWithRelations();
+    } catch (err) {
+      handleError(err, 'fetch draft picks with relations');
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchByYear = async (year: number): Promise<void> => {
+    loading.value = true;
+    clearError();
+    try {
+      draftPicksWithRelations.value = await draftPickApiService.fetchByYear(year);
+    } catch (err) {
+      handleError(err, 'fetch draft picks by year');
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchByTeamAndYear = async (teamId: number, year: number): Promise<void> => {
+    loading.value = true;
+    clearError();
+    try {
+      draftPicksWithRelations.value = await draftPickApiService.fetchByTeamAndYear(teamId, year);
+    } catch (err) {
+      handleError(err, 'fetch draft picks by team and year');
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const create = async (data: CreateDraftPickData): Promise<DraftPick | null> => {
+    loading.value = true;
+    clearError();
+    try {
+      const newDraftPick = await draftPickApiService.create(data);
+      draftPicks.value.push(newDraftPick);
+      return newDraftPick;
+    } catch (err) {
+      handleError(err, 'create draft pick');
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const update = async (id: number, data: UpdateDraftPickData): Promise<DraftPick | null> => {
+    loading.value = true;
+    clearError();
+    try {
+      const updatedDraftPick = await draftPickApiService.update(id, data);
+      const index = draftPicks.value.findIndex(dp => dp.id === id);
+      if (index !== -1) {
+        draftPicks.value[index] = updatedDraftPick;
+      }
+      if (currentDraftPick.value?.id === id) {
+        currentDraftPick.value = updatedDraftPick;
+      }
+      return updatedDraftPick;
+    } catch (err) {
+      handleError(err, 'update draft pick');
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const remove = async (id: number): Promise<boolean> => {
+    loading.value = true;
+    clearError();
+    try {
+      await draftPickApiService.delete(id);
+      draftPicks.value = draftPicks.value.filter(dp => dp.id !== id);
+      if (currentDraftPick.value?.id === id) {
+        currentDraftPick.value = null;
+      }
+      return true;
+    } catch (err) {
+      handleError(err, 'delete draft pick');
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const setCurrentDraftPick = (draftPick: DraftPick | null): void => {
+    currentDraftPick.value = draftPick;
+  };
+
+  return {
+    draftPicks,
+    draftPicksWithRelations,
+    currentDraftPick,
+    loading,
+    error,
+    isLoading,
+    hasError,
+    getDraftPickById,
+    fetchAll,
+    fetchById,
+    create,
+    update,
+    remove,
+    fetchAllWithRelations,
+    fetchByYear,
+    fetchByTeamAndYear,
+    setCurrentDraftPick,
+    clearError,
+    reset,
+  };
+});
+
