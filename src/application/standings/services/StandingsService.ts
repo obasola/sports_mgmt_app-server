@@ -1,3 +1,5 @@
+
+// src/application/standings/services/StandingService.ts
 import { IStandingsRepository } from '@/domain/standings/repositories/IStandingsRepository';
 import { TeamStanding } from '@/domain/standings/interface/TeamStanding';
 

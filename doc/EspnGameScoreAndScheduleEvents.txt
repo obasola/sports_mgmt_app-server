@@ -1,0 +1,1923 @@
+
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/cache
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/dev
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/dev/try-endpoints.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/mappers
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/mappers/playerMapper.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/mappers/teamMapper.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/schemas
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/schemas/common.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/schemas/players.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/schemas/teams.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/endpoints.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/espnClient.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/espn/espnPlayers.test.ts
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/services
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/services/backfillSeason.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/services/importNflScores.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/services/JobService.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/services/runJob.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/services/runJobAttach.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/services/ScoreboardScheduleService.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/services/syncTeams.ts
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/entities
+// src/domain/game/entities/Game.ts
+/**
+ * Game Entity - Domain Model
+ * Represents a single NFL game with business logic
+ */
+
+import type { GameStatusType } from '../types/GameTypes';
+import { isValidGameStatus } from '../types/GameTypes';
+
+export interface GameProps {
+  id?: number;
+  seasonYear: string;
+  gameWeek?: number;
+  seasonType?: number;
+  gameDate?: Date;
+  homeTeamId: number;
+  awayTeamId: number;
+  gameLocation?: string;
+  gameCity?: string;
+  gameStateProvince?: string;
+  gameCountry?: string;
+  homeScore?: number;
+  awayScore?: number;
+  gameStatus?: GameStatusType;
+  espnEventId?: string;
+  espnCompetitionId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  // Relations (attached by repository)
+  homeTeam?: any;
+  awayTeam?: any;
+}
+
+export class Game {
+  private props: GameProps;
+
+  private constructor(props: GameProps) {
+    this.props = props;
+  }
+
+  // Factory method
+  static create(props: GameProps): Game {
+    // Business rule validations
+    if (props.homeTeamId === props.awayTeamId) {
+      throw new Error('Home team and away team cannot be the same');
+    }
+
+    if (props.gameWeek !== undefined && (props.gameWeek < 0 || props.gameWeek > 22)) {
+      throw new Error('Game week must be between 1 and 22');
+    }
+
+    if (props.seasonType !== undefined && (props.seasonType < 1 || props.seasonType > 3)) {
+      throw new Error('Preseason week must be between 1 and 3');
+    }
+
+    return new Game(props);
+  }
+
+  // Getters
+  get id(): number | undefined {
+    return this.props.id;
+  }
+
+  get seasonYear(): string {
+    return this.props.seasonYear;
+  }
+
+  get gameWeek(): number | undefined {
+    return this.props.gameWeek;
+  }
+
+  get seasonType(): number | undefined {
+    return this.props.seasonType;
+  }
+
+  get gameDate(): Date | undefined {
+    return this.props.gameDate;
+  }
+
+  get homeTeamId(): number {
+    return this.props.homeTeamId;
+  }
+
+  get awayTeamId(): number {
+    return this.props.awayTeamId;
+  }
+
+  get gameLocation(): string | undefined {
+    return this.props.gameLocation;
+  }
+
+  get gameCity(): string | undefined {
+    return this.props.gameCity;
+  }
+
+  get gameStateProvince(): string | undefined {
+    return this.props.gameStateProvince;
+  }
+
+  get gameCountry(): string | undefined {
+    return this.props.gameCountry;
+  }
+
+  get homeScore(): number | undefined {
+    return this.props.homeScore;
+  }
+
+  get awayScore(): number | undefined {
+    return this.props.awayScore;
+  }
+
+  get gameStatus(): string | undefined {
+    return this.props.gameStatus;
+  }
+
+  get espnEventId(): string | undefined {
+    return this.props.espnEventId;
+  }
+
+  get espnCompetitionId(): string | undefined {
+    return this.props.espnCompetitionId;
+  }
+
+  get createdAt(): Date | undefined {
+    return this.props.createdAt;
+  }
+
+  get updatedAt(): Date | undefined {
+    return this.props.updatedAt;
+  }
+
+  // Relation getters
+  get homeTeam(): any | undefined {
+    return this.props.homeTeam;
+  }
+
+  get awayTeam(): any | undefined {
+    return this.props.awayTeam;
+  }
+
+  // Relation setters (used by repository to hydrate relations)
+  set homeTeam(team: any) {
+    this.props.homeTeam = team;
+  }
+
+  set awayTeam(team: any) {
+    this.props.awayTeam = team;
+  }
+
+  // Business logic methods
+  updateScore(homeScore: number, awayScore: number, status?: GameStatusType): void {
+    if (homeScore < 0 || awayScore < 0) {
+      throw new Error('Scores cannot be negative');
+    }
+    this.props.homeScore = homeScore;
+    this.props.awayScore = awayScore;
+    if (status) {
+      if (!isValidGameStatus(status)) {
+        throw new Error(`Invalid game status: ${status}`);
+      }
+      this.props.gameStatus = status;
+    }
+  }
+
+  isCompleted(): boolean {
+    return this.props.gameStatus === 'completed';
+  }
+
+  isTie(): boolean {
+    return (
+      this.isCompleted() &&
+      this.props.homeScore !== undefined &&
+      this.props.awayScore !== undefined &&
+      this.props.homeScore === this.props.awayScore
+    );
+  }
+
+  getWinningTeamId(): number | null {
+    if (!this.isCompleted() || this.props.homeScore === undefined || this.props.awayScore === undefined) {
+      return null;
+    }
+    if (this.props.homeScore > this.props.awayScore) {
+      return this.props.homeTeamId;
+    }
+    if (this.props.awayScore > this.props.homeScore) {
+      return this.props.awayTeamId;
+    }
+    return null; // Tie
+  }
+
+  isPreseason(): boolean {
+    return this.props.seasonType !== undefined && this.props.seasonType === 1;
+  }
+
+  isRegularSeason(): boolean {
+    return !this.isPreseason();
+  }
+
+  // Persistence methods
+  toPersistence(): any {
+    return {
+      id: this.props.id,
+      seasonYear: this.props.seasonYear,
+      gameWeek: this.props.gameWeek,
+      seasonType: this.props.seasonType,
+      gameDate: this.props.gameDate,
+      homeTeamId: this.props.homeTeamId,
+      awayTeamId: this.props.awayTeamId,
+      gameLocation: this.props.gameLocation,
+      gameCity: this.props.gameCity,
+      gameStateProvince: this.props.gameStateProvince,
+      gameCountry: this.props.gameCountry,
+      homeScore: this.props.homeScore,
+      awayScore: this.props.awayScore,
+      gameStatus: this.props.gameStatus,
+      espnEventId: this.props.espnEventId,
+      espnCompetitionId: this.props.espnCompetitionId,
+      createdAt: this.props.createdAt,
+      updatedAt: this.props.updatedAt,
+    };
+  }
+
+  toPlainObject(): GameProps {
+    return {
+      id: this.props.id,
+      seasonYear: this.props.seasonYear,
+      gameWeek: this.props.gameWeek,
+      seasonType: this.props.seasonType,
+      gameDate: this.props.gameDate,
+      homeTeamId: this.props.homeTeamId,
+      awayTeamId: this.props.awayTeamId,
+      gameLocation: this.props.gameLocation,
+      gameCity: this.props.gameCity,
+      gameStateProvince: this.props.gameStateProvince,
+      gameCountry: this.props.gameCountry,
+      homeScore: this.props.homeScore,
+      awayScore: this.props.awayScore,
+      gameStatus: this.props.gameStatus,
+      espnEventId: this.props.espnEventId,
+      espnCompetitionId: this.props.espnCompetitionId,
+      createdAt: this.props.createdAt,
+      updatedAt: this.props.updatedAt,
+      homeTeam: this.props.homeTeam,
+      awayTeam: this.props.awayTeam,
+    };
+  }
+
+  static fromPersistence(data: any): Game {
+    return new Game({
+      id: data.id,
+      seasonYear: data.seasonYear,
+      gameWeek: data.gameWeek,
+      seasonType: data.seasonType,
+      gameDate: data.gameDate ? new Date(data.gameDate) : undefined,
+      homeTeamId: data.homeTeamId,
+      awayTeamId: data.awayTeamId,
+      gameLocation: data.gameLocation,
+      gameCity: data.gameCity,
+      gameStateProvince: data.gameStateProvince,
+      gameCountry: data.gameCountry,
+      homeScore: data.homeScore,
+      awayScore: data.awayScore,
+      gameStatus: data.gameStatus,
+      espnEventId: data.espnEventId,
+      espnCompetitionId: data.espnCompetitionId,
+      createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+      updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
+    });
+  }
+}
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/types
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/types/GameTypes.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/value-objects
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/value-objects/GameLocation.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/value-objects/GameStatus.ts
+
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/entities/Game.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/repositories
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/domain/game/repositories/IGameRepository.ts
+// src/domain/game/repositories/IGameRepository.ts
+import type { Game } from '../entities/Game';
+import type { PaginationParams, PaginatedResponse } from '@/shared/types/common';
+
+export interface GameFilters {
+  seasonYear?: string;
+  gameWeek?: number;
+  seasonType?: number;
+  homeTeamId?: number;
+  awayTeamId?: number;
+  teamId?: number; // Either home or away
+  gameStatus?: string;
+  gameCity?: string;
+  gameCountry?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+}
+
+/**
+ * Repository interface for Game entity
+ * All methods that return Game(s) MUST include team relations (homeTeam, awayTeam)
+ */
+export interface IGameRepository {
+  // Core CRUD - All return Games WITH team relations
+  save(game: Game): Promise<Game>;
+  findById(id: number): Promise<Game | null>;
+  findAll(filters?: GameFilters, pagination?: PaginationParams): Promise<PaginatedResponse<Game>>;
+  update(id: number, game: Game): Promise<Game>;
+  delete(id: number): Promise<void>;
+  exists(id: number): Promise<boolean>;
+
+  // Team and season queries - All return Games WITH team relations
+  findByTeamAndSeason(teamId: number, seasonYear: string): Promise<Game[]>;
+  findByTeamSeasonWeek(teamId: number, seasonYear: string, gameWeek: number): Promise<Game[]>;
+  
+  // Status-based queries - All return Games WITH team relations
+  findUpcomingGames(teamId?: number, limit?: number): Promise<Game[]>;
+  findCompletedGames(teamId?: number, limit?: number): Promise<Game[]>;
+  
+  // Season type queries - All return Games WITH team relations
+  findPreseasonGames(teamId?: number, seasonYear?: number): Promise<Game[]>;
+  findRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]>;
+  findRegularSeasonGameByWeek(teamId?: number, seasonYear?: string, week?: number): Promise<Game[]>;
+  findAllGamesForSeason(teamId?: number, seasonYear?: string): Promise<Game[]>;
+
+  // Business logic helpers
+  checkGameConflict(
+    homeTeamId: number,
+    awayTeamId: number,
+    gameDate: Date,
+    seasonYear: string
+  ): Promise<boolean>;
+
+  // ESPN integration helpers
+  findTeamIdByEspnTeamId(espnTeamId: string): Promise<number | null>;
+  findTeamIdByAbbrev(abbreviation: string): Promise<number | null>;
+
+  // Upsert for ESPN sync - Returns Game WITH team relations
+  upsertByKey(
+    key: {
+      espnCompetitionId: string;
+      espnEventId: string;
+      seasonYear: string;
+      seasonType: number;
+      gameWeek: number;
+      homeTeamId: number;
+      awayTeamId: number;
+    },
+    data: {
+      readonly seasonYear: string;
+      readonly gameWeek: number;
+      readonly seasonType: number;
+      readonly gameDate: Date | null;
+      readonly homeTeamId: number;
+      readonly awayTeamId: number;
+      readonly homeScore: number | null;
+      readonly awayScore: number | null;
+      readonly gameStatus: string | null;
+      readonly espnEventId: string;
+      readonly espnCompetitionId: string;
+    }
+  ): Promise<Game>;
+
+  // Optional: Method to explicitly fetch with teams (for backward compatibility)
+  findByIdWithTeams?(id: number): Promise<{ 
+    game: Game; 
+    homeTeam: any; 
+    awayTeam: any;
+  } | null>;
+
+  /**
+   * Fetch a single game by its ESPN competition ID.
+   * Used for ESPN sync comparisons (detecting score changes, etc.).
+   */
+  findByEspnCompetitionId(espnCompetitionId: string): Promise<Game | null>;
+
+}
+
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/presentation/controllers/GameController.ts
+// src/presentation/controllers/GameController.ts
+import { Request, Response, NextFunction } from 'express';
+import type { GameService } from '@/application/game/services/GameService';
+import { ApiResponse } from '@/shared/types/common';
+import { GameResponseDto, UpdateScoreDtoSchema } from '@/application/game/dto/GameDto';
+import { z } from 'zod';
+import { mapGameToResponse } from '@/application/game/dto/mapGameToResponse';
+
+type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
+
+type ControllerGameFilters = {
+  teamId?: number;
+  homeTeamId?: number;
+  awayTeamId?: number;
+  gameWeek?: number;
+  seasonYear?: string;
+  seasonType?: number;
+  gameStatus?: GameStatus;
+  gameCity?: string;
+  gameCountry?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+};
+
+function toStatus(input: unknown): GameStatus | undefined {
+  if (!input) return undefined;
+  const v = String(input).toLowerCase();
+  const map: Record<string, GameStatus> = {
+    scheduled: 'scheduled',
+    in_progress: 'in_progress',
+    // accept common synonym from UI/backends
+    final: 'completed',
+    completed: 'completed',
+    cancelled: 'cancelled',
+    canceled: 'cancelled',
+    postponed: 'postponed',
+  };
+  return map[v];
+}
+
+function toDate(input: unknown): Date | undefined {
+  if (!input) return undefined;
+  const d = new Date(input as any);
+  return isNaN(d.getTime()) ? undefined : d;
+}
+
+/**
+ * Accept both flat queries and nested `?params[year]=...` style.
+ * Also handle aliases (year→seasonYear, week→gameWeek, team_id→teamId).
+ */
+function normalizeFilters(qAny: Record<string, any>): ControllerGameFilters {
+  const q = (qAny?.params && typeof qAny.params === 'object') ? qAny.params : qAny;
+
+  // aliases
+  const seasonYear = q.seasonYear ?? q.year;
+  const gameWeek   = q.gameWeek ?? q.week;
+  const teamId     = q.teamId ?? q.team_id;
+
+  const out: ControllerGameFilters = {};
+
+  if (teamId != null) out.teamId = Number(teamId);
+  if (q.homeTeamId != null) out.homeTeamId = Number(q.homeTeamId);
+  if (q.awayTeamId != null) out.awayTeamId = Number(q.awayTeamId);
+
+  if (gameWeek != null) out.gameWeek = Number(gameWeek);
+  if (seasonYear != null) out.seasonYear = String(seasonYear);
+
+  if (q.seasonType != null) out.seasonType = Number(q.seasonType);
+
+  out.gameStatus = toStatus(q.gameStatus);
+
+  if (q.gameCity) out.gameCity = String(q.gameCity);
+  if (q.gameCountry) out.gameCountry = String(q.gameCountry);
+
+  out.dateFrom = toDate(q.dateFrom);
+  out.dateTo   = toDate(q.dateTo);
+
+  return out;
+}
+
+export class GameController {
+  constructor(private readonly gameService: GameService) {}
+
+  createGame = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const game = await this.gameService.createGame(req.body);
+      const dto = mapGameToResponse(game);
+      res.status(201).json({ success: true, data: dto, message: 'Game created successfully' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getGameById = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const id = z.coerce.number().parse(req.params.id);
+      const game = await this.gameService.getGameById(id);
+      const dto = mapGameToResponse(game);
+      res.json({ success: true, data: dto });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // 🔧 Flatten & normalize query BEFORE calling service
+    getAllGames = async (req: Request, res: Response<any>, next: NextFunction) => {
+    try {
+      // support both flat and nested
+      const raw = (req.query as any);
+      const filters = normalizeFilters(raw);
+
+      // page/limit may also be nested under ?params[]
+      const qp = raw?.params ?? raw;
+      const page  = qp.page  ? parseInt(String(qp.page), 10)  : 1;
+      const limit = qp.limit ? parseInt(String(qp.limit), 10) : 25;
+
+      // DEBUG (optional):
+      // console.log('→ normalized filters:', filters);
+      // console.log('→ page/limit:', { page, limit });
+
+      const { data, pagination } = await this.gameService.getAllGames(filters, { page, limit });
+      const dtoGames = data.map(mapGameToResponse);
+
+      res.set('X-Total-Count', String(pagination.total));
+      res.set('Access-Control-Expose-Headers', 'X-Total-Count');
+
+      res.json({ success: true, data: dtoGames, pagination });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+
+  getPreseasonGames = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
+      const preseasonWeek = req.query.preseasonWeek
+        ? z.coerce.number().parse(req.query.preseasonWeek)
+        : undefined;
+      const games = await this.gameService.getPreseasonGames(teamId, preseasonWeek);
+      const dtoGames = games.map(mapGameToResponse);
+      res.json({ success: true, data: dtoGames });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getRegularSeasonGames = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
+      const seasonYear = (req.query.seasonYear as string) ?? (req.query.year as string);
+      const games = await this.gameService.getRegularSeasonGames(teamId, seasonYear);
+      const dtoGames = games.map(mapGameToResponse);
+      res.json({ success: true, data: dtoGames });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getTeamGames = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = z.coerce.number().parse(req.params.teamId);
+      const seasonYear = z.string().regex(/^\d{4}$/).parse(req.params.seasonYear);
+      const games = await this.gameService.getTeamSeasonGames(teamId, seasonYear);
+      const dtoGames = games.map(mapGameToResponse);
+      res.json({ success: true, data: dtoGames });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateGame = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const id = z.coerce.number().parse(req.params.id);
+      const game = await this.gameService.updateGame(id, req.body);
+      const dto = mapGameToResponse(game);
+      res.json({ success: true, data: dto, message: 'Game updated successfully' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateGameScore = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const id = z.coerce.number().parse(req.params.id);
+      const parsed = UpdateScoreDtoSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid score update payload',
+          errors: parsed.error.issues,
+        } as any);
+        return;
+      }
+      const game = await this.gameService.updateGameScore(id, parsed.data);
+      const dto = mapGameToResponse(game);
+      res.json({ success: true, data: dto, message: 'Game score updated successfully' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  deleteGame = async (
+    req: Request,
+    res: Response<ApiResponse>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const id = z.coerce.number().parse(req.params.id);
+      await this.gameService.deleteGame(id);
+      res.status(204).json({ success: true, message: 'Game deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getUpcomingGames = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
+      const limit = req.query.limit ? z.coerce.number().parse(req.query.limit) : undefined;
+      const games = await this.gameService.getUpcomingGames(teamId, limit);
+      const dtoGames = games.map(mapGameToResponse);
+      res.json({ success: true, data: dtoGames });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getCompletedGames = async (
+    req: Request,
+    res: Response<ApiResponse<GameResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = req.query.teamId ? z.coerce.number().parse(req.query.teamId) : undefined;
+      const limit = req.query.limit ? z.coerce.number().parse(req.query.limit) : undefined;
+      const games = await this.gameService.getCompletedGames(teamId, limit);
+      const dtoGames = games.map(mapGameToResponse);
+      res.json({ success: true, data: dtoGames });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getTeamStatistics = async (
+    req: Request,
+    res: Response<ApiResponse<any>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = z.coerce.number().parse(req.params.teamId);
+      const seasonYear = z
+        .string()
+        .regex(/^\d{4}$/)
+        .parse((req.query.seasonYear as string) ?? String(new Date().getFullYear()));
+      const stats = await this.gameService.getTeamStatistics(teamId, seasonYear);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/presentation/controllers/ScheduleController.ts
+// src/presentation/controllers/ScheduleController.ts
+import { Request, Response, NextFunction } from 'express';
+import { ScheduleService } from '@/application/schedule/services/ScheduleService';
+import { ApiResponse } from '@/shared/types/common';
+import {
+  ScheduleResponseDto,
+  ScheduleFiltersDto,
+  PaginationDto,
+} from '@/application/schedule/dto/ScheduleDto';
+
+export class ScheduleController {
+  constructor(private readonly scheduleService: ScheduleService) {}
+
+  createSchedule = async (
+    req: Request,
+    res: Response<ApiResponse<ScheduleResponseDto>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const schedule = await this.scheduleService.createSchedule(req.body);
+      res.status(201).json({
+        success: true,
+        data: schedule,
+        message: 'Schedule created successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getScheduleById = async (
+    req: Request,
+    res: Response<ApiResponse<ScheduleResponseDto>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const schedule = await this.scheduleService.getScheduleById(id);
+      res.json({
+        success: true,
+        data: schedule,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // LIST (paginated)
+  getAllSchedules = async (
+    req: Request,
+    res: Response<{ success: boolean; data: ScheduleResponseDto[]; pagination: any }>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      // Let the client override; otherwise choose a larger sensible default than 10
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 25;
+
+      const filters: ScheduleFiltersDto = {
+        teamId: req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined,
+        seasonYear: req.query.seasonYear ? parseInt(req.query.seasonYear as string, 10) : undefined,
+        oppTeamId: req.query.oppTeamId ? parseInt(req.query.oppTeamId as string, 10) : undefined,
+        oppTeamConference: req.query.oppTeamConference as string,
+        oppTeamDivision: req.query.oppTeamDivision as string,
+        scheduleWeek: req.query.scheduleWeek
+          ? parseInt(req.query.scheduleWeek as string, 10)
+          : undefined,
+        gameCity: req.query.gameCity as string,
+        gameStateProvince: req.query.gameStateProvince as string,
+        gameCountry: req.query.gameCountry as string,
+        wonLostFlag: req.query.wonLostFlag as string,
+        homeOrAway: req.query.homeOrAway as string,
+        completed: req.query.completed ? (req.query.completed as string) === 'true' : undefined,
+      };
+
+      const { data, pagination } = await this.scheduleService.getAllSchedules(filters, {
+        page,
+        limit,
+      });
+
+      // Many data tables look for this header for server-side pagination
+      res.set('X-Total-Count', String(pagination.total));
+      // Make sure browsers allow your frontend to read the header
+      res.set('Access-Control-Expose-Headers', 'X-Total-Count');
+
+      res.json({
+        success: true,
+        data,
+        pagination, // { page, limit, total, pages }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateSchedule = async (
+    req: Request,
+    res: Response<ApiResponse<ScheduleResponseDto>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const schedule = await this.scheduleService.updateSchedule(id, req.body);
+      res.json({
+        success: true,
+        data: schedule,
+        message: 'Schedule updated successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  deleteSchedule = async (
+    req: Request,
+    res: Response<ApiResponse>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      await this.scheduleService.deleteSchedule(id);
+      res.status(204).json({
+        success: true,
+        message: 'Schedule deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // TEAM SEASON (paginated so the client can render a pager)
+  getTeamSchedule = async (
+    req: Request,
+    res: Response<{
+      success: boolean;
+      data: ScheduleResponseDto[];
+      pagination: any;
+      message: string;
+    }>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = parseInt(req.params.teamId, 10);
+      const seasonYear = parseInt(req.params.seasonYear, 10);
+
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 25;
+
+      const result = await this.scheduleService.getTeamSchedulePaginated(teamId, seasonYear, {
+        page,
+        limit,
+      });
+
+      res.json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination,
+        message: `Retrieved schedule for team ${teamId} in ${seasonYear}`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getOpponentHistory = async (
+    req: Request,
+    res: Response<ApiResponse<ScheduleResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const oppTeamId = parseInt(req.params.oppTeamId, 10);
+      const schedules = await this.scheduleService.getOpponentHistory(oppTeamId);
+      res.json({
+        success: true,
+        data: schedules,
+        message: `Retrieved history against opponent team ${oppTeamId}`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getUpcomingGames = async (
+    req: Request,
+    res: Response<ApiResponse<ScheduleResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined;
+      const schedules = await this.scheduleService.getUpcomingGames(teamId);
+      res.json({
+        success: true,
+        data: schedules,
+        message: 'Retrieved upcoming games',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getCompletedGames = async (
+    req: Request,
+    res: Response<ApiResponse<ScheduleResponseDto[]>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const teamId = req.query.teamId ? parseInt(req.query.teamId as string, 10) : undefined;
+      const schedules = await this.scheduleService.getCompletedGames(teamId);
+      res.json({
+        success: true,
+        data: schedules,
+        message: 'Retrieved completed games',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateGameResult = async (
+    req: Request,
+    res: Response<ApiResponse<ScheduleResponseDto>>,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const { teamScore, oppTeamScore, wonLostFlag } = req.body;
+      const schedule = await this.scheduleService.updateGameResult(
+        id,
+        teamScore,
+        oppTeamScore,
+        wonLostFlag
+      );
+      res.json({
+        success: true,
+        data: schedule,
+        message: 'Game result updated successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/presentation/routes/gameRoutes.ts
+// src/presentation/routes/gameRoutes.ts
+import { Router } from 'express';
+import { z } from 'zod';
+import { prisma as prismaClient} from '../../infrastructure/prisma';
+
+import { GameController } from '../controllers/GameController';
+import { GameService } from '@/application/game/services/GameService';
+import { PrismaGameRepository } from '@/infrastructure/repositories/PrismaGameRepository';
+import { PrismaTeamRepository } from '@/infrastructure/repositories/PrismaTeamRepository';
+import { validateBody, validateParams, validateQuery } from '../middleware/validation';
+import {
+  CreateGameDtoSchema,
+  UpdateGameDtoSchema,
+  UpdateScoreDtoSchema,
+} from '@/application/game/dto/GameDto';
+
+const router = Router();
+
+/* -----------------------------------------------------------------------------
+ * Dependencies
+ * -------------------------------------------------------------------------- */
+
+const gameRepository = new PrismaGameRepository(prismaClient);
+const teamRepository = new PrismaTeamRepository();
+const gameService = new GameService(gameRepository, teamRepository);
+const gameController = new GameController(gameService);
+
+/* -----------------------------------------------------------------------------
+ * Zod schemas (HTTP edge: params + query only)
+ * -------------------------------------------------------------------------- */
+
+// Path param: /:id
+const IdParamsSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});
+
+// Path params: /team/:teamId/season/:seasonYear
+const TeamSeasonParamsSchema = z.object({
+  teamId: z.coerce.number().int().positive(),
+  seasonYear: z.string().regex(/^\d{4}$/, 'Season year must be a 4-digit year'),
+});
+
+// Query for list endpoints (accept flat or nested ?params[...])
+const GameQueryInner = z
+  .object({
+    teamId: z.coerce.number().int().positive().optional(),
+    homeTeamId: z.coerce.number().int().positive().optional(),
+    awayTeamId: z.coerce.number().int().positive().optional(),
+    gameWeek: z.coerce.number().int().min(0).max(25).optional(),
+    seasonYear: z.string().regex(/^\d{4}$/, 'seasonYear must be a 4-digit year').optional(),
+    // UI sometimes sends `year`/`week`; keep them to pass through (the controller normalizes)
+    year: z.string().regex(/^\d{4}$/).optional(),
+    week: z.coerce.number().int().min(0).max(25).optional(),
+    // allow 0/1 for seasonType flag
+    seasonType: z.coerce.number().int().min(0).max(1).optional(),
+    gameStatus: z.string().optional(),
+    gameCity: z.string().optional(),
+    gameCountry: z.string().optional(),
+    dateFrom: z.union([z.string(), z.date()]).optional(),
+    dateTo: z.union([z.string(), z.date()]).optional(),
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(200).optional(),
+  })
+  .passthrough();
+
+// Query for list endpoints (accept aliases; controller will normalize)
+const GameQuerySchema = z.union([
+  GameQueryInner,
+  z.object({ params: GameQueryInner }).passthrough(),
+]);
+
+
+
+/* -----------------------------------------------------------------------------
+ * Routes
+ * -------------------------------------------------------------------------- */
+
+router.post('/', validateBody(CreateGameDtoSchema), gameController.createGame);
+
+router.get('/', validateQuery(GameQuerySchema), gameController.getAllGames);
+
+router.get('/upcoming', gameController.getUpcomingGames);
+router.get('/completed', gameController.getCompletedGames);
+
+router.get(
+  '/team/:teamId/statistics',
+  validateParams(z.object({ teamId: z.coerce.number().int().positive() })),
+  validateQuery(z.object({ seasonYear: z.string().regex(/^\d{4}$/).optional() }).passthrough()),
+  gameController.getTeamStatistics
+);
+
+router.get(
+  '/team/:teamId/season/:seasonYear',
+  validateParams(TeamSeasonParamsSchema),
+  validateQuery(
+    z
+      .object({
+        seasonType: z.coerce.number().int().min(1).max(3).optional(),
+        week: z.coerce.number().int().min(0).max(25).optional(),
+      })
+      .passthrough()
+  ),
+  gameController.getTeamGames
+);
+
+router.get('/:id', validateParams(IdParamsSchema), gameController.getGameById);
+
+router.get('/seasonType', gameController.getPreseasonGames);
+router.get('/regular-season', gameController.getRegularSeasonGames);
+
+router.put('/:id', validateParams(IdParamsSchema), validateBody(UpdateGameDtoSchema), gameController.updateGame);
+
+router.patch(
+  '/:id/score',
+  validateParams(IdParamsSchema),
+  validateBody(UpdateScoreDtoSchema),
+  gameController.updateGameScore
+);
+
+router.delete('/:id', validateParams(IdParamsSchema), gameController.deleteGame);
+
+export { router as gameRoutes };
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/presentation/routes/scheduleRoutes.ts
+// src/presentation/routes/scheduleRoutes.ts
+import { Router } from 'express';
+import { ScheduleController } from '../controllers/ScheduleController';
+import { ScheduleService } from '@/application/schedule/services/ScheduleService';
+import { PrismaScheduleRepository } from '@/infrastructure/repositories/PrismaScheduleRepository';
+import { validateBody, validateParams, validateQuery } from '../middleware/validation';
+import {
+  CreateScheduleDtoSchema,
+  UpdateScheduleDtoSchema,
+  ScheduleFiltersDtoSchema,
+  PaginationDtoSchema,
+} from '@/application/schedule/dto/ScheduleDto';
+import { z } from 'zod';
+
+import { EspnScheduleClient } from '../../infrastructure/espn/EspnScheduleClient';
+import { GetWeekScheduleService } from '@/application/schedule/services/GetWeekScheduleService';
+
+
+const weekScheduleService = new GetWeekScheduleService(new EspnScheduleClient());
+
+const router = Router();
+
+// Dependency injection
+const scheduleRepository = new PrismaScheduleRepository();
+const scheduleService = new ScheduleService(scheduleRepository);
+const scheduleController = new ScheduleController(scheduleService);
+
+// ---------------------
+// Zod schemas (coerce + passthrough + defaults)
+// ---------------------
+const IdParamsSchema = z.object({
+  id: z.coerce.number().int().positive(),
+}).passthrough();
+
+const TeamSeasonParamsSchema = z.object({
+  teamId: z.coerce.number().int().positive(),
+  // keep seasonYear numeric; change to string+regex if your controller expects a string
+  seasonYear: z.coerce.number().int().min(1900).max(3000),
+}).passthrough();
+
+const OpponentParamsSchema = z.object({
+  oppTeamId: z.coerce.number().int().positive(),
+}).passthrough();
+
+// Bodies often arrive as strings; coerce and validate
+const GameResultSchema = z.object({
+  teamScore: z.coerce.number().int().min(0, 'Team score cannot be negative'),
+  oppTeamScore: z.coerce.number().int().min(0, 'Opponent team score cannot be negative'),
+  wonLostFlag: z.string().length(1, 'Won/Lost flag must be a single character'),
+}).passthrough();
+
+// Keep your existing list filters, but allow extra keys
+const QuerySchema = ScheduleFiltersDtoSchema.merge(PaginationDtoSchema).passthrough();
+
+// Optional per-route query with sensible defaults
+// (Use when you want defaults like regular season)
+const ScheduleQuerySchema = z.object({
+  week: z.coerce.number().int().min(0).max(25).optional(),
+  seasonType: z.coerce.number().int().min(1).max(3).default(2), // 2 = regular season
+}).passthrough();
+
+// ---------------------
+// Routes
+// ---------------------
+router.post(
+  '/',
+  validateBody(CreateScheduleDtoSchema),
+  scheduleController.createSchedule
+);
+
+router.get(
+  '/',
+  validateQuery(QuerySchema),
+  scheduleController.getAllSchedules
+);
+
+router.get('/upcomingSchedule', async (req, res) => {
+  try {
+    const year = Number(req.query.seasonYear)
+    const seasonType = Number(req.query.seasonType)
+    const week = Number(req.query.week)
+
+    console.log('➡️ Incoming params:', { year, seasonType, week, raw: req.query })
+
+    if (!year || !seasonType || !week) {
+      return res.status(400).json({ success: false, message: 'Missing year, seasonType, or week' })
+    }
+
+    const result = await weekScheduleService.execute(year, seasonType, week)
+    return res.json(result)
+  } catch (err: any) {
+    console.error('❌ /upcomingSchedule failed:', err)
+    return res.status(500).json({ success: false, message: err.message, error: err.message })
+  }
+})
+
+router.get('/upcomingGames', scheduleController.getUpcomingGames);
+
+router.get('/completed', scheduleController.getCompletedGames);
+
+router.get(
+  '/team/:teamId/season/:seasonYear',
+  validateParams(TeamSeasonParamsSchema),
+  validateQuery(ScheduleQuerySchema), // ← adds seasonType default=2, optional week
+  scheduleController.getTeamSchedule
+);
+
+router.get(
+  '/opponent/:oppTeamId',
+  validateParams(OpponentParamsSchema),
+  scheduleController.getOpponentHistory
+);
+
+router.get(
+  '/:id',
+  validateParams(IdParamsSchema),
+  scheduleController.getScheduleById
+);
+
+router.put(
+  '/:id',
+  validateParams(IdParamsSchema),
+  validateBody(UpdateScheduleDtoSchema),
+  scheduleController.updateSchedule
+);
+
+router.patch(
+  '/:id/result',
+  validateParams(IdParamsSchema),
+  validateBody(GameResultSchema),
+  scheduleController.updateGameResult
+);
+
+router.delete(
+  '/:id',
+  validateParams(IdParamsSchema),
+  scheduleController.deleteSchedule
+);
+
+export { router as scheduleRoutes };
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/game
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/game/dto
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/game/dto/GameDto.ts
+// DTO Schemas
+// src/application/game/dto/GameDto.ts
+import { z } from 'zod';
+
+export const CreateGameDtoSchema = z.object({
+  seasonYear: z.string().regex(/^\d{4}$/, 'Season year must be a 4-digit year'),
+  gameWeek: z.coerce.number().min(0, 'Game week must be at least 1 WHEN NOT PRESEASON').max(20, 'Game week cannot exceed 20').optional(),
+  seasonType: z.coerce.number().int().min(1).max(3),
+  gameDate: z.string().transform((str) => new Date(str)).optional(),
+  homeTeamId: z.coerce.number().positive('Home team ID is required'),
+  awayTeamId: z.coerce.number().positive('Away team ID is required'),
+  gameLocation: z.string().max(255, 'Game location cannot exceed 255 characters').optional(),
+  gameCity: z.string().max(100, 'Game city cannot exceed 100 characters').optional(),
+  gameStateProvince: z.string().max(100, 'State/Province cannot exceed 100 characters').optional(),
+  gameCountry: z.string().max(50, 'Country cannot exceed 50 characters').default('USA').optional(),
+  homeScore: z.coerce.number().min(0, 'Home score cannot be negative').optional(),
+  awayScore: z.coerce.number().min(0, 'Away score cannot be negative').optional(),
+  gameStatus: z.enum(['scheduled', 'in_progress', 'completed', 'cancelled', 'postponed']).default('scheduled').optional(),
+}).refine((data) => data.homeTeamId !== data.awayTeamId, {
+  message: 'Home team and away team cannot be the same',
+  path: ['awayTeamId'],
+});
+
+export const UpdateGameDtoSchema = CreateGameDtoSchema._def.schema.partial().omit({
+  homeTeamId: true,
+  awayTeamId: true,
+  seasonYear: true,
+});
+
+export const GameFiltersDtoSchema = z.object({
+  seasonYear: z.string().regex(/^\d{4}$/).optional(),
+  gameWeek: z.number().min(1).max(20).optional(),
+  seasonType: z.coerce.number().int().min(1).max(3).optional(),
+  homeTeamId: z.number().positive().optional(),
+  awayTeamId: z.number().positive().optional(),
+  teamId: z.number().positive().optional(),
+  gameStatus: z.enum(['scheduled', 'in_progress', 'completed', 'cancelled', 'postponed']).optional(),
+  gameCity: z.string().optional(),
+  gameCountry: z.string().optional(),
+  dateFrom: z.string().transform((str) => new Date(str)).optional(),
+  dateTo: z.string().transform((str) => new Date(str)).optional(),
+});
+
+export const PaginationDtoSchema = z.object({
+  page: z.coerce.number().optional().default(1),      // ← Add .coerce
+  limit: z.coerce.number().optional().default(10),    // ← Add .coerce  
+  include: z.string().optional(),    
+});
+
+export const UpdateScoreDtoSchema = z.object({
+  homeScore: z.number().min(0, 'Home score cannot be negative'),
+  awayScore: z.number().min(0, 'Away score cannot be negative'),
+  gameStatus: z.enum(['in_progress', 'completed']).optional(),
+});
+
+export type CreateGameDto = z.infer<typeof CreateGameDtoSchema>;
+export type UpdateGameDto = z.infer<typeof UpdateGameDtoSchema>;
+export type GameFiltersDto = z.infer<typeof GameFiltersDtoSchema>;
+export type PaginationDto = z.infer<typeof PaginationDtoSchema>;
+export type UpdateScoreDto = z.infer<typeof UpdateScoreDtoSchema>;
+
+// ✅ NEW: Team info for responses
+export interface TeamInfo {
+  id: number;
+  name: string;
+  city?: string;
+  state?: string;
+  conference?: string;
+  division?: string;
+  stadium?: string;
+}
+
+export interface GameResponseDto {
+  id: number;
+  seasonYear: string;
+  gameWeek?: number;
+  seasonType?: number;
+  gameDate?: string;
+  homeTeamId: number;
+  awayTeamId: number;
+  homeTeamName?: string;
+  awayTeamName?: string;
+  gameLocation?: string;
+  gameCity?: string;
+  gameStateProvince?: string;
+  gameCountry?: string;
+  homeScore?: number;
+  awayScore?: number;
+  gameStatus?: string;
+  fullLocation?: string;
+  winningTeamId?: number | null;
+  isTie?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  // relations
+  homeTeam?: TeamInfo;
+  awayTeam?: TeamInfo;
+}
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/game/dto/mapGameToResponse.ts
+// src/application/game/dto/mapGameToResponse.ts
+import type { GameResponseDto } from './GameDto'
+import type { Game } from '@/domain/game/entities/Game'
+
+export function mapGameToResponse(game: Game): GameResponseDto {
+  const plain = game.toPlainObject()
+
+  return {
+    id: plain.id!,
+    seasonYear: plain.seasonYear!,
+    gameWeek: plain.gameWeek,
+    seasonType: plain.seasonType,
+    gameDate: plain.gameDate ? plain.gameDate.toISOString() : undefined,
+
+    homeTeamId: plain.homeTeamId!,
+    awayTeamId: plain.awayTeamId!,
+    homeTeamName: plain.homeTeam?.name,
+    awayTeamName: plain.awayTeam?.name,
+
+    gameLocation: plain.gameLocation,
+    gameCity: plain.gameCity,
+    gameStateProvince: plain.gameStateProvince,
+    gameCountry: plain.gameCountry,
+
+    homeScore: plain.homeScore,
+    awayScore: plain.awayScore,
+    gameStatus: plain.gameStatus,
+
+    fullLocation: [plain.gameLocation, plain.gameCity, plain.gameStateProvince, plain.gameCountry]
+      .filter((p) => !!p && String(p).trim().length > 0)
+      .join(', '),
+
+    winningTeamId: ((): number | null => {
+      // use entity’s business logic (safer)
+      try { return (game as any).getWinningTeamId?.() ?? null } catch { return null }
+    })(),
+    isTie: ((): boolean => {
+      try { return (game as any).isTie?.() ?? false } catch { return false }
+    })(),
+
+    createdAt: plain.createdAt ? plain.createdAt.toISOString() : undefined,
+    updatedAt: plain.updatedAt ? plain.updatedAt.toISOString() : undefined,
+
+    // keep full relations for logos/UX
+    homeTeam: plain.homeTeam
+      ? {
+          id: plain.homeTeam.id,
+          name: plain.homeTeam.name,
+          city: plain.homeTeam.city ?? undefined,
+          state: plain.homeTeam.state ?? undefined,
+          conference: plain.homeTeam.conference ?? undefined,
+          division: plain.homeTeam.division ?? undefined,
+          stadium: plain.homeTeam.stadium ?? undefined,
+        }
+      : undefined,
+    awayTeam: plain.awayTeam
+      ? {
+          id: plain.awayTeam.id,
+          name: plain.awayTeam.name,
+          city: plain.awayTeam.city ?? undefined,
+          state: plain.awayTeam.state ?? undefined,
+          conference: plain.awayTeam.conference ?? undefined,
+          division: plain.awayTeam.division ?? undefined,
+          stadium: plain.awayTeam.stadium ?? undefined,
+        }
+      : undefined,
+  }
+}
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/game/services
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/game/services/GameService.ts
+// src/application/game/services/GameService.ts
+import { Game } from '@/domain/game/entities/Game';
+import type { IGameRepository } from '@/domain/game/repositories/IGameRepository';
+import type {
+  CreateGameDto,
+  UpdateGameDto,
+  GameFiltersDto,
+  PaginationDto,
+  UpdateScoreDto,
+} from '../dto/GameDto';
+import type { PaginatedResponse } from '@/shared/types/common';
+import { NotFoundError, ValidationError } from '@/shared/errors/AppError';
+import type { ITeamRepository } from '@/domain/team/repositories/ITeamRepository';
+
+export class GameService {
+  constructor(
+    private readonly gameRepository: IGameRepository,
+    private readonly teamRepository?: ITeamRepository // ← Add this parameter
+  ) {}
+
+  /**
+   * Create a new game
+   * Repository now returns Game with team relations loaded
+   */
+  async createGame(dto: CreateGameDto): Promise<Game> {
+    // Validate teams exist and are different
+    if (dto.homeTeamId === dto.awayTeamId) {
+      throw new ValidationError('Home team and away team cannot be the same');
+    }
+
+    // Check for game conflicts
+    if (dto.gameDate) {
+      const conflict = await this.gameRepository.checkGameConflict(
+        dto.homeTeamId,
+        dto.awayTeamId,
+        new Date(dto.gameDate),
+        dto.seasonYear
+      );
+      if (conflict) {
+        throw new ValidationError(
+          'A game already exists for these teams on this date in this season'
+        );
+      }
+    }
+
+    const game = Game.create({
+      seasonYear: dto.seasonYear,
+      gameWeek: dto.gameWeek,
+      seasonType: dto.seasonType,
+      gameDate: dto.gameDate ? new Date(dto.gameDate) : undefined,
+      homeTeamId: dto.homeTeamId,
+      awayTeamId: dto.awayTeamId,
+      gameLocation: dto.gameLocation,
+      gameCity: dto.gameCity,
+      gameStateProvince: dto.gameStateProvince,
+      gameCountry: dto.gameCountry || 'USA',
+      homeScore: dto.homeScore,
+      awayScore: dto.awayScore,
+      gameStatus: dto.gameStatus || 'scheduled',
+    });
+
+    return await this.gameRepository.save(game);
+  }
+
+  /**
+   * Get game by ID
+   * Repository now returns Game with team relations loaded
+   */
+  async getGameById(id: number): Promise<Game> {
+    const game = await this.gameRepository.findById(id);
+    if (!game) {
+      throw new NotFoundError('Game', id);
+    }
+    return game;
+  }
+
+  /**
+   * Get all games with filters and pagination
+   * Repository now returns Games with team relations loaded
+   */
+  async getAllGames(
+    filters?: GameFiltersDto,
+    pagination?: PaginationDto
+  ): Promise<PaginatedResponse<Game>> {
+    return await this.gameRepository.findAll(filters, pagination);
+  }
+
+  /**
+   * Get seasonType games
+   * Repository now returns Games with team relations loaded
+   */
+  async getPreseasonGames(teamId?: number, preseasonWeek?: number): Promise<Game[]> {
+    return await this.gameRepository.findPreseasonGames(teamId, preseasonWeek);
+  }
+
+  /**
+   * Get regular season games
+   * Repository now returns Games with team relations loaded
+   */
+  async getRegularSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
+    return await this.gameRepository.findRegularSeasonGames(teamId, seasonYear);
+  }
+
+  /**
+   * Get games for a specific team and season
+   * Repository now returns Games with team relations loaded
+   */
+  async getTeamSeasonGames(teamId: number, seasonYear: string): Promise<Game[]> {
+    return await this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
+  }
+
+  /**
+   * Get upcoming games
+   * Repository now returns Games with team relations loaded
+   */
+  async getUpcomingGames(teamId?: number, limit?: number): Promise<Game[]> {
+    return await this.gameRepository.findUpcomingGames(teamId, limit);
+  }
+
+  /**
+   * Get completed games
+   * Repository now returns Games with team relations loaded
+   */
+  async getCompletedGames(teamId?: number, limit?: number): Promise<Game[]> {
+    return await this.gameRepository.findCompletedGames(teamId, limit);
+  }
+
+  /**
+   * Update a game
+   * Repository now returns Game with team relations loaded
+   */
+  async updateGame(id: number, dto: UpdateGameDto): Promise<Game> {
+    const existingGame = await this.gameRepository.findById(id);
+    if (!existingGame) {
+      throw new NotFoundError('Game', id);
+    }
+
+    // Validate date conflict if date is being updated
+    if (dto.gameDate) {
+      const conflict = await this.gameRepository.checkGameConflict(
+        existingGame.homeTeamId,
+        existingGame.awayTeamId,
+        new Date(dto.gameDate),
+        existingGame.seasonYear
+      );
+      if (conflict) {
+        const conflictGame = await this.gameRepository.findById(id);
+        if (!conflictGame || conflictGame.id !== id) {
+          throw new ValidationError(
+            'A game already exists for these teams on this date in this season'
+          );
+        }
+      }
+    }
+
+    const updatedGame = Game.create({
+      id: existingGame.id,
+      seasonYear: existingGame.seasonYear,
+      gameWeek: dto.gameWeek ?? existingGame.gameWeek,
+      seasonType: dto.seasonType ?? existingGame.seasonType,
+      gameDate: dto.gameDate ? new Date(dto.gameDate) : existingGame.gameDate,
+      homeTeamId: existingGame.homeTeamId,
+      awayTeamId: existingGame.awayTeamId,
+      gameLocation: dto.gameLocation ?? existingGame.gameLocation,
+      gameCity: dto.gameCity ?? existingGame.gameCity,
+      gameStateProvince: dto.gameStateProvince ?? existingGame.gameStateProvince,
+      gameCountry: dto.gameCountry ?? existingGame.gameCountry,
+      homeScore: dto.homeScore ?? existingGame.homeScore,
+      awayScore: dto.awayScore ?? existingGame.awayScore,
+      gameStatus: (dto.gameStatus ?? existingGame.gameStatus) as
+        | 'scheduled'
+        | 'in_progress'
+        | 'completed'
+        | 'cancelled'
+        | 'postponed'
+        | undefined,
+    });
+
+    return await this.gameRepository.update(id, updatedGame);
+  }
+
+  /**
+   * Update game score only
+   * Repository now returns Game with team relations loaded
+   */
+  async updateGameScore(id: number, dto: UpdateScoreDto): Promise<Game> {
+    const existingGame = await this.gameRepository.findById(id);
+    if (!existingGame) {
+      throw new NotFoundError('Game', id);
+    }
+
+    existingGame.updateScore(dto.homeScore, dto.awayScore, dto.gameStatus);
+
+    return await this.gameRepository.update(id, existingGame);
+  }
+
+  /**
+   * Delete a game
+   */
+  async deleteGame(id: number): Promise<void> {
+    const exists = await this.gameRepository.exists(id);
+    if (!exists) {
+      throw new NotFoundError('Game', id);
+    }
+    await this.gameRepository.delete(id);
+  }
+
+  /**
+   * Get games for a team in a specific week
+   * Repository now returns Games with team relations loaded
+   */
+  async getTeamWeekGames(teamId: number, seasonYear: string, gameWeek: number): Promise<Game[]> {
+    return await this.gameRepository.findByTeamSeasonWeek(teamId, seasonYear, gameWeek);
+  }
+
+  /**
+   * Get all games for a season (seasonType + regular + playoffs)
+   * Repository now returns Games with team relations loaded
+   */
+  async getAllSeasonGames(teamId?: number, seasonYear?: string): Promise<Game[]> {
+    return await this.gameRepository.findAllGamesForSeason(teamId, seasonYear);
+  }
+
+  /****************************************************************
+   * Calculate conference record for a team in a season
+   *  (new methods added for Team Info Statistics)
+   ****************************************************************/
+
+  async getConferenceRecord(
+    teamId: number,
+    seasonYear: string
+  ): Promise<{ wins: number; losses: number; ties: number }> {
+    const games = await this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
+    const completedGames = games.filter((g) => g.gameStatus === 'completed');
+
+    let wins = 0;
+    let losses = 0;
+    let ties = 0;
+
+    for (const game of completedGames) {
+      const isHome = game.homeTeamId === teamId;
+      const currentTeam = isHome ? game.homeTeam : game.awayTeam;
+      const opponent = isHome ? game.awayTeam : game.homeTeam;
+
+      // Only count if opponent is in same conference
+      if (opponent && currentTeam && opponent.conference === currentTeam.conference) {
+        const teamScore = isHome ? game.homeScore : game.awayScore;
+        const oppScore = isHome ? game.awayScore : game.homeScore;
+
+        if (teamScore !== undefined && oppScore !== undefined) {
+          if (teamScore > oppScore) wins++;
+          else if (teamScore < oppScore) losses++;
+          else ties++;
+        }
+      }
+    }
+
+    return { wins, losses, ties };
+  }
+
+  /**
+   * Calculate division record for a team in a season
+   */
+  async getDivisionRecord(
+    teamId: number,
+    seasonYear: string
+  ): Promise<{ wins: number; losses: number; ties: number }> {
+    const games = await this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
+    const completedGames = games.filter((g) => g.gameStatus === 'completed');
+
+    let wins = 0;
+    let losses = 0;
+    let ties = 0;
+
+    for (const game of completedGames) {
+      const isHome = game.homeTeamId === teamId;
+      const currentTeam = isHome ? game.homeTeam : game.awayTeam;
+      const opponent = isHome ? game.awayTeam : game.homeTeam;
+
+      // Only count if opponent is in same division
+      if (
+        opponent &&
+        currentTeam &&
+        opponent.division === currentTeam.division &&
+        opponent.conference === currentTeam.conference
+      ) {
+        const teamScore = isHome ? game.homeScore : game.awayScore;
+        const oppScore = isHome ? game.awayScore : game.homeScore;
+
+        if (teamScore !== undefined && oppScore !== undefined) {
+          if (teamScore > oppScore) wins++;
+          else if (teamScore < oppScore) losses++;
+          else ties++;
+        }
+      }
+    }
+
+    return { wins, losses, ties };
+  }
+
+  /**
+   * Get division standings for a team's division
+   */
+  async getDivisionStandings(
+    teamId: number,
+    seasonYear: string
+  ): Promise<
+    {
+      teamId: number;
+      teamName: string;
+      wins: number;
+      losses: number;
+      ties: number;
+      winPercentage: number;
+      divisionWins: number;
+      divisionLosses: number;
+    }[]
+  > {
+    if (!this.teamRepository) {
+      throw new Error('TeamRepository is required for division standings calculation');
+    }
+
+    // First, get a game for this team to find their division/conference
+    const teamGames = await this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
+    if (teamGames.length === 0) {
+      return []; // No games, can't determine division
+    }
+
+    // Extract team info from the first game
+    const firstGame = teamGames[0];
+    const currentTeam = firstGame.homeTeamId === teamId ? firstGame.homeTeam : firstGame.awayTeam;
+
+    if (!currentTeam || !currentTeam.division || !currentTeam.conference) {
+      throw new NotFoundError('Team division/conference information', teamId);
+    }
+
+    // Get all teams in the same division via the team repository
+    const divisionTeams = await this.teamRepository.findByDivision(currentTeam.division);
+
+    interface TeamStanding {
+      teamId: number;
+      teamName: string;
+      wins: number;
+      losses: number;
+      ties: number;
+      winPercentage: number;
+      divisionWins: number;
+      divisionLosses: number;
+    }
+
+    const standings = await Promise.all(
+      divisionTeams.map(async (divTeam): Promise<TeamStanding> => {
+        const games = await this.gameRepository.findByTeamAndSeason(divTeam.id!, seasonYear);
+        const completedGames = games.filter((g) => g.gameStatus === 'completed');
+
+        let wins = 0;
+        let losses = 0;
+        let ties = 0;
+        let divWins = 0;
+        let divLosses = 0;
+
+        for (const game of completedGames) {
+          const isHome = game.homeTeamId === divTeam.id;
+          const opponent = isHome ? game.awayTeam : game.homeTeam;
+          const teamScore = isHome ? game.homeScore : game.awayScore;
+          const oppScore = isHome ? game.awayScore : game.homeScore;
+
+          if (teamScore !== undefined && oppScore !== undefined) {
+            if (teamScore > oppScore) {
+              wins++;
+              if (
+                opponent?.division === currentTeam.division &&
+                opponent?.conference === currentTeam.conference
+              ) {
+                divWins++;
+              }
+            } else if (teamScore < oppScore) {
+              losses++;
+              if (
+                opponent?.division === currentTeam.division &&
+                opponent?.conference === currentTeam.conference
+              ) {
+                divLosses++;
+              }
+            } else {
+              ties++;
+            }
+          }
+        }
+
+        const totalGames = wins + losses + ties;
+        const winPercentage = totalGames > 0 ? (wins + ties * 0.5) / totalGames : 0;
+
+        return {
+          teamId: divTeam.id!,
+          teamName: divTeam.name,
+          wins,
+          losses,
+          ties,
+          winPercentage,
+          divisionWins: divWins,
+          divisionLosses: divLosses,
+        };
+      })
+    );
+
+    // Sort by win percentage, then division record
+    return standings.sort((a: TeamStanding, b: TeamStanding) => {
+      if (b.winPercentage !== a.winPercentage) {
+        return b.winPercentage - a.winPercentage;
+      }
+      const aDivPct = a.divisionWins / (a.divisionWins + a.divisionLosses || 1);
+      const bDivPct = b.divisionWins / (b.divisionWins + b.divisionLosses || 1);
+      return bDivPct - aDivPct;
+    });
+  }
+
+  //************************** New Stats added later ********************* */
+  /**
+   * Calculate home/away record for a team in a season
+   */
+  async getHomeAwayRecords(
+    teamId: number,
+    seasonYear: string
+  ): Promise<{
+    home: { wins: number; losses: number; ties: number };
+    away: { wins: number; losses: number; ties: number };
+  }> {
+    const games = await this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
+    const completedGames = games.filter((g) => g.gameStatus === 'completed');
+
+    let homeWins = 0,
+      homeLosses = 0,
+      homeTies = 0;
+    let awayWins = 0,
+      awayLosses = 0,
+      awayTies = 0;
+
+    for (const game of completedGames) {
+      const isHome = game.homeTeamId === teamId;
+      const teamScore = isHome ? game.homeScore : game.awayScore;
+      const oppScore = isHome ? game.awayScore : game.homeScore;
+
+      if (teamScore !== undefined && oppScore !== undefined) {
+        if (isHome) {
+          if (teamScore > oppScore) homeWins++;
+          else if (teamScore < oppScore) homeLosses++;
+          else homeTies++;
+        } else {
+          if (teamScore > oppScore) awayWins++;
+          else if (teamScore < oppScore) awayLosses++;
+          else awayTies++;
+        }
+      }
+    }
+
+    return {
+      home: { wins: homeWins, losses: homeLosses, ties: homeTies },
+      away: { wins: awayWins, losses: awayLosses, ties: awayTies },
+    };
+  }
+  /**
+   * Get team statistics summary
+   */
+  async getTeamStatistics(
+    teamId: number,
+    seasonYear: string
+  ): Promise<{
+    overallRecord: { wins: number; losses: number; ties: number };
+    conferenceRecord: { wins: number; losses: number; ties: number };
+    divisionRecord: { wins: number; losses: number; ties: number };
+    homeRecord: { wins: number; losses: number; ties: number };
+    awayRecord: { wins: number; losses: number; ties: number };
+    divisionPosition: number;
+    divisionTotal: number;
+  }> {
+    const [conf, div, standings, homeAway] = await Promise.all([
+      this.getConferenceRecord(teamId, seasonYear),
+      this.getDivisionRecord(teamId, seasonYear),
+      this.getDivisionStandings(teamId, seasonYear),
+      this.getHomeAwayRecords(teamId, seasonYear),
+    ]);
+
+    const position = standings.findIndex((s) => s.teamId === teamId) + 1;
+
+    // Calculate overall record (existing code)
+    const games = await this.gameRepository.findByTeamAndSeason(teamId, seasonYear);
+    const completedGames = games.filter((g) => g.gameStatus === 'completed');
+
+    let overallWins = 0,
+      overallLosses = 0,
+      overallTies = 0;
+
+    for (const game of completedGames) {
+      const isHome = game.homeTeamId === teamId;
+      const teamScore = isHome ? game.homeScore : game.awayScore;
+      const oppScore = isHome ? game.awayScore : game.homeScore;
+
+      if (teamScore !== undefined && oppScore !== undefined) {
+        if (teamScore > oppScore) overallWins++;
+        else if (teamScore < oppScore) overallLosses++;
+        else overallTies++;
+      }
+    }
+
+    return {
+      overallRecord: { wins: overallWins, losses: overallLosses, ties: overallTies },
+      conferenceRecord: conf,
+      divisionRecord: div,
+      homeRecord: homeAway.home,
+      awayRecord: homeAway.away,
+      divisionPosition: position,
+      divisionTotal: standings.length,
+    };
+  }
+}
+
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/schedule/dto
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/schedule/dto/ScheduleDto.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/schedule/services
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/schedule/services/GetWeekScheduleService.ts
+/home/dthompson/_workspaceDev01/sports_mgmt_app_server/src/application/schedule/services/ScheduleService.ts
+
+
+
+
+
+
+
+
+
+
+
+
+

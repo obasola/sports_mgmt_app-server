@@ -12,7 +12,7 @@ export class PrismaStandingsRepository implements IStandingsRepository {
       where: {
         seasonYear: String(year),
         seasonType,
-        gameStatus: Game_gameStatus.completed,
+        gameStatus: Game_gameStatus.final,
         //seasonType
       },
       include: {
@@ -24,7 +24,7 @@ export class PrismaStandingsRepository implements IStandingsRepository {
 
   async computeStandings(year: number, seasonType: number): Promise<TeamStanding[]> {
     const games = await this.getCompletedGames(year, seasonType)
-
+    console.log("[PrismaStandingsRepo::computeStandings] Bbr games found: "+games.length)
     const standings: Record<number, TeamStanding> = {}
 
     const ensureTeam = (team: any) => {

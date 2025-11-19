@@ -1,3 +1,4 @@
+// src/index.ts
 import 'module-alias/register'; // ✅ must be first for @/... paths to resolve
 import './config/env';          // ✅ loads dotenv-flow next
 import express from 'express';
@@ -10,7 +11,7 @@ import { CONFIG, isDev } from './config/env';
 import { apiRoutes } from './presentation/routes';
 import { errorHandler } from './presentation/middleware/errorHandler';
 import { initScoreboardCron } from './jobs/scoreboardCron';
-import { buildJobsModule } from './bootstrap/jobsModule';
+
 import { useCorsFromEnv } from './presentation/middleware/cors';
 
 
@@ -54,9 +55,9 @@ app.use(API_BASE, apiRoutes);
 // optional non-versioned convenience (keep if you want to support both)
 app.use('/api', apiRoutes);
 
-// Jobs module
-const { routes: jobsRoutes } = buildJobsModule();
-app.use(`${API_BASE}/jobs`, jobsRoutes);
+// Jobs module redundant with "src/presentation/routes/jobRoutes.ts"
+//const { routes: jobsRoutes } = buildJobsModule();
+//app.use(`${API_BASE}/jobs`, jobsRoutes);
 
 
 // ---- list all registered routes (debugging only)

@@ -82,15 +82,7 @@ export class BackfillSeasonService {
 
         // IMPORTANT: Pass **local Team.id** in both key and payload
         await this.gameRepo.upsertByKey(
-          {
-            espnCompetitionId: comp.id,
-            espnEventId: event.id,
-            seasonYear,
-            seasonType: (sbSeasonType === 1 ? 1 : 0) as unknown as SeasonType, // cast 0/1 to SeasonType to satisfy types
-            gameWeek: weekForDb,
-            homeTeamId,
-            awayTeamId,
-          },
+          { espnCompetitionId: String(comp.id) },
           payload
         )
         processed++

@@ -1,37 +1,56 @@
-import { Router, type Request, type Response, type NextFunction } from 'express'
-import { importWeekService } from '@/infrastructure/dependencies'
-import { queueJobService } from '@/infrastructure/dependencies'
+// ================================================================
+// src/presentation/routes/job.scoreboard.ts
+// Lightweight REST Endpoints for Scoreboard Sync
+// ================================================================
+import { Router } from 'express'
+
+import {
+  scoreboardSyncService,
+  syncWeekEventsService
+} from '@/infrastructure/dependencies'
 
 export const scoreboardJobs = Router()
 
-// POST /jobs/kickoff/scoreboard/by-week  { "year":2025, "seasonType":2, "week":1 }
-scoreboardJobs.post('/kickoff/scoreboard/by-week', async (req, res, next) => {
+// ------------------------------------------------------------
+// Import Scores by Week (Scoreboard)
+// ------------------------------------------------------------
+scoreboardJobs.post('/kickoff/scoreboard/by-week', async (req, res) => {
+  const { year, seasonType, week } = req.body
+
+  if (!year || !seasonType || !week)
+    return res.status(400).json({ error: 'year, seasonType, week are required' })
+
   try {
-    const { year, seasonType, week } = req.body;
+    const result = await scoreboardSyncService.runWeek({
+      seasonYear: String(year),
+      seasonType: Number(seasonType) as any,
+      week: Number(week)
+    })
 
-    if (!year || !seasonType || !week) {
-      return res.status(400).json({ error: 'year, seasonType, and week are required' });
-    }
-    const result = await importWeekService.run({ seasonYear: String(year), seasonType, week })
-
-    return res.json({ ok: true, ...result });
-  } catch (err) {
-    next(err);
-    return res.status(500).json({ err });
-  }
-});
-
-
-/* also pass year
-scoreboardJobs.post('/by-week', async (req, res, next) => {
-  try {
-    const { year, seasonType, week } = req.body as { year: number, seasonType: 1|2|3, week: number }
-    if (!year || !seasonType || week == null) return res.status(400).json({ error: 'year, seasonType, week required' })
-    const result = await importWeekService.importWeek({ year, seasonType, week })
     return res.json({ ok: true, ...result })
-  } catch (err) {
-    next(err)
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message })
   }
 })
 
-*/
+// ------------------------------------------------------------
+// Import Schedule (Events) by Week
+// ------------------------------------------------------------
+scoreboardJobs.post('/kickoff/schedule/by-week', async (req, res) => {
+  const { year, seasonType, week } = req.body
+
+  if (!year || !seasonType || !week)
+    return res.status(400).json({ error: 'year, seasonType, week are required' })
+
+  try {
+    const result = await syncWeekEventsService.sync(
+      year,
+      Number(seasonType),
+      Number(week)
+    )
+
+    return res.json({ ok: true, ...result })
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message })
+  }
+})

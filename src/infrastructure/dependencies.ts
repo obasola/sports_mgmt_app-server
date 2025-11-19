@@ -29,11 +29,12 @@ import { PrismaJobLogger } from './repositories/PrismaJobLogger'
 // Application Services – Core Domain
 // ───────────────────────────────────────────────────────────────
 import { DraftService } from '../application/draft/service/DraftService'
-import { ImportNflScoresService } from '../services/importNflScores'
+
 import { BackfillSeasonService } from '../services/backfillSeason'
 import { SyncTeamsService } from '../services/syncTeams'
 
 // ───────────────────────────────────────────────────────────────
+// src/infrastructure/repositories/dependencies.ts
 // Application Services – Job Management
 // ───────────────────────────────────────────────────────────────
 import { QueueJobService } from '../application/jobs/services/QueueJobService'
@@ -43,6 +44,9 @@ import { ListJobsService } from '../application/jobs/services/ListJobService'
 import { GetJobDetailService } from '../application/jobs/services/GetJobDetailService'
 import GetJobLogsService from '../application/jobs/services/GetJobLogService'
 import { ScheduleJobService } from '../application/jobs/services/ScheduleJobService'
+import { ImportScoresByDateService } from '@/application/scoreboard/services/ImportScoresByDateService'
+import { ScoreboardSyncService } from '@/application/scoreboard/services/ScoreboardSyncService'
+import { SyncWeekEventsService } from '@/application/schedule/services/SyncWeekEventsService';
 
 // ───────────────────────────────────────────────────────────────
 // 1️⃣ Instantiate Core Infrastructure
@@ -68,22 +72,25 @@ const jobLogRepository = new PrismaJobLogRepository(prismaClient)
 // 3️⃣ Instantiate Domain Services
 // ───────────────────────────────────────────────────────────────
 const draftService = new DraftService(prospectRepository, teamNeedRepository)
-const importWeekService = new ImportNflScoresService(espnClient, gameRepository, jobLogger)
 const backfillSeasonService = new BackfillSeasonService(espnClient, gameRepository, jobLogger)
 const syncTeamsService = new SyncTeamsService(jobLogger)
+const syncWeekEventsService = new SyncWeekEventsService(gameRepository, teamRepository);
+const scoreboardSyncService = new ScoreboardSyncService();
 
 // ───────────────────────────────────────────────────────────────
 // 4️⃣ Instantiate Job Application Services
 // ───────────────────────────────────────────────────────────────
-const queueJobService = new QueueJobService(jobRepository)
-const runJobService = new RunJobService(jobRepository, jobLogRepository, inProcessRunner, jobEmitter)
-const cancelJobService = new CancelJobService(jobRepository)
-const listJobsService = new ListJobsService(jobRepository)
+const queueJobService     = new QueueJobService(jobRepository)
+const runJobService       = new RunJobService(jobRepository, jobLogRepository, inProcessRunner, jobEmitter)
+const cancelJobService    = new CancelJobService(jobRepository)
+const listJobsService     = new ListJobsService(jobRepository)
 const getJobDetailService = new GetJobDetailService(jobRepository)
-const getJobLogsService = new GetJobLogsService(jobLogRepository)
+const getJobLogsService   = new GetJobLogsService(jobLogRepository)
+const getScoresByDateService = new ImportScoresByDateService(new ScoreboardSyncService() );
+
 //
-const cronScheduler = new CronScheduler(queueJobService, runJobService)
-const scheduleJobService = new ScheduleJobService(cronScheduler)
+const cronScheduler       = new CronScheduler(queueJobService, runJobService)
+const scheduleJobService  = new ScheduleJobService(cronScheduler)
 // ───────────────────────────────────────────────────────────────
 // 5️⃣ Export Everything (for Controllers and Routes)
 // ───────────────────────────────────────────────────────────────
@@ -108,9 +115,10 @@ export {
 
   // Domain Services
   draftService,
-  importWeekService,
   backfillSeasonService,
   syncTeamsService,
+  syncWeekEventsService,
+  scoreboardSyncService,
 
   // Job Services
   queueJobService,
@@ -119,5 +127,6 @@ export {
   listJobsService,
   getJobDetailService,
   getJobLogsService,
+  getScoresByDateService,
   scheduleJobService,
 }

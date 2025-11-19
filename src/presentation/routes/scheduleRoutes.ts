@@ -12,6 +12,12 @@ import {
 } from '@/application/schedule/dto/ScheduleDto';
 import { z } from 'zod';
 
+import { EspnScheduleClient } from '../../infrastructure/espn/EspnScheduleClient';
+import { GetWeekScheduleService } from '@/application/schedule/services/GetWeekScheduleService';
+
+
+const weekScheduleService = new GetWeekScheduleService(new EspnScheduleClient());
+
 const router = Router();
 
 // Dependency injection
@@ -68,7 +74,27 @@ router.get(
   scheduleController.getAllSchedules
 );
 
-router.get('/upcoming', scheduleController.getUpcomingGames);
+router.get('/upcomingSchedule', async (req, res) => {
+  try {
+    const year = Number(req.query.seasonYear)
+    const seasonType = Number(req.query.seasonType)
+    const week = Number(req.query.week)
+
+    console.log('➡️ Incoming params:', { year, seasonType, week, raw: req.query })
+
+    if (!year || !seasonType || !week) {
+      return res.status(400).json({ success: false, message: 'Missing year, seasonType, or week' })
+    }
+
+    const result = await weekScheduleService.execute(year, seasonType, week)
+    return res.json(result)
+  } catch (err: any) {
+    console.error('❌ /upcomingSchedule failed:', err)
+    return res.status(500).json({ success: false, message: err.message, error: err.message })
+  }
+})
+
+router.get('/upcomingGames', scheduleController.getUpcomingGames);
 
 router.get('/completed', scheduleController.getCompletedGames);
 

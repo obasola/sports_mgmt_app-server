@@ -1,5 +1,5 @@
 // src/presentation/routes/index.ts
-import 'module-alias/register';
+//import 'module-alias/register';
 
 import { Router } from 'express';
 import { teamRoutes } from './teamRoutes';
@@ -15,7 +15,7 @@ import { playerTeamRoutes } from './PlayerTeamRoutes';
 import { postSeasonResultRoutes } from './PostSeasonResultRoutes';
 import { gameRoutes } from './gameRoutes';
 
-import { buildJobRoutes } from './jobRoutes';
+import { jobRoutes } from './jobRoutes';
 import { JobController } from '../controllers/JobController'
 
 // Import your job-related services from DI container
@@ -72,7 +72,7 @@ router.use('/standings', standingsRoutes);
 router.use('/teamStandings', teamStandingsRoutes);
 router.use('/teams', teamRoutes);
 router.use('/team-needs', teamNeedRoutes);
-router.use('/jobs', buildJobRoutes(jobController))
+router.use('/jobs', jobRoutes);
 router.use('/jobs/kickoff/scoreboard', scoreboardJobs)
 router.use('/jobs/scoreboard/schedule', scoreboardScheduleRoutes)
 router.use('/scoreboard', buildScoreboardRouter()) // <— add this line

@@ -107,6 +107,7 @@ router.get('/:id', validateParams(IdParamsSchema), gameController.getGameById);
 
 router.get('/seasonType', gameController.getPreseasonGames);
 router.get('/regular-season', gameController.getRegularSeasonGames);
+router.get('/games/primetime', gameController.primetime)
 
 router.put('/:id', validateParams(IdParamsSchema), validateBody(UpdateGameDtoSchema), gameController.updateGame);
 

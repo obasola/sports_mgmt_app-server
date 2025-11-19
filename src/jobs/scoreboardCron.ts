@@ -3,8 +3,8 @@ import { schedule, ScheduledTask } from 'node-cron'
 import { getSchedule, saveSchedule } from '@/services/ScoreboardScheduleService'
 import type { ScoreboardSchedule, Day } from '@/types/scoreboardSchedule'
 import { JobService } from '@/services/JobService'
-import { jobLogger, importWeekService, backfillSeasonService, syncTeamsService } from '@/infrastructure/dependencies';
 import { nowInTz, dayCode, yyyymmddInTz, isAtScheduledTime } from './dateUtils'; // keep your helpers
+import { jobLogger, scoreboardSyncService, backfillSeasonService, syncTeamsService } from '@/infrastructure/dependencies';
 
 
 
@@ -17,7 +17,7 @@ export async function runScoreboardCron() {
   let now = new Date();
   let year = now.getFullYear();
   await syncTeamsService.run();
-  await importWeekService.run({ seasonYear: String(year), seasonType: 2, week: 1 });
+  await scoreboardSyncService.runWeek({ seasonYear: String(year), seasonType: 2, week: 1 });
   // or backfill:
   // await backfillSeasonService.run({ year: 2024, seasonType: 2 });
 }
@@ -46,16 +46,16 @@ export async function runOnce(schedule: ScoreboardSchedule) {
 
     // Import the configured week
     await jobLogger.log(jobId, { message: `Importing seasonType=${schedule.seasonType}, week=${schedule.week}...` });
-    const result = await importWeekService.run({
+    const result = await scoreboardSyncService.runWeek({
       seasonYear: schedule.seasonYear,
       seasonType: schedule.seasonType,
       week: schedule.week,
     });
 
     await jobLogger.succeed(jobId, {
-      totalEvents: result.totalEvents,
-      upserts: result.upserts,
-      skipped: result.skipped,
+ //    totalEvents: result.totalEvents,
+ //     upserts: result.upserts,
+ //     skipped: result.skipped,
       seasonYear: result.seasonYear,
       seasonType: result.seasonType,
       week: result.week,

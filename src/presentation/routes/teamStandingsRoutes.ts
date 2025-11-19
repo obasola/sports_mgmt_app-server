@@ -10,6 +10,6 @@ const service = new StandingsService(repo);
 const controller = new StandingsController(service);
 
 const router = Router();
-router.get('/', controller.get.bind(controller));
+router.get('/standings', controller.get.bind(controller));
 
 export const teamStandingsRoutes = router;

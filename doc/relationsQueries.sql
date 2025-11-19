@@ -57,3 +57,8 @@ where currentTeamId = 78
 FROM Game
 WHERE
   awayTeamId = 78 OR homeTeamId = 78;
+
+
+SELECT id, name, espnTeamId
+FROM Team
+WHERE id IN (65, 63);

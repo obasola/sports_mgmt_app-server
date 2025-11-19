@@ -1,5 +1,6 @@
 // src/domain/game/repositories/IGameRepository.ts
-import type { Game } from '../entities/Game';
+import { Prisma } from '@prisma/client';
+import type { Game, GameProps } from '../entities/Game';
 import type { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 
 export interface GameFilters {
@@ -26,8 +27,16 @@ export interface IGameRepository {
   findById(id: number): Promise<Game | null>;
   findAll(filters?: GameFilters, pagination?: PaginationParams): Promise<PaginatedResponse<Game>>;
   update(id: number, game: Game): Promise<Game>;
+  updatePartial(id: number, patch: Prisma.GameUpdateInput): Promise<Game>;
   delete(id: number): Promise<void>;
   exists(id: number): Promise<boolean>;
+
+    /**
+   * Fetch a single game by its ESPN competition ID.
+   * Used for ESPN sync comparisons (detecting score changes, etc.).
+   */
+  findByEspnCompetitionId(espnCompetitionId: string): Promise<Game | null>;
+
 
   // Team and season queries - All return Games WITH team relations
   findByTeamAndSeason(teamId: number, seasonYear: string): Promise<Game[]>;
@@ -56,15 +65,15 @@ export interface IGameRepository {
   findTeamIdByAbbrev(abbreviation: string): Promise<number | null>;
 
   // Upsert for ESPN sync - Returns Game WITH team relations
+  /*
   upsertByKey(
-    key: {
+  where: { espnCompetitionId: string },
+  data: any
+): Promise<Game>; */
+
+  upsertByKey(
+    where: {
       espnCompetitionId: string;
-      espnEventId: string;
-      seasonYear: string;
-      seasonType: number;
-      gameWeek: number;
-      homeTeamId: number;
-      awayTeamId: number;
     },
     data: {
       readonly seasonYear: string;
@@ -81,17 +90,12 @@ export interface IGameRepository {
     }
   ): Promise<Game>;
 
+
   // Optional: Method to explicitly fetch with teams (for backward compatibility)
   findByIdWithTeams?(id: number): Promise<{ 
     game: Game; 
     homeTeam: any; 
     awayTeam: any;
   } | null>;
-
-  /**
-   * Fetch a single game by its ESPN competition ID.
-   * Used for ESPN sync comparisons (detecting score changes, etc.).
-   */
-  findByEspnCompetitionId(espnCompetitionId: string): Promise<Game | null>;
 
 }

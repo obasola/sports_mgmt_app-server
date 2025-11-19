@@ -1,9 +1,28 @@
 // src/infrastructure/repositories/PrismaGameRepository.ts
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, Game_gameStatus } from '@prisma/client';
 import { Game } from '../../domain/game/entities/Game';
 import type { IGameRepository, GameFilters } from '../../domain/game/repositories/IGameRepository';
 import type { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+
+// --------------------------------------------------------------
+// Map ESPN status.type.name -> Prisma Game_gameStatus enum values
+// --------------------------------------------------------------
+// --------------------------------------------------------------
+// Map ESPN status.type.name -> Prisma Game_gameStatus enum values
+// --------------------------------------------------------------
+function mapEspnStatus(status: string | undefined): Game_gameStatus {
+  if (!status) return Game_gameStatus.scheduled;
+
+  const normalized = status.toUpperCase();
+
+  if (normalized.includes('FINAL')) return Game_gameStatus.final;
+  if (normalized.includes('IN_PROGRESS')) return Game_gameStatus.in_progress;
+  if (normalized.includes('POSTPONED')) return Game_gameStatus.postponed;
+  if (normalized.includes('CANCELED')) return Game_gameStatus.canceled;
+
+  return Game_gameStatus.scheduled;
+}
 
 export class PrismaGameRepository implements IGameRepository {
   constructor(private prisma: PrismaClient) {}
@@ -13,18 +32,6 @@ export class PrismaGameRepository implements IGameRepository {
     homeTeam: true,
     awayTeam: true,
   };
-
-  // ---------- ESPN helper mapping ----------
-  async findTeamIdByEspnTeamId(id: string): Promise<number | null> {
-    const n = Number(id);
-    const t = await this.prisma.team.findFirst({ where: { espnTeamId: n }, select: { id: true } });
-    return t?.id ?? null;
-  }
-
-  async findTeamIdByAbbrev(abbreviation: string): Promise<number | null> {
-    const t = await this.prisma.team.findFirst({ where: { abbreviation }, select: { id: true } });
-    return t?.id ?? null;
-  }
 
   // ---------- Domain CRUD ----------
   async save(game: Game): Promise<Game> {
@@ -52,6 +59,33 @@ export class PrismaGameRepository implements IGameRepository {
     return this.hydrateGameWithTeams(created);
   }
 
+  // ---------- ESPN helper mapping ----------
+  async findTeamIdByEspnTeamId(id: string | number | null | undefined): Promise<number | null> {
+    console.warn(`[PrismaGameRepo::findTeamIdByEspnTeamId] entryPoint - id=${id}`);
+    if (!id) return null;
+    const n = Number(id); // ESPN IDs come in as strings; normalize to number
+    if (isNaN(n)) {
+      console.warn(`[findTeamIdByEspnTeamId] Invalid espnTeamId value: ${id}`);
+      return null;
+    }
+
+    const t = await this.prisma.team.findFirst({
+      where: { espnTeamId: n },
+      select: { id: true },
+    });
+
+    if (!t) {
+      console.warn(
+        `[PrismaGameRepo::findTeamIdByEspnTeamId] Fai Team record found for espnTeamId=${n}`
+      );
+    }
+    return t?.id ?? null;
+  }
+
+  async findTeamIdByAbbrev(abbreviation: string): Promise<number | null> {
+    const t = await this.prisma.team.findFirst({ where: { abbreviation }, select: { id: true } });
+    return t?.id ?? null;
+  }
   async findById(id: number): Promise<Game | null> {
     const row = await this.prisma.game.findUnique({
       where: { id },
@@ -151,6 +185,16 @@ export class PrismaGameRepository implements IGameRepository {
       },
       include: this.teamInclude,
     });
+    return this.hydrateGameWithTeams(updated);
+  }
+
+  async updatePartial(id: number, patch: Prisma.GameUpdateInput): Promise<Game> {
+    const updated = await this.prisma.game.update({
+      where: { id },
+      data: patch,
+      include: this.teamInclude,
+    });
+
     return this.hydrateGameWithTeams(updated);
   }
 
@@ -306,25 +350,20 @@ export class PrismaGameRepository implements IGameRepository {
   /**
    * Find a game by ESPN competition ID (unique key).
    */
-  async findByEspnCompetitionId(espnCompetitionId: string): Promise<Game | null> {
-    const row = await this.prisma.game.findUnique({
-      where: { espnCompetitionId },
+
+  /* replacement */
+  async findByEspnCompetitionId(id: string) {
+    const row = this.prisma.game.findUnique({
+      where: { espnCompetitionId: id },
       include: this.teamInclude,
     });
-    return row ? this.hydrateGameWithTeams(row) : null;
+    if (!row) return null;
+    return this.hydrateGameWithTeams(row);
   }
 
   // ---------- ESPN upsert ----------
   async upsertByKey(
-    key: {
-      espnCompetitionId: string;
-      espnEventId: string;
-      seasonYear: string;
-      seasonType: number;
-      gameWeek: number;
-      homeTeamId: number;
-      awayTeamId: number;
-    },
+    where: { espnCompetitionId: string },
     data: {
       seasonYear: string;
       gameWeek: number;
@@ -334,55 +373,19 @@ export class PrismaGameRepository implements IGameRepository {
       awayTeamId: number;
       homeScore: number | null;
       awayScore: number | null;
-      gameStatus: any;
+      gameStatus: string | null;
       espnEventId: string;
       espnCompetitionId: string;
     }
   ): Promise<Game> {
-    const compId = key.espnCompetitionId;
-
-    if (!data.homeTeamId || !data.awayTeamId) {
-      console.warn(
-        `⚠️ [GameRepo] Skipping upsert for competition=${compId} — missing team mapping.`,
-        { homeTeamId: data.homeTeamId, awayTeamId: data.awayTeamId }
-      );
-      //throw new Error(`Missing team mapping for competition=${compId}`);
-      // ✅ just skip and return null
-      return null as any;
-    }
-
-    const baseFields = {
-      seasonYear: data.seasonYear,
-      gameWeek: data.gameWeek,
-      seasonType: data.seasonType,
-      gameDate: data.gameDate,
-      homeScore: data.homeScore,
-      awayScore: data.awayScore,
-      gameStatus: data.gameStatus,
-      espnEventId: data.espnEventId,
-      espnCompetitionId: data.espnCompetitionId,
-    };
-
-    const record = await this.prisma.game.upsert({
-      where: { espnCompetitionId: compId },
-      update: {
-        ...baseFields,
-        homeTeam: { connect: { id: data.homeTeamId } },
-        awayTeam: { connect: { id: data.awayTeamId } },
-      },
-      create: {
-        ...baseFields,
-        homeTeam: { connect: { id: data.homeTeamId } },
-        awayTeam: { connect: { id: data.awayTeamId } },
-      },
-      include: {
-        homeTeam: true,
-        awayTeam: true,
-      },
+    const row = await this.prisma.game.upsert({
+      where,
+      update: data as Prisma.GameUncheckedUpdateInput,
+      create: data as Prisma.GameUncheckedCreateInput,
+      include: this.teamInclude,
     });
 
-    // ✅ Convert Prisma record → Domain entity
-    return this.toDomain(record);
+    return this.hydrateGameWithTeams(row);
   }
 
   // -----------------------------------------------
@@ -405,5 +408,4 @@ export class PrismaGameRepository implements IGameRepository {
       // add any additional props your Game entity constructor expects
     });
   }
-  
 }

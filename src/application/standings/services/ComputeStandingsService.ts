@@ -1,3 +1,4 @@
+// src/application/services/ComputeStandingsService.ts
 import { TeamStanding } from '@/domain/standings/entities/TeamStanding'
 
 export interface TeamInfo {
@@ -56,7 +57,9 @@ export class ComputeStandingsService {
         const awayScore = g.awayScore ?? 0
 
         // Skip incomplete games
-        if (g.gameStatus !== 'completed') continue
+        const s = (g.gameStatus || '').toLowerCase()
+        if (!s.includes('final') && s !== 'completed') continue
+
 
         home.pointsFor += homeScore
         home.pointsAgainst += awayScore

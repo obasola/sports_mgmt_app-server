@@ -1,4 +1,11 @@
 // src/services/ScoreboardScheduleService.ts
+/*
+This file is not the actual Scoreboard sync logic.
+This is the UI-configurable cron schedule for when the scoreboard sync job should run.
+
+The real scoreboard logic lives in:
+src/application/scoreboard/services/ScoreboardSyncService.ts
+*/
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import type { ScoreboardSchedule, Day } from '@/types/scoreboardSchedule'
@@ -51,6 +58,7 @@ const toJsonValue = (o: unknown): Prisma.InputJsonValue =>
 
 export async function saveSchedule(s: ScoreboardSchedule): Promise<ScoreboardSchedule> {
   validateSchedule(s)
+  
   await prisma.appSetting.upsert({
     where: { key: KEY },
     create: { key: KEY, value: toJsonValue(s) },

@@ -4,6 +4,14 @@ import { PrismaStandingsRepository } from '@/infrastructure/repositories/PrismaS
 import { ComputeStandingsService } from '../../application/standings/services/ComputeStandingsService';
 import { ListStandingsUseCase } from '../../application/standings/useCases/ListStandingsUseCase';
 
+import { StandingsService } from '@/application/standings/services/StandingsService';
+import { StandingsController } from '@/presentation/controllers/StandingsController';
+
+const prisma = new PrismaClient();
+const repo = new PrismaStandingsRepository(prisma);
+const service = new StandingsService(repo);
+const controller = new StandingsController(service);
+
 const router = express.Router();
 
 router.get('/', async (req, res, next) => {
@@ -20,6 +28,7 @@ router.get('/', async (req, res, next) => {
     next(err);
   }
 });
+router.get('/debug', controller.debug.bind(controller));
 
 export default router;
 

@@ -49,12 +49,12 @@ function toDate(input: unknown): Date | undefined {
  * Also handle aliases (year→seasonYear, week→gameWeek, team_id→teamId).
  */
 function normalizeFilters(qAny: Record<string, any>): ControllerGameFilters {
-  const q = (qAny?.params && typeof qAny.params === 'object') ? qAny.params : qAny;
+  const q = qAny?.params && typeof qAny.params === 'object' ? qAny.params : qAny;
 
   // aliases
   const seasonYear = q.seasonYear ?? q.year;
-  const gameWeek   = q.gameWeek ?? q.week;
-  const teamId     = q.teamId ?? q.team_id;
+  const gameWeek = q.gameWeek ?? q.week;
+  const teamId = q.teamId ?? q.team_id;
 
   const out: ControllerGameFilters = {};
 
@@ -73,7 +73,7 @@ function normalizeFilters(qAny: Record<string, any>): ControllerGameFilters {
   if (q.gameCountry) out.gameCountry = String(q.gameCountry);
 
   out.dateFrom = toDate(q.dateFrom);
-  out.dateTo   = toDate(q.dateTo);
+  out.dateTo = toDate(q.dateTo);
 
   return out;
 }
@@ -111,15 +111,15 @@ export class GameController {
   };
 
   // 🔧 Flatten & normalize query BEFORE calling service
-    getAllGames = async (req: Request, res: Response<any>, next: NextFunction) => {
+  getAllGames = async (req: Request, res: Response<any>, next: NextFunction) => {
     try {
       // support both flat and nested
-      const raw = (req.query as any);
+      const raw = req.query as any;
       const filters = normalizeFilters(raw);
 
       // page/limit may also be nested under ?params[]
       const qp = raw?.params ?? raw;
-      const page  = qp.page  ? parseInt(String(qp.page), 10)  : 1;
+      const page = qp.page ? parseInt(String(qp.page), 10) : 1;
       const limit = qp.limit ? parseInt(String(qp.limit), 10) : 25;
 
       // DEBUG (optional):
@@ -137,7 +137,6 @@ export class GameController {
       next(err);
     }
   };
-
 
   getPreseasonGames = async (
     req: Request,
@@ -180,7 +179,10 @@ export class GameController {
   ): Promise<void> => {
     try {
       const teamId = z.coerce.number().parse(req.params.teamId);
-      const seasonYear = z.string().regex(/^\d{4}$/).parse(req.params.seasonYear);
+      const seasonYear = z
+        .string()
+        .regex(/^\d{4}$/)
+        .parse(req.params.seasonYear);
       const games = await this.gameService.getTeamSeasonGames(teamId, seasonYear);
       const dtoGames = games.map(mapGameToResponse);
       res.json({ success: true, data: dtoGames });
@@ -291,4 +293,23 @@ export class GameController {
       next(error);
     }
   };
+
+  // src/presentation/controllers/GameController.ts
+  primetime = async (req: Request, res: Response) => {
+  const year = String(req.query.year ?? '')
+
+  const { data } = await this.gameService.getAllGames(
+    { seasonYear: year },
+    { page: 1, limit: 500 }
+  )
+
+  const primetimeGames = data.filter((g) => {
+    if (!g.gameDate) return false
+    const hour = new Date(g.gameDate).getHours()
+    return hour >= 19 && hour <= 23   // 7pm–11pm primetime
+  })
+
+  return res.json(primetimeGames)
+}
+
 }

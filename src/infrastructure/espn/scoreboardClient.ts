@@ -44,6 +44,7 @@ async function httpGet(params: Record<string, string | number | undefined>) {
 }
 
 /** Canonical entry point */
+/** Canonical entry point */
 export async function fetchScoreboard(params: ScoreboardParams) {
   // translate legacy param
   if (params.season != null && params.year == null) {
@@ -55,18 +56,47 @@ export async function fetchScoreboard(params: ScoreboardParams) {
   // build canonical query
   const q: Record<string, string | number | undefined> = {}
   if (params.date) q.dates = params.date
-  if (params.year != null) q.year = params.year
+  if (params.year != null) q.seasonYear = params.year        // <-- fix key
   if (params.seasonType != null) q.seasontype = params.seasonType
   if (params.week != null) q.week = params.week
 
+  let raw: any
   try {
-    return await pRetry(() => httpGet(q), { retries: 2, factor: 2, minTimeout: 500 })
+    raw = await pRetry(() => httpGet(q), { retries: 2, factor: 2, minTimeout: 500 })
   } catch (e) {
-    // fallback to a computed date if we had year/type/week
+    // fallback to computed date if week-based fetch fails
     if (!params.date && params.year != null && params.seasonType != null && params.week != null) {
       const fallbackDate = weekToSunday(params.year, params.week, params.seasonType)
-      return await pRetry(() => httpGet({ dates: fallbackDate }), { retries: 2, factor: 2, minTimeout: 500 })
+      raw = await pRetry(() => httpGet({ dates: fallbackDate }), { retries: 2, factor: 2, minTimeout: 500 })
+    } else {
+      throw e
     }
-    throw e
   }
+
+  // 🔍 Normalize ESPN’s structure into usable format
+  const events = (raw?.events ?? []).map((ev: any) => {
+    const comp = ev.competitions?.[0]
+    const home = comp?.competitors?.find((c: any) => c.homeAway === 'home')
+    const away = comp?.competitors?.find((c: any) => c.homeAway === 'away')
+
+    return {
+      id: ev.id,
+      date: ev.date,
+      status: comp?.status?.type?.name ?? 'scheduled',
+      homeTeamId: home ? Number(home.team.id) : undefined,
+      awayTeamId: away ? Number(away.team.id) : undefined,
+      homeScore: home?.score ? Number(home.score) : null,
+      awayScore: away?.score ? Number(away.score) : null,
+      homeTeamName: home?.team?.displayName ?? null,
+      awayTeamName: away?.team?.displayName ?? null,
+    }
+  })
+
+  console.log(
+    `(src/infrastructure/espn/scoreboardClient.ts) Parsed ${events.length} events from ESPN for`,
+    params.date ?? `${params.year}-W${params.week}`
+  )
+
+  return { events }
 }
+

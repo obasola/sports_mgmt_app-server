@@ -1,0 +1,167 @@
+
+> sports_mgmt_app-server@1.0.0 dev
+> ts-node src/index.ts
+
+✅ Draft Pick routes registered
+Registered routes:
+GET        /health
+⏸️  Cron jobs disabled (ENABLE_CRON_JOBS=false)
+🚀 SportsMgmt API vb0.1 up on :5000
+📱 APP_ENV=development NODE_ENV=development
+🔗 Health: http://localhost:5000/health
+📋 API Base: http://localhost:5000/api
+🌐 CORS Allowed: http://localhost:5173
+where params:  { seasonYear: '2025' }
+filters:  {
+  seasonYear: '2025',
+  gameStatus: undefined,
+  dateFrom: undefined,
+  dateTo: undefined
+}
+where:  { seasonYear: '2025' }
+[0mGET /api/games?params[year]=2025&params[page]=1&params[limit]=10 [36m304[0m 40.895 ms - -[0m
+[0mGET /api/jobs/scoreboard/schedule [36m304[0m 4.432 ms - -[0m
+(src/infrastructure/scoreboardClient.ts) Fetching: https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasonYear=2025&seasontype=2&week=10
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Denver Broncos (espn=7 → db=72), away=Las Vegas Raiders (espn=13 → db=79)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Indianapolis Colts (espn=11 → db=75), away=Atlanta Falcons (espn=1 → db=62)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Chicago Bears (espn=3 → db=67), away=New York Giants (espn=19 → db=82)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Miami Dolphins (espn=15 → db=94), away=Buffalo Bills (espn=2 → db=65)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Minnesota Vikings (espn=16 → db=80), away=Baltimore Ravens (espn=33 → db=63)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=New York Jets (espn=20 → db=83), away=Cleveland Browns (espn=5 → db=69)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Tampa Bay Buccaneers (espn=27 → db=88), away=New England Patriots (espn=17 → db=95)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Carolina Panthers (espn=29 → db=66), away=New Orleans Saints (espn=18 → db=92)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Houston Texans (espn=34 → db=93), away=Jacksonville Jaguars (espn=30 → db=76)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Seattle Seahawks (espn=26 → db=87), away=Arizona Cardinals (espn=22 → db=61)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=San Francisco 49ers (espn=25 → db=86), away=Los Angeles Rams (espn=14 → db=77)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Washington Commanders (espn=28 → db=90), away=Detroit Lions (espn=8 → db=71)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Los Angeles Chargers (espn=24 → db=96), away=Pittsburgh Steelers (espn=23 → db=85)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Green Bay Packers (espn=9 → db=73), away=Philadelphia Eagles (espn=21 → db=84)
+[0mPOST /api/jobs/kickoff/scoreboard/by-week [32m200[0m 548.691 ms - 106[0m
+(src/infrastructure/scoreboardClient.ts) Fetching: https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasonYear=2025&seasontype=2&week=10
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Denver Broncos (espn=7 → db=72), away=Las Vegas Raiders (espn=13 → db=79)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Indianapolis Colts (espn=11 → db=75), away=Atlanta Falcons (espn=1 → db=62)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Chicago Bears (espn=3 → db=67), away=New York Giants (espn=19 → db=82)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Miami Dolphins (espn=15 → db=94), away=Buffalo Bills (espn=2 → db=65)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Minnesota Vikings (espn=16 → db=80), away=Baltimore Ravens (espn=33 → db=63)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=New York Jets (espn=20 → db=83), away=Cleveland Browns (espn=5 → db=69)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Tampa Bay Buccaneers (espn=27 → db=88), away=New England Patriots (espn=17 → db=95)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Carolina Panthers (espn=29 → db=66), away=New Orleans Saints (espn=18 → db=92)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Houston Texans (espn=34 → db=93), away=Jacksonville Jaguars (espn=30 → db=76)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Seattle Seahawks (espn=26 → db=87), away=Arizona Cardinals (espn=22 → db=61)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=San Francisco 49ers (espn=25 → db=86), away=Los Angeles Rams (espn=14 → db=77)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Washington Commanders (espn=28 → db=90), away=Detroit Lions (espn=8 → db=71)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Los Angeles Chargers (espn=24 → db=96), away=Pittsburgh Steelers (espn=23 → db=85)
+===================================
+(src/services/importNflScores.ts) Year: 2025
+===================================
+[importNflScores::importCompetition] Mapping: home=Green Bay Packers (espn=9 → db=73), away=Philadelphia Eagles (espn=21 → db=84)
+[0mPOST /api/jobs/kickoff/scoreboard/by-week [32m200[0m 489.983 ms - 106[0m
+(ImportScoresByDateService) Running scoreboard import for date: 20251114
+🏈 Syncing scoreboard for date 20251114
+(src/infrastructure/espn/scoreboardClient.ts) Parsed 0 events from ESPN for 20251114
+[0mPOST /api/jobs/kickoff/scoreboard/by-date [32m200[0m 109.703 ms - 44[0m
+[0mGET /api/standings?year=2025&seasonType=2 [32m200[0m 58.862 ms - 11[0m
+[0mGET /api/standings?year=2025&seasonType=2 [32m200[0m 77.492 ms - 11[0m
+[0mGET /api/jobs/scoreboard/schedule [32m200[0m 10.400 ms - 159[0m
+(ImportScoresByDateService) Running scoreboard import for date: 20251113
+🏈 Syncing scoreboard for date 20251113
+(src/infrastructure/espn/scoreboardClient.ts) Parsed 1 events from ESPN for 20251113
+Year (final): 2025 for compId=401772945 | homeTeamDbId=95 | awayTeamDbId=83
+[0mPOST /api/jobs/kickoff/scoreboard/by-date [32m200[0m 288.924 ms - 44[0m
+[0mGET /api/standings?year=2025&seasonType=2 [32m200[0m 37.089 ms - 11[0m
+[0mGET /api/standings?year=2025&seasonType=2 [32m200[0m 85.999 ms - 11[0m
+[0mGET /api/standings?year=2025&seasonType=2 [32m200[0m 47.198 ms - 11[0m
+[0mGET /api/standings?year=2025&seasonType=2 [32m200[0m 96.147 ms - 11[0m
+[0mGET /api/standings?year=2025 [32m200[0m 90.268 ms - 11[0m
+[0mGET /api/standings?year=2025 [32m200[0m 45.421 ms - 11[0m
+[0mGET /api/standings?year=2025 [32m200[0m 44.354 ms - 11[0m
+[0mGET /api/standings?year=2025&seasonType=2 [32m200[0m 79.889 ms - 11[0m
+[0mGET /api/standings?year=2025&seasonType=2 [32m200[0m 89.588 ms - 11[0m
+[0mGET /api/standings/debug [33m404[0m 3.073 ms - 100[0m
+[0mGET /api/standings/debug [33m404[0m 0.431 ms - 100[0m
+[0mGET /api/standings/debug [33m404[0m 1.059 ms - 100[0m
+[0mGET /api/standings/standings/debug [33m404[0m 0.398 ms - 110[0m
+[0mGET /api/standings/debug [33m404[0m 1.603 ms - 100[0m
+
+SIGINT received. Shutting down...
