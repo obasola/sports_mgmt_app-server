@@ -30,7 +30,7 @@ where currentTeamId = 78
      (select name from Team where id = homeTeamId) as homeTeam,
      awayScore, homeScore
   from Game 
-  where awayTeamId = 78 or homeTeamId = 78
+  where awayTeamId = 93 or homeTeamId = 93
 
   SELECT
   gameWeek,

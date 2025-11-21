@@ -124,14 +124,19 @@ export class ScoreboardSyncService {
     for (const ev of data.events ?? []) {
       try {
         const compId = String(ev.id);
+        console.log(`🏈 [ScoreboardSync] processing compId ${compId}`);
+
         const existing = await this.games.findByEspnCompetitionId(compId);
 
         if (!existing) {
           console.warn(`⚠️ [ScoreboardSync] Skipping competition=${compId}. No DB row exists.`);
           continue;
         }
-
+        console.log(`🏈 [ScoreboardSync] normalizing event status ${ev.status}`);
         const status = this.normalizeStatus(ev.status?.type?.name ?? ev.status);
+        console.log(`🏈 [ScoreboardSync] (UPDATE data) Date: ${ev.date} homeScore: ${ev.homeScore} awayScore: ${ev.awayScore} gameStatus: ${ev.status} `);
+        console.log(`🏈 [ScoreboardSync] existing true but existing.id = ${existing.id}`);
+        console.log(`🏈 [ScoreboardSync] (existing) awayTeamId = ${existing.awayTeamId} homeTeamId = ${existing.homeTeamId} `);
 
         const updateData = {
           gameStatus: this.toPrismaStatus(status),
@@ -141,8 +146,11 @@ export class ScoreboardSyncService {
         };
 
         if (existing && existing.id) {
+          console.log(`🏈 [ScoreboardSync] do partial update: HomeScore = ${updateData.homeScore} AwayScore = ${updateData.awayScore}`);
           await this.games.updatePartial(existing.id, updateData);
           processed++;
+        }else{
+          console.log(`🏈 [ScoreboardSync] Nothing to Update for Date: ${date}`);
         }
       } catch (err) {
         failed++;

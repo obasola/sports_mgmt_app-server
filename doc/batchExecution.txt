@@ -1,9 +1,9 @@
 Quick sanity test (CLI)
 
 # Week import (single) Games
-npx ts-node src/cli/importWeek.ts 2025 2 8
+npx ts-node src/cli/importWeek.ts 2025 2 12
 - OR - 
-npx ts-node --esm src/cli/importScores.ts 2025 2 8
+npx ts-node --esm src/cli/importScores.ts 2025 2 12
 
 # Season backfill Games
 npx ts-node src/cli/backfillSeason.ts --year=2025 --seasonType=2

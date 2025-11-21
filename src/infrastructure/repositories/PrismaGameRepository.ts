@@ -353,7 +353,7 @@ export class PrismaGameRepository implements IGameRepository {
 
   /* replacement */
   async findByEspnCompetitionId(id: string) {
-    const row = this.prisma.game.findUnique({
+    const row = await this.prisma.game.findUnique({
       where: { espnCompetitionId: id },
       include: this.teamInclude,
     });

@@ -9,6 +9,7 @@ export class ImportScoresByDateService {
   async run({ date }: { date: string }) {
     console.log('(ImportScoresByDateService) Running scoreboard import for date:', date);
     const result = await this.scoreboardSyncService.runDate({date});
+    console.log('(ImportScoresByDateService) result: '+result)
     return result;
   }
 }
