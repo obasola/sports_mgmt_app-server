@@ -62,3 +62,14 @@ WHERE
 SELECT id, name, espnTeamId
 FROM Team
 WHERE id IN (65, 63);
+
+-- FindBy espnCompetitionId
+SELECT g.gameDate, g.gameWeek, at.name as awayTeam, ht.name as homeTeam
+from Game g,
+     Team at,
+     Team ht
+where g.espnCompetitionId = 401772631 
+  and g.awayTeamId = at.id
+  and g.homeTeamId = ht.id;
+
+  401772946

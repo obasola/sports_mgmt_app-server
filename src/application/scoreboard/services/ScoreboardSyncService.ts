@@ -3,7 +3,8 @@
 import { fetchScoreboard, SeasonType } from '@/infrastructure/espn/scoreboardClient';
 import { PrismaClient } from '@prisma/client';
 import { PrismaGameRepository } from '@/infrastructure/repositories/PrismaGameRepository';
-import { Game_gameStatus } from '@prisma/client'; // adjust path if needed
+import { Game_gameStatus } from '@prisma/client';
+import { DebugLogger } from '@/infrastructure/logging/DebugLogger';
 
 export interface ScoreboardSyncResult {
   processed: number;
@@ -16,10 +17,12 @@ export interface ScoreboardSyncResult {
 export class ScoreboardSyncService {
   private prisma: PrismaClient;
   private games: PrismaGameRepository;
+  private logger: DebugLogger;
 
   constructor() {
     this.prisma = new PrismaClient();
     this.games = new PrismaGameRepository(this.prisma);
+    this.logger = DebugLogger.getInstance();
   }
 
   private normalizeSeasonYear(value: any): string {
@@ -41,16 +44,11 @@ export class ScoreboardSyncService {
     return 'scheduled';
   }
 
-  /**
-   * ⭐ Option C Logic:
-   * - Scoreboard updates scores + status ONLY.
-   * - Games MUST ALREADY EXIST (from Event Sync).
-   */
   async runWeek(params: { seasonYear: string; seasonType: SeasonType; week: number }) {
     const { seasonYear, seasonType, week } = params;
     const normalizedYear = this.normalizeSeasonYear(seasonYear);
 
-    console.log(
+    this.logger.log(
       `🏈 [ScoreboardSync] Updating scores for ${normalizedYear} type ${seasonType} week ${week}`
     );
 
@@ -69,29 +67,39 @@ export class ScoreboardSyncService {
         const existing = await this.games.findByEspnCompetitionId(compId);
 
         if (!existing) {
-          console.warn(
+          this.logger.warn(
             `⚠️ [ScoreboardSync] Skipping competition=${compId}.` +
               ` No DB row exists — expected Event Sync to create it.`
           );
           continue;
+        } else {
+          this.logger.log(`🏈 [ScoreboardSync] normalizing event status ${ev.status}`);
+
+          this.logger.log(
+            `🏈 [ScoreboardSync] (UPDATE data) Date: ${ev.date} homeScore: ${ev.homeScore} awayScore: ${ev.awayScore} gameStatus: ${ev.status}`
+          );
+          this.logger.log(`🏈 [ScoreboardSync] existing true but existing.id = ${existing.id}`);
+          this.logger.log(
+            `🏈 [ScoreboardSync] (existing) awayTeamId = ${existing.awayTeamId} homeTeamId = ${existing.homeTeamId}`
+          );
         }
 
         const status = this.normalizeStatus(ev.status?.type?.name ?? ev.status);
 
-        // Update only scoreboard-controlled fields
         const updateData = {
           gameStatus: this.toPrismaStatus(status),
           homeScore: ev.homeScore ?? null,
           awayScore: ev.awayScore ?? null,
           gameDate: ev.date ? new Date(ev.date) : existing.gameDate,
         };
+
         if (existing && existing.id) {
           await this.games.updatePartial(existing.id, updateData);
           processed++;
         }
       } catch (err) {
         failed++;
-        console.error(`❌ [ScoreboardSync] Error processing event ${ev.id}:`, err);
+        this.logger.error(`❌ [ScoreboardSync] Error processing event ${ev.id}:`, err);
       }
     }
 
@@ -104,14 +112,9 @@ export class ScoreboardSyncService {
     };
   }
 
-  /**
-   * Same logic for date-based sync:
-   * - NO creation
-   * - Update scores only
-   */
   async runDate(params: { date: string }) {
     const { date } = params;
-    console.log(`🏈 [ScoreboardSync] Updating scores for date ${date}`);
+    this.logger.log(`🏈 [ScoreboardSync] Updating scores for date ${date}`);
 
     if (!/^\d{8}$/.test(date)) {
       throw new Error(`Invalid date format "${date}". Expected YYYYMMDD.`);
@@ -124,19 +127,25 @@ export class ScoreboardSyncService {
     for (const ev of data.events ?? []) {
       try {
         const compId = String(ev.id);
-        console.log(`🏈 [ScoreboardSync] processing compId ${compId}`);
+        this.logger.log(`🏈 [ScoreboardSync] processing compId ${compId}`);
 
         const existing = await this.games.findByEspnCompetitionId(compId);
 
         if (!existing) {
-          console.warn(`⚠️ [ScoreboardSync] Skipping competition=${compId}. No DB row exists.`);
+          this.logger.warn(`⚠️ [ScoreboardSync] Skipping competition=${compId}. No DB row exists.`);
           continue;
         }
-        console.log(`🏈 [ScoreboardSync] normalizing event status ${ev.status}`);
+
+        this.logger.log(`🏈 [ScoreboardSync] normalizing event status ${ev.status}`);
         const status = this.normalizeStatus(ev.status?.type?.name ?? ev.status);
-        console.log(`🏈 [ScoreboardSync] (UPDATE data) Date: ${ev.date} homeScore: ${ev.homeScore} awayScore: ${ev.awayScore} gameStatus: ${ev.status} `);
-        console.log(`🏈 [ScoreboardSync] existing true but existing.id = ${existing.id}`);
-        console.log(`🏈 [ScoreboardSync] (existing) awayTeamId = ${existing.awayTeamId} homeTeamId = ${existing.homeTeamId} `);
+
+        this.logger.log(
+          `🏈 [ScoreboardSync] (UPDATE data) Date: ${ev.date} homeScore: ${ev.homeScore} awayScore: ${ev.awayScore} gameStatus: ${ev.status}`
+        );
+        this.logger.log(`🏈 [ScoreboardSync] existing true but existing.id = ${existing.id}`);
+        this.logger.log(
+          `🏈 [ScoreboardSync] (existing) awayTeamId = ${existing.awayTeamId} homeTeamId = ${existing.homeTeamId}`
+        );
 
         const updateData = {
           gameStatus: this.toPrismaStatus(status),
@@ -146,15 +155,17 @@ export class ScoreboardSyncService {
         };
 
         if (existing && existing.id) {
-          console.log(`🏈 [ScoreboardSync] do partial update: HomeScore = ${updateData.homeScore} AwayScore = ${updateData.awayScore}`);
+          this.logger.log(
+            `🏈 [ScoreboardSync] do partial update: HomeScore = ${updateData.homeScore} AwayScore = ${updateData.awayScore}`
+          );
           await this.games.updatePartial(existing.id, updateData);
           processed++;
-        }else{
-          console.log(`🏈 [ScoreboardSync] Nothing to Update for Date: ${date}`);
+        } else {
+          this.logger.log(`🏈 [ScoreboardSync] Nothing to Update for Date: ${date}`);
         }
       } catch (err) {
         failed++;
-        console.error(`❌ [ScoreboardSync] Error processing event ${ev.id}:`, err);
+        this.logger.error(`❌ [ScoreboardSync] Error processing event ${ev.id}:`, err);
       }
     }
 
@@ -169,7 +180,6 @@ export class ScoreboardSyncService {
     if (s.includes('postponed')) return Game_gameStatus.postponed;
     if (s.includes('canceled')) return Game_gameStatus.canceled;
 
-    // default:
     return Game_gameStatus.scheduled;
   }
 

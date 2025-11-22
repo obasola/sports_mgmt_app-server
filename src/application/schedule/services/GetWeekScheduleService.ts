@@ -1,11 +1,15 @@
-// application/schedule/services/GetWeekScheduleService.ts
-import { EspnScheduleClient, EventDTO, WeekScheduleDTO } from "../../../infrastructure/espn/EspnScheduleClient";
+import { EspnScheduleClient } from "@/infrastructure/espn/EspnScheduleClient";
+import { WeekScheduleDTO } from "@/utils/schedule/scheduleTypes";
 
 export class GetWeekScheduleService {
   constructor(private scheduleClient: EspnScheduleClient) {}
 
-  async execute(year: number, seasonType: number, week: number): Promise<WeekScheduleDTO> {
-    const events = await this.scheduleClient.getWeekEvents(year, seasonType, week);
-    return { year, seasonType, week, events };
+  async execute(
+    year: number,
+    seasonType: number,
+    week: number
+  ): Promise<WeekScheduleDTO> {
+
+    return await this.scheduleClient.getWeekEvents(year, seasonType, week);
   }
 }
