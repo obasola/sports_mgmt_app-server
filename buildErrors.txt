@@ -1,0 +1,261 @@
+
+> sports_mgmt_app-server@1.0.0 build
+> npm run clean && tsc -p tsconfig.json && tsc-alias -p tsconfig.json --verbose
+
+
+> sports_mgmt_app-server@1.0.0 clean
+> rimraf dist
+
+src/domain/auth/mappers/EmailVerificationTokenMapper.ts(7,5): error TS2741: Property 'isExpired' is missing in type '{ id: number | null; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'EmailVerificationTokenDTO'.
+src/domain/auth/mappers/PasswordResetTokenMapper.ts(7,5): error TS2741: Property 'isExpired' is missing in type '{ id: number | null; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'PasswordResetTokenDTO'.
+src/domain/auth/mappers/RefreshTokenMapper.ts(8,5): error TS2741: Property 'isExpired' is missing in type '{ id: number | null; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'RefreshTokenDTO'.
+src/domain/auth/mappers/RefreshTokenMapper.ts(38,5): error TS2322: Type 'number | null' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/infrastructure/jwt/JwtAuthTokenService.ts(2,17): error TS2307: Cannot find module 'jsonwebtoken' or its corresponding type declarations.
+src/infrastructure/jwt/JwtAuthTokenService.ts(22,26): error TS2339: Property 'randomBytes' does not exist on type 'Crypto'.
+src/infrastructure/mail/MailerSendMailService.ts(1,23): error TS2459: Module '"@/domain/mail/services/MailService"' declares 'MailMessage' locally, but it is not exported.
+src/infrastructure/repositories/PrismaPersonRepository.ts(38,34): error TS2339: Property 'pageSize' does not exist on type 'PaginationParams'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(50,7): error TS2353: Object literal may only specify known properties, and 'items' does not exist in type 'PaginatedResponse<Person>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(50,23): error TS2345: Argument of type '(row: { pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }) => Person' is not assignable to parameter of type '(value: { firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }, index: number, array: { ...; }[]) => Person'.
+  Types of parameters 'row' and 'value' are incompatible.
+    Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(62,44): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
+  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(66,54): error TS2322: Type '{ emailAddress: string; }' is not assignable to type 'PersonWhereUniqueInput'.
+  Type '{ emailAddress: string; }' is not assignable to type '{ pid: number; } & { pid?: number | undefined; AND?: PersonWhereInput | PersonWhereInput[] | undefined; OR?: PersonWhereInput[] | undefined; ... 10 more ...; refreshTokens?: RefreshTokenListRelationFilter | undefined; }'.
+    Property 'pid' is missing in type '{ emailAddress: string; }' but required in type '{ pid: number; }'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(67,44): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
+  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(71,54): error TS2322: Type '{ userName: string; }' is not assignable to type 'PersonWhereUniqueInput'.
+  Type '{ userName: string; }' is not assignable to type '{ pid: number; } & { pid?: number | undefined; AND?: PersonWhereInput | PersonWhereInput[] | undefined; OR?: PersonWhereInput[] | undefined; ... 10 more ...; refreshTokens?: RefreshTokenListRelationFilter | undefined; }'.
+    Property 'pid' is missing in type '{ userName: string; }' but required in type '{ pid: number; }'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(72,44): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
+  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(101,9): error TS2353: Object literal may only specify known properties, and 'rid' does not exist in type '(Without<PersonCreateInput, PersonUncheckedCreateInput> & PersonUncheckedCreateInput) | (Without<...> & PersonCreateInput)'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(109,35): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
+  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(118,35): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
+  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(129,51): error TS2322: Type 'EmailVerificationTokenDTO' is not assignable to type '(Without<EmailVerificationTokenCreateInput, EmailVerificationTokenUncheckedCreateInput> & EmailVerificationTokenUncheckedCreateInput) | (Without<...> & EmailVerificationTokenCreateInput)'.
+  Type 'EmailVerificationTokenDTO' is not assignable to type 'Without<EmailVerificationTokenCreateInput, EmailVerificationTokenUncheckedCreateInput> & EmailVerificationTokenUncheckedCreateInput'.
+    Type 'EmailVerificationTokenDTO' is not assignable to type 'EmailVerificationTokenUncheckedCreateInput'.
+      Types of property 'id' are incompatible.
+        Type 'number | null' is not assignable to type 'number | undefined'.
+          Type 'null' is not assignable to type 'number | undefined'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(133,5): error TS2322: Type '{ id: number; createdAt: Date; personId: number; token: string; expiresAt: Date; } | null' is not assignable to type 'EmailVerificationTokenDTO | null'.
+  Property 'isExpired' is missing in type '{ id: number; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'EmailVerificationTokenDTO'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(151,47): error TS2322: Type 'PasswordResetTokenDTO' is not assignable to type '(Without<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput> & PasswordResetTokenUncheckedCreateInput) | (Without<...> & PasswordResetTokenCreateInput)'.
+  Type 'PasswordResetTokenDTO' is not assignable to type 'Without<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput> & PasswordResetTokenUncheckedCreateInput'.
+    Type 'PasswordResetTokenDTO' is not assignable to type 'PasswordResetTokenUncheckedCreateInput'.
+      Types of property 'id' are incompatible.
+        Type 'number | null' is not assignable to type 'number | undefined'.
+          Type 'null' is not assignable to type 'number | undefined'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(155,5): error TS2322: Type '{ id: number; createdAt: Date; personId: number; token: string; expiresAt: Date; } | null' is not assignable to type 'PasswordResetTokenDTO | null'.
+  Property 'isExpired' is missing in type '{ id: number; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'PasswordResetTokenDTO'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(173,41): error TS2322: Type 'RefreshTokenDTO' is not assignable to type '(Without<RefreshTokenCreateInput, RefreshTokenUncheckedCreateInput> & RefreshTokenUncheckedCreateInput) | (Without<...> & RefreshTokenCreateInput)'.
+  Type 'RefreshTokenDTO' is not assignable to type 'Without<RefreshTokenCreateInput, RefreshTokenUncheckedCreateInput> & RefreshTokenUncheckedCreateInput'.
+    Property 'tokenHash' is missing in type 'RefreshTokenDTO' but required in type 'RefreshTokenUncheckedCreateInput'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(177,5): error TS2322: Type '{ id: number; createdAt: Date; personId: number; expiresAt: Date; tokenHash: string; } | null' is not assignable to type 'RefreshTokenDTO | null'.
+  Type '{ id: number; createdAt: Date; personId: number; expiresAt: Date; tokenHash: string; }' is missing the following properties from type 'RefreshTokenDTO': token, isExpired
+src/infrastructure/repositories/PrismaPersonRepository.ts(177,55): error TS2353: Object literal may only specify known properties, and 'token' does not exist in type 'RefreshTokenWhereUniqueInput'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(181,33): error TS2345: Argument of type 'RefreshTokenDTO' is not assignable to parameter of type '{ select?: RefreshTokenSelect<DefaultArgs> | null | undefined; omit?: RefreshTokenOmit<DefaultArgs> | null | undefined; include?: RefreshTokenInclude<...> | ... 1 more ... | undefined; data: (Without<...> & RefreshTokenUncheckedUpdateInput) | (Without<...> & RefreshTokenUpdateInput); where: RefreshTokenWhereUniqueIn...'.
+  Type 'RefreshTokenDTO' is missing the following properties from type '{ select?: RefreshTokenSelect<DefaultArgs> | null | undefined; omit?: RefreshTokenOmit<DefaultArgs> | null | undefined; include?: RefreshTokenInclude<...> | ... 1 more ... | undefined; data: (Without<...> & RefreshTokenUncheckedUpdateInput) | (Without<...> & RefreshTokenUpdateInput); where: RefreshTokenWhereUniqueIn...': data, where
+src/infrastructure/security/Argon2PasswordHasher.ts(3,20): error TS2307: Cannot find module 'argon2' or its corresponding type declarations.
+src/presentation/controllers/AuthEmailController.ts(2,35): error TS2307: Cannot find module '@/infrastructure/email/MailServiceFactory' or its corresponding type declarations.
+src/presentation/controllers/AuthEmailController.ts(11,11): error TS18047: 'req.body' is possibly 'null'.
+src/presentation/controllers/AuthEmailController.ts(11,20): error TS2339: Property 'email' does not exist on type 'ReadableStream<any>'.
+src/presentation/controllers/AuthEmailController.ts(16,14): error TS2554: Expected 0 arguments, but got 1.
+src/presentation/controllers/AuthEmailController.ts(18,9): error TS2349: This expression is not callable.
+  Type 'Number' has no call signatures.
+src/presentation/controllers/PersonController.ts(120,48): error TS2339: Property 'searchPersonsByName' does not exist on type 'PersonService'.
+
+
+// src/infrastructure/repositories/PrismaPersonRepository.ts
+import { PrismaClient, Person as PrismaPerson, RefreshToken } from "@prisma/client";
+
+import { IPersonRepository } from "@/domain/person/repositories/IPersonRepository";
+import { PersonFilters } from "@/domain/person/repositories/PersonFilters";
+
+import { Person } from "@/domain/person/entities/Person";
+import { NewPersonInput } from "@/domain/person/entities/Person";
+
+import { EmailVerificationTokenDTO } from "@/domain/auth/dtos/EmailVerificationTokenDTO";
+import { PasswordResetTokenDTO } from "@/domain/auth/dtos/PasswordResetTokenDTO";
+import { RefreshTokenDTO } from "@/domain/auth/dtos/RefreshTokenDTO";
+
+import { PaginationParams, PaginatedResponse } from "@/shared/types/common";
+
+import { prisma } from "../prisma";
+
+export class PrismaPersonRepository implements IPersonRepository {
+  constructor(private readonly db: PrismaClient = prisma) {}
+
+  // ───────────────────────────────────────────
+  // PERSON: findAll with filters + pagination
+  // ───────────────────────────────────────────
+  async findAll(
+    filters: PersonFilters = {},
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<Person>> {
+
+    const where: any = {};
+
+    if (filters.userName)       where.userName = { contains: filters.userName, mode: "insensitive" };
+    if (filters.emailAddress)   where.emailAddress = { contains: filters.emailAddress, mode: "insensitive" };
+    if (filters.firstName)      where.firstName = { contains: filters.firstName, mode: "insensitive" };
+    if (filters.lastName)       where.lastName = { contains: filters.lastName, mode: "insensitive" };
+    if (filters.isActive !== undefined)       where.isActive = filters.isActive;
+    if (filters.emailVerified !== undefined)  where.emailVerified = filters.emailVerified;
+
+    const page = pagination?.page ?? 1;
+    const pageSize = pagination?.pageSize ?? 25;
+
+    const total = await this.db.person.count({ where });
+
+    const rows = await this.db.person.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: { pid: "asc" }
+    });
+
+    return {
+      items: rows.map(Person.fromPersistence),
+      total,
+      page,
+      pageSize
+    };
+  }
+
+  // ───────────────────────────────────────────
+  // PERSON: finders
+  // ───────────────────────────────────────────
+  async findById(pid: number): Promise<Person | null> {
+    const record = await this.db.person.findUnique({ where: { pid } });
+    return record ? Person.fromPersistence(record) : null;
+  }
+
+  async findByEmail(email: string): Promise<Person | null> {
+    const record = await this.db.person.findUnique({ where: { emailAddress: email } });
+    return record ? Person.fromPersistence(record) : null;
+  }
+
+  async findByUserName(userName: string): Promise<Person | null> {
+    const record = await this.db.person.findUnique({ where: { userName } });
+    return record ? Person.fromPersistence(record) : null;
+  }
+
+  // ───────────────────────────────────────────
+  // PERSON: exists
+  // ───────────────────────────────────────────
+  async exists(pid: number): Promise<boolean> {
+    return (await this.db.person.count({ where: { pid } })) > 0;
+  }
+
+  async existsByEmailAddress(emailAddress: string): Promise<boolean> {
+    return (await this.db.person.count({ where: { emailAddress } })) > 0;
+  }
+
+  async existsByUserName(userName: string): Promise<boolean> {
+    return (await this.db.person.count({ where: { userName } })) > 0;
+  }
+
+  // ───────────────────────────────────────────
+  // PERSON: create / update / delete
+  // ───────────────────────────────────────────
+  async createPerson(input: NewPersonInput): Promise<Person> {
+    const record = await this.db.person.create({
+      data: {
+        userName: input.userName,
+        emailAddress: input.emailAddress,
+        password: input.passwordHash,  // correct Prisma column
+        firstName: input.firstName,
+        lastName: input.lastName,
+        rid: input.rid ?? null,
+        isActive: true,
+        emailVerified: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+
+    return Person.fromPersistence(record);
+  }
+
+  async updatePerson(person: Person): Promise<Person> {
+    const updated = await this.db.person.update({
+      where: { pid: person.pid },
+      data: person.toPersistence()
+    });
+
+    return Person.fromPersistence(updated);
+  }
+
+  async delete(pid: number): Promise<void> {
+    await this.db.person.delete({ where: { pid } });
+  }
+
+  // ───────────────────────────────────────────
+  // EMAIL VERIFICATION TOKENS
+  // ───────────────────────────────────────────
+  async createEmailVerificationToken(dto: EmailVerificationTokenDTO): Promise<void> {
+    await this.db.emailVerificationToken.create({ data: dto });
+  }
+
+  async findEmailVerificationToken(token: string): Promise<EmailVerificationTokenDTO | null> {
+    return this.db.emailVerificationToken.findUnique({ where: { token } });
+  }
+
+  async markEmailVerified(personId: number): Promise<void> {
+    await this.db.person.update({
+      where: { pid: personId },
+      data: { emailVerified: true, verifiedAt: new Date() }
+    });
+  }
+
+  async deleteEmailVerificationToken(id: number): Promise<void> {
+    await this.db.emailVerificationToken.delete({ where: { id } });
+  }
+
+  // ───────────────────────────────────────────
+  // PASSWORD RESET TOKENS
+  // ───────────────────────────────────────────
+  async createPasswordResetToken(dto: PasswordResetTokenDTO): Promise<void> {
+    await this.db.passwordResetToken.create({ data: dto });
+  }
+
+  async findPasswordResetToken(token: string): Promise<PasswordResetTokenDTO | null> {
+    return this.db.passwordResetToken.findUnique({ where: { token } });
+  }
+
+  async updatePassword(personId: number, hashedPassword: string): Promise<void> {
+    await this.db.person.update({
+      where: { pid: personId },
+      data: { password: hashedPassword }
+    });
+  }
+
+  async deletePasswordResetToken(id: number): Promise<void> {
+    await this.db.passwordResetToken.delete({ where: { id } });
+  }
+
+  // ───────────────────────────────────────────
+  // REFRESH TOKENS
+  // ───────────────────────────────────────────
+  async createRefreshToken(dto: RefreshTokenDTO): Promise<void> {
+    await this.db.refreshToken.create({ data: dto });
+  }
+
+  async findRefreshToken(token: string): Promise<RefreshTokenDTO | null> {    
+    return this.db.refreshToken.findUnique({ where: { token } });
+  }
+
+  async saveRefreshToken(dto: RefreshTokenDTO): Promise<void> {
+    this.db.refreshToken.update(dto);
+  }
+
+  async deleteRefreshToken(id: number): Promise<void> {
+    await this.db.refreshToken.delete({ where: { id } });
+  }
+}
+

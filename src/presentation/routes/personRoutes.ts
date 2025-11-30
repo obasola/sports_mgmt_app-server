@@ -60,7 +60,7 @@ router.get(
 router.get(
   '/search',
   validateQuery(SearchQuerySchema),
-  personController.searchPersonsByName
+  personController.searchByUserName
 );
 
 router.get(

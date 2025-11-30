@@ -55,6 +55,6 @@ export function resolveTeamLogo(teamName: string): string {
   ].some(t => file.includes(t))
 
   return isAFC
-    ? `/src/assets/images/afc/${file}`
-    : `/src/assets/images/nfc/${file}`
+    ? `/logos/afc/${file}`
+    : `/logos/nfc/${file}`
 }

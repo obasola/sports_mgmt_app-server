@@ -1,170 +1,286 @@
-import { IPersonRepository, PersonFilters } from '@/domain/person/repositories/IPersonRepository';
+// src/infrastructure/repositories/PrismaPersonRepository.ts
+import { PrismaClient } from '@prisma/client';
+import { Prisma } from "@prisma/client";
+import { IPersonRepository } from '@/domain/person/repositories/IPersonRepository';
+import { PersonFilters } from '@/domain/person/repositories/PersonFilters';
 import { Person } from '@/domain/person/entities/Person';
+import { NewPersonInput } from '@/domain/person/entities/Person';
+
+import { EmailVerificationTokenDTO } from '@/domain/auth/dtos/EmailVerificationTokenDTO';
+import { PasswordResetTokenDTO } from '@/domain/auth/dtos/PasswordResetTokenDTO';
+import { RefreshTokenDTO } from '@/domain/auth/dtos/RefreshTokenDTO';
+
 import { PaginationParams, PaginatedResponse } from '@/shared/types/common';
-import { NotFoundError } from '@/shared/errors/AppError';
-import { prisma } from '../database/prisma';
 
-type DbPerson = {
-  pid: number;
-  userName: string;
-  emailAddress: string;
-  password: string;         // non-null in DB
-  firstName: string;
-  lastName: string;
-};
-
-// Expand DB → Domain shape by filling missing optional fields with nulls.
-function toDomainShape(p: DbPerson) {
-  return Person.fromPersistence({
-    pid: p.pid,
-    userName: p.userName,
-    emailAddress: p.emailAddress,
-    password: p.password ?? '',     // domain may allow null; DB does not
-    firstName: p.firstName,
-    lastName: p.lastName,
-    // add any optional fields your domain constructor expects:
-    rid: null,
-    isActive: null,
-    createdAt: null,
-    updatedAt: null,
-    lastLoginAt: null,
-  } as any);
-}
+import { prisma } from '../prisma';
+import { PersonMapper } from '@/domain/person/mapper/PersonMapper';
 
 export class PrismaPersonRepository implements IPersonRepository {
-  async save(person: Person): Promise<Person> {
-    const data = person.toPersistence();
+  constructor(private readonly db: PrismaClient = prisma) {}
 
-    const created = await prisma.person.create({
-      data: {
-        userName: data.userName!,
-        emailAddress: data.emailAddress!,
-        // DB requires string, never null
-        password: (data.password ?? '').toString(),
-        firstName: data.firstName!,
-        lastName: data.lastName!,
+  // ───────────────────────────────────────────
+  // PERSON: findAll with filters + pagination
+  // ───────────────────────────────────────────
+  async findAll(
+    filters: PersonFilters = {},
+    pagination?: PaginationParams
+  ): Promise<PaginatedResponse<Person>> {
+    const where: Prisma.PersonWhereInput = {};
+
+    if (filters.userName) {
+      where.userName = { contains: filters.userName };
+    }
+    if (filters.emailAddress) {
+      where.emailAddress = { contains: filters.emailAddress };
+    }
+    if (filters.firstName) {
+      where.firstName = { contains: filters.firstName };
+    }
+    if (filters.lastName) {
+      where.lastName = { contains: filters.lastName };
+    }
+    if (filters.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
+    if (filters.emailVerified !== undefined) {
+      where.emailVerified = filters.emailVerified;
+    }
+
+    const page: number = pagination?.page ?? 1;
+    const limit: number = pagination?.limit ?? 25;
+
+    // Optional: use a transaction so count + rows are consistent
+    const [total, rows] = await this.db.$transaction([
+      this.db.person.count({ where }),
+      this.db.person.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { pid: 'asc' },
+      }),
+    ]);
+
+    const pages = total === 0 ? 0 : Math.ceil(total / limit);
+
+    return {
+      data: rows.map(Person.fromPersistence),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages,
       },
-    });
-
-    return toDomainShape(created as DbPerson);
+    };
   }
 
+  // ───────────────────────────────────────────
+  // PERSON: finders
+  // ───────────────────────────────────────────
   async findById(pid: number): Promise<Person | null> {
-    const p = await prisma.person.findUnique({ where: { pid } });
-    return p ? toDomainShape(p as DbPerson) : null;
+    const record = await this.db.person.findUnique({ where: { pid } });
+    return record ? Person.fromPersistence(record) : null;
+  }
+
+  async findByEmail(email: string): Promise<Person | null> {
+    // Check if emailAddress is a unique field in your Prisma schema
+    // If not, use findFirst instead
+    const record = await this.db.person.findFirst({
+      where: { emailAddress: email },
+    });
+    return record ? Person.fromPersistence(record) : null;
   }
 
   async findByUserName(userName: string): Promise<Person | null> {
-    const p = await prisma.person.findFirst({ where: { userName: { equals: userName } } });
-    return p ? toDomainShape(p as DbPerson) : null;
-  }
-
-  async findByEmailAddress(emailAddress: string): Promise<Person | null> {
-    const p = await prisma.person.findFirst({ where: { emailAddress: { equals: emailAddress } } });
-    return p ? toDomainShape(p as DbPerson) : null;
-  }
-
-  async findAll(filters?: PersonFilters, pagination?: PaginationParams): Promise<PaginatedResponse<Person>> {
-    const page  = pagination?.page  ?? 1;
-    const limit = pagination?.limit ?? 10;
-    const skip  = (page - 1) * limit;
-
-    const where = this.buildWhereClause(filters);
-
-    const [rows, total] = await Promise.all([
-      prisma.person.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
-      }),
-      prisma.person.count({ where }),
-    ]);
-
-    return {
-      data: rows.map(r => toDomainShape(r as DbPerson)),
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    };
-  }
-
-  async update(pid: number, person: Person): Promise<Person> {
-    const exists = await this.exists(pid);
-    if (!exists) throw new NotFoundError('Person', pid);
-
-    const data = person.toPersistence();
-
-    const updated = await prisma.person.update({
-      where: { pid },
-      data: {
-        userName:    data.userName ?? undefined,
-        emailAddress:data.emailAddress ?? undefined,
-        // if domain gives null, don’t write null into a NOT NULL column
-        password:    data.password != null ? data.password.toString() : undefined,
-        firstName:   data.firstName ?? undefined,
-        lastName:    data.lastName ?? undefined,
-      },
+    // Check if userName is a unique field in your Prisma schema
+    // If not, use findFirst instead
+    const record = await this.db.person.findFirst({
+      where: { userName },
     });
-
-    return toDomainShape(updated as DbPerson);
+    return record ? Person.fromPersistence(record) : null;
   }
 
-  async delete(pid: number): Promise<void> {
-    const exists = await this.exists(pid);
-    if (!exists) throw new NotFoundError('Person', pid);
-    await prisma.person.delete({ where: { pid } });
-  }
-
+  // ───────────────────────────────────────────
+  // PERSON: exists
+  // ───────────────────────────────────────────
   async exists(pid: number): Promise<boolean> {
-    const count = await prisma.person.count({ where: { pid } });
-    return count > 0;
-  }
-
-  async existsByUserName(userName: string): Promise<boolean> {
-    const count = await prisma.person.count({ where: { userName: { equals: userName } } });
-    return count > 0;
+    return (await this.db.person.count({ where: { pid } })) > 0;
   }
 
   async existsByEmailAddress(emailAddress: string): Promise<boolean> {
-    const count = await prisma.person.count({ where: { emailAddress: { equals: emailAddress } } });
-    return count > 0;
+    return (await this.db.person.count({ where: { emailAddress } })) > 0;
   }
 
-  async searchByName(searchTerm: string, pagination?: PaginationParams): Promise<PaginatedResponse<Person>> {
-    const page  = pagination?.page  ?? 1;
-    const limit = pagination?.limit ?? 10;
-    const skip  = (page - 1) * limit;
+  async existsByUserName(userName: string): Promise<boolean> {
+    return (await this.db.person.count({ where: { userName } })) > 0;
+  }
 
-    const where = {
-      OR: [
-        { firstName: { contains: searchTerm, mode: 'insensitive' as const } },
-        { lastName:  { contains: searchTerm, mode: 'insensitive' as const } },
-        { userName:  { contains: searchTerm, mode: 'insensitive' as const } },
-      ],
-    };
+  // ───────────────────────────────────────────
+  // PERSON: create / update / delete
+  // ───────────────────────────────────────────
+  async createPerson(input: NewPersonInput): Promise<Person> {
+    const record = await this.db.person.create({
+      data: {
+        userName: input.userName,
+        emailAddress: input.emailAddress,
+        passwordHash: input.passwordHash,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        // Only include rid if it exists in your Prisma schema
+        // Remove this line if rid doesn't exist in the schema
+        // rid: input.rid ?? undefined,
+        //       isActive: true,
+        emailVerified: false,
+        //       createdAt: new Date(),
+        //       updatedAt: new Date()
+      },
+    });
 
-    const [rows, total] = await Promise.all([
-      prisma.person.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
-      }),
-      prisma.person.count({ where }),
-    ]);
+    return Person.fromPersistence(record);
+  }
+
+  async updatePerson(person: Person): Promise<Person> {
+    const updated = await this.db.person.update({
+      where: { pid: person.pid },
+      data: person.toPersistence(),
+    });
+    //return PersonMapper.mapFromDatabaseRow(updated)
+    return Person.fromPersistence(updated);
+  }
+
+  async delete(pid: number): Promise<void> {
+    await this.db.person.delete({ where: { pid } });
+  }
+
+  // ───────────────────────────────────────────
+  // EMAIL VERIFICATION TOKENS
+  // ───────────────────────────────────────────
+  async createEmailVerificationToken(dto: EmailVerificationTokenDTO): Promise<void> {
+    await this.db.emailVerificationToken.create({
+      data: {
+        personId: dto.personId,
+        token: dto.token,
+        createdAt: dto.createdAt,
+        expiresAt: dto.expiresAt,
+        // id is auto-generated, don't include it
+      },
+    });
+  }
+
+  async findEmailVerificationToken(token: string): Promise<EmailVerificationTokenDTO | null> {
+    const record = await this.db.emailVerificationToken.findUnique({
+      where: { token },
+    });
+
+    if (!record) return null;
 
     return {
-      data: rows.map(r => toDomainShape(r as DbPerson)),
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      id: record.id,
+      personId: record.personId,
+      token: record.token,
+      createdAt: record.createdAt,
+      expiresAt: record.expiresAt,
     };
   }
 
-  private buildWhereClause(filters?: PersonFilters): object {
-    if (!filters) return {};
-    const where: Record<string, unknown> = {};
-    if (filters.userName)    where.userName    = { contains: filters.userName,    mode: 'insensitive' };
-    if (filters.emailAddress)where.emailAddress= { contains: filters.emailAddress,mode: 'insensitive' };
-    if (filters.firstName)   where.firstName   = { contains: filters.firstName,   mode: 'insensitive' };
-    if (filters.lastName)    where.lastName    = { contains: filters.lastName,    mode: 'insensitive' };
-    return where;
+  async markEmailVerified(personId: number): Promise<void> {
+    await this.db.person.update({
+      where: { pid: personId },
+      data: { emailVerified: true, verifiedAt: new Date() },
+    });
+  }
+
+  async deleteEmailVerificationToken(id: number): Promise<void> {
+    await this.db.emailVerificationToken.delete({ where: { id } });
+  }
+
+  // ───────────────────────────────────────────
+  // PASSWORD RESET TOKENS
+  // ───────────────────────────────────────────
+  async createPasswordResetToken(dto: PasswordResetTokenDTO): Promise<void> {
+    await this.db.passwordResetToken.create({
+      data: {
+        personId: dto.personId,
+        token: dto.token,
+        createdAt: dto.createdAt,
+        expiresAt: dto.expiresAt,
+        // id is auto-generated, don't include it
+      },
+    });
+  }
+
+  async findPasswordResetToken(token: string): Promise<PasswordResetTokenDTO | null> {
+    const record = await this.db.passwordResetToken.findUnique({
+      where: { token },
+    });
+
+    if (!record) return null;
+
+    return {
+      id: record.id,
+      personId: record.personId,
+      token: record.token,
+      createdAt: record.createdAt,
+      expiresAt: record.expiresAt,
+    };
+  }
+
+  async updatePassword(personId: number, hashedPassword: string): Promise<void> {
+    await this.db.person.update({
+      where: { pid: personId },
+      data: { passwordHash: hashedPassword },
+    });
+  }
+
+  async deletePasswordResetToken(id: number): Promise<void> {
+    await this.db.passwordResetToken.delete({ where: { id } });
+  }
+
+  // ───────────────────────────────────────────
+  // REFRESH TOKENS
+  // ───────────────────────────────────────────
+  async createRefreshToken(dto: RefreshTokenDTO): Promise<void> {
+    await this.db.refreshToken.create({
+      data: {
+        personId: dto.personId,
+        tokenHash: dto.token,
+        createdAt: dto.createdAt,
+        expiresAt: dto.expiresAt,
+        // id is auto-generated, don't include it
+      },
+    });
+  }
+
+  async findRefreshToken(token: string): Promise<RefreshTokenDTO | null> {
+    // Check if token or tokenHash is the unique field in your schema
+    const record = await this.db.refreshToken.findFirst({
+      where: {
+        OR: [{ tokenHash: token }, { tokenHash: token }],
+      },
+    });
+
+    if (!record) return null;
+
+    return {
+      id: record.id,
+      personId: record.personId,
+      token: record.tokenHash || '', // Adjust based on your schema
+      createdAt: record.createdAt,
+      expiresAt: record.expiresAt,
+    };
+  }
+
+  async saveRefreshToken(dto: RefreshTokenDTO): Promise<void> {
+    await this.db.refreshToken.update({
+      where: { id: dto.id! },
+      data: {
+        personId: dto.personId,
+        tokenHash: dto.token, // Adjust based on your schema
+        expiresAt: dto.expiresAt,
+      },
+    });
+  }
+
+  async deleteRefreshToken(id: number): Promise<void> {
+    await this.db.refreshToken.delete({ where: { id } });
   }
 }

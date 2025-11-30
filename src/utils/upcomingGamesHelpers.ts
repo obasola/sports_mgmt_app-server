@@ -88,12 +88,15 @@ export function formatDate(raw: string) {
 
   const day = d.toLocaleDateString(undefined, {
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
+    timeZone: 'America/New_York',
+    
   })
 
   const time = d.toLocaleTimeString(undefined, {
     hour: 'numeric',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: 'America/New_York',
   })
 
   return { day, time }

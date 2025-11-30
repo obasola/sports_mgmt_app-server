@@ -1,4 +1,4 @@
-// src/index.ts
+// (sports_mgmt_app_server/) src/index.ts
 import 'module-alias/register'; // ✅ must be first for @/... paths to resolve
 import './config/env';          // ✅ loads dotenv-flow next
 import express from 'express';

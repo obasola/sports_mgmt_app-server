@@ -1,0 +1,5 @@
+import { MailMessage } from "../value-objects/MailMessage";
+
+export interface MailService {
+  send(message: MailMessage): Promise<void>;
+}

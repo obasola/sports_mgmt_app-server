@@ -104,28 +104,23 @@ export class PersonController {
     }
   };
 
-  searchPersonsByName = async (
+   searchByUserName = async (
     req: Request,
-    res: Response<ApiResponse<PaginatedResponse<PersonResponseDto>>>,
+    res: Response<ApiResponse<PersonResponseDto>>,
     next: NextFunction
   ): Promise<void> => {
     try {
-      const searchTerm = req.query.search as string;
-      
-      const pagination: PaginationDto = {
-        page: req.query.page ? parseInt(req.query.page as string) : 1,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
-      };
-
-      const persons = await this.personService.searchPersonsByName(searchTerm, pagination);
+      const userName = req.params.username;
+      const person = await this.personService.getPersonByEmailAddress(userName);
       res.json({
         success: true,
-        data: persons,
+        data: person,
       });
     } catch (error) {
       next(error);
     }
   };
+
 
   updatePerson = async (
     req: Request,

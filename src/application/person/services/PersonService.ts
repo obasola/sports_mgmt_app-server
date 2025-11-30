@@ -11,6 +11,8 @@ import {
   LoginDto,
   LoginResponseDto,
 } from '../dto/PersonDto';
+import { PersonMapper } from '@/domain/person/mapper/PersonMapper';
+import { PersonProps } from '@/domain/person/dtos/PersonDTO';
 
 
 export interface LoginRequest {
@@ -86,7 +88,7 @@ export class PersonService {
     }
 
     // Check if email already exists
-    const existingEmail = await this.personRepository.findByEmailAddress(dto.emailAddress);
+    const existingEmail = await this.personRepository.findByEmail(dto.emailAddress);
     if (existingEmail) {
       throw new ConflictError(`Email address ${dto.emailAddress} already exists`);
     }
@@ -94,12 +96,12 @@ export class PersonService {
     const person = Person.create({
       userName: dto.userName,
       emailAddress: dto.emailAddress,
-      password: dto.password, // In real app, hash the password before storing
+      passwordHash: dto.password, // In real app, hash the password before storing
       firstName: dto.firstName,
       lastName: dto.lastName,
     });
 
-    const savedPerson = await this.personRepository.save(person);
+    const savedPerson = await this.personRepository.createPerson(PersonMapper.mapPersonToNewPersonInput(person));
     return this.toResponseDto(savedPerson);
   }
 
@@ -120,7 +122,7 @@ export class PersonService {
   }
 
   async getPersonByEmailAddress(emailAddress: string): Promise<PersonResponseDto> {
-    const person = await this.personRepository.findByEmailAddress(emailAddress);
+    const person = await this.personRepository.findByEmail(emailAddress);
     if (!person) {
       throw new NotFoundError('Person', emailAddress);
     }
@@ -138,15 +140,11 @@ export class PersonService {
     };
   }
 
-  async searchPersonsByName(
-    searchTerm: string,
-    pagination?: PaginationParams
-  ): Promise<PaginatedResponse<PersonResponseDto>> {
-    const result = await this.personRepository.searchByName(searchTerm, pagination);
-    return {
-      data: result.data.map((person) => this.toResponseDto(person)),
-      pagination: result.pagination,
-    };
+  async findByUserName(
+    username: string
+  ): Promise<PersonProps> {
+    const result = await this.personRepository.findByUserName(username);
+    return PersonMapper.mapFromDatabaseRow(result);
   }
 
   async updatePerson(pid: number, dto: UpdatePersonDto): Promise<PersonResponseDto> {
@@ -165,7 +163,7 @@ export class PersonService {
 
     // Check if email already exists (if changing email)
     if (dto.emailAddress && dto.emailAddress !== existingPerson.emailAddress) {
-      const personWithEmail = await this.personRepository.findByEmailAddress(dto.emailAddress);
+      const personWithEmail = await this.personRepository.findByEmail(dto.emailAddress);
       if (personWithEmail && personWithEmail.pid !== pid) {
         throw new ConflictError(`Email address ${dto.emailAddress} already exists`);
       }
@@ -192,7 +190,7 @@ export class PersonService {
       existingPerson.updateName(existingPerson.firstName, dto.lastName);
     }
 
-    const updatedPerson = await this.personRepository.update(pid, existingPerson);
+    const updatedPerson = await this.personRepository.updatePerson(existingPerson);
     return this.toResponseDto(updatedPerson);
   }
 

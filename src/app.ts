@@ -1,4 +1,4 @@
-// src/app.ts
+// (sports_mgmt_app_server/) src/app.ts
 
 import express from 'express';
 import cors from 'cors';

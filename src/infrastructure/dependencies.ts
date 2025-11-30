@@ -3,6 +3,21 @@
 // ==========================
 import { PrismaClient } from '@prisma/client'
 import { prisma } from './prisma'
+// ───────────────────────────────────────────────────────────────
+// Repositories – Email + Authentication
+// ───────────────────────────────────────────────────────────────
+import { Argon2PasswordHasher } from "./security/Argon2PasswordHasher";
+import { NodeCryptoSecureTokenGenerator } from "./security/NodeCryptoSecureTokenGenerator";
+import { JwtAuthTokenService } from "./jwt/JwtAuthTokenService";
+import { createMailService } from "./mail/MailServiceFactory";
+
+import { RegisterUseCase } from "@/application/auth/register/RegisterUseCase";
+import { VerifyEmailUseCase } from "@/application/auth/verify-email/VerifyEmailUseCase";
+import { LoginUseCase } from "@/application/auth/login/LoginUseCase";
+import { RefreshTokenUseCase } from "@/application/auth/refresh/RefreshTokenUseCase";
+import { LogoutUseCase } from "@/application/auth/logout/LogoutUseCase";
+import { ForgotPasswordUseCase } from "@/application/auth/forgot-password/ForgotPasswordUseCase";
+import { ResetPasswordUseCase } from "@/application/auth/reset-password/ResetPasswordUseCase";
 
 // ───────────────────────────────────────────────────────────────
 // Repositories – Domain + Job
@@ -47,6 +62,7 @@ import { ScheduleJobService } from '../application/jobs/services/ScheduleJobServ
 import { ImportScoresByDateService } from '@/application/scoreboard/services/ImportScoresByDateService'
 import { ScoreboardSyncService } from '@/application/scoreboard/services/ScoreboardSyncService'
 import { SyncWeekEventsService } from '@/application/schedule/services/SyncWeekEventsService';
+import { PrismaPersonRepository } from './repositories/PrismaPersonRepository';
 
 // ───────────────────────────────────────────────────────────────
 // 1️⃣ Instantiate Core Infrastructure
@@ -91,8 +107,46 @@ const getScoresByDateService = new ImportScoresByDateService(new ScoreboardSyncS
 //
 const cronScheduler       = new CronScheduler(queueJobService, runJobService)
 const scheduleJobService  = new ScheduleJobService(cronScheduler)
+//
 // ───────────────────────────────────────────────────────────────
-// 5️⃣ Export Everything (for Controllers and Routes)
+// 5️⃣ Authentication Infrastructure & Use Cases
+// ───────────────────────────────────────────────────────────────
+export const personRepo = new PrismaPersonRepository();
+export const passwordHasher = new Argon2PasswordHasher();
+export const tokenGen = new NodeCryptoSecureTokenGenerator();
+export const jwtTokens = new JwtAuthTokenService();
+
+// 🔥 Now using your DI-aware provider selector (resend/sendgrid/mailersend)
+export const mailer = createMailService();
+
+export const registerUseCase = new RegisterUseCase(
+  personRepo, passwordHasher, tokenGen, mailer
+);
+
+export const resetPasswordUseCase = new ResetPasswordUseCase(
+  personRepo, passwordHasher
+);
+
+export const verifyEmailUseCase = new VerifyEmailUseCase(personRepo);
+
+export const loginUseCase = new LoginUseCase(
+  personRepo, passwordHasher, jwtTokens
+);
+
+export const refreshTokenUseCase = new RefreshTokenUseCase(
+  personRepo, passwordHasher, jwtTokens
+);
+
+export const logoutUseCase = new LogoutUseCase(
+  personRepo, passwordHasher
+);
+
+export const forgotPasswordUseCase = new ForgotPasswordUseCase(
+  personRepo, tokenGen, mailer
+);
+
+// ───────────────────────────────────────────────────────────────
+// 6️⃣ Export Everything
 // ───────────────────────────────────────────────────────────────
 export {
   // Prisma
@@ -129,4 +183,4 @@ export {
   getJobLogsService,
   getScoresByDateService,
   scheduleJobService,
-}
+};

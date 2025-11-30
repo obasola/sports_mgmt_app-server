@@ -79,17 +79,39 @@ model Game {
   @@unique([seasonYear, gameDate, homeTeamId, awayTeamId], map: "unique_game")
   @@index([awayTeamId], map: "awayTeamId")
   @@index([homeTeamId], map: "homeTeamId")
-  @@index([seasonYear, gameWeek])
-  @@index([gameStatus])
+  @@index([espnCompetitionId], map: "idx_game_competitionId")
+  @@index([gameStatus], map: "idx_game_status")
+  @@index([seasonYear, gameWeek], map: "idx_game_year_week")
 }
 
 model Person {
-  pid          Int    @id @default(autoincrement())
-  userName     String @db.VarChar(25)
-  emailAddress String @db.VarChar(75)
-  password     String @db.VarChar(25)
-  firstName    String @db.VarChar(25)
-  lastName     String @db.VarChar(35)
+  pid                    Int                      @id @default(autoincrement())
+  userName               String                   @db.VarChar(25)
+  emailAddress           String                   @db.VarChar(75)
+  passwordHash           String?                  @db.VarChar(255)
+  firstName              String                   @db.VarChar(25)
+  lastName               String                   @db.VarChar(35)
+  emailVerified          Boolean                  @default(false)
+  verifiedAt             DateTime?                @db.DateTime(0)
+  rid                    Int?
+  isActive               Boolean?                 @default(true)
+  createdAt              DateTime?                @default(now()) @db.DateTime(0)
+  updatedAt              DateTime?                @default(now()) @db.DateTime(0)
+  lastLoginAt            DateTime?                @db.DateTime(0)
+  EmailVerificationToken EmailVerificationToken[]
+  PasswordResetToken     PasswordResetToken[]
+  refreshTokens          RefreshToken[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  personId  Int
+  tokenHash String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @db.DateTime(0)
+  expiresAt DateTime @db.DateTime(0)
+  person    Person   @relation(fields: [personId], references: [pid], onDelete: Cascade, map: "fk_refresh_token_person")
+
+  @@index([personId], map: "idx_refresh_token_personId")
 }
 
 model Player {
@@ -582,28 +604,26 @@ model espn_draft_picks {
   @@index([year, round, overall_pick], map: "idx_year_round_pick")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model Game_backup {
-  id                Int                    @default(0)
-  seasonYear        String                 @db.VarChar(4)
-  gameWeek          Int?                   @db.TinyInt
-  gameDate          DateTime?              @db.DateTime(0)
-  homeTeamId        Int
-  awayTeamId        Int
-  gameLocation      String?                @db.VarChar(255)
-  gameCity          String?                @db.VarChar(100)
-  gameStateProvince String?                @db.VarChar(100)
-  gameCountry       String                 @default("USA") @db.VarChar(50)
-  homeScore         Int?                   @default(0)
-  awayScore         Int?                   @default(0)
-  gameStatus        Game_backup_gameStatus @default(scheduled)
-  createdAt         DateTime?              @default(now()) @db.Timestamp(0)
-  updatedAt         DateTime?              @default(now()) @db.Timestamp(0)
-  espnEventId       String?                @db.VarChar(255)
-  espnCompetitionId String?                @db.VarChar(255)
-  seasonType        Int?                   @default(2) @db.TinyInt
+model EmailVerificationToken {
+  id        Int      @id @default(autoincrement())
+  personId  Int
+  token     String   @unique(map: "uniq_email_verification_token") @db.VarChar(255)
+  expiresAt DateTime @db.DateTime(0)
+  createdAt DateTime @default(now()) @db.DateTime(0)
+  Person    Person   @relation(fields: [personId], references: [pid], onDelete: Cascade, map: "fk_email_verification_person")
 
-  @@ignore
+  @@index([personId], map: "idx_email_verification_person")
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  personId  Int
+  token     String   @unique(map: "uniq_password_reset_token") @db.VarChar(255)
+  expiresAt DateTime @db.DateTime(0)
+  createdAt DateTime @default(now()) @db.DateTime(0)
+  Person    Person   @relation(fields: [personId], references: [pid], onDelete: Cascade, map: "fk_password_reset_person")
+
+  @@index([personId], map: "idx_password_reset_person")
 }
 
 enum data_processing_jobs_job_type {
@@ -711,12 +731,4 @@ enum Game_gameStatus {
   postponed
   canceled
   final
-}
-
-enum Game_backup_gameStatus {
-  scheduled
-  in_progress
-  completed
-  postponed
-  canceled
 }
