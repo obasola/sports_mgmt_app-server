@@ -1,3 +1,4 @@
+// src/presentation/controllers/AuthEmailController.ts
 import { SendEmailUseCase } from "@/application/mail/SendEmailUseCase";
 import { createMailService } from "@/infrastructure/mail/MailServiceFactory";
 
@@ -6,7 +7,7 @@ const mailer = createMailService();
 const sendEmailUseCase = new SendEmailUseCase(mailer);
 
 import { Request, Response } from 'express';
-
+mailer
 type SendTestEmailBody = {
   email: string;
 };

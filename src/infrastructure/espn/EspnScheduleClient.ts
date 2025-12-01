@@ -8,7 +8,8 @@ import { NormalizedGameDTO, WeekScheduleDTO } from '@/utils/schedule/scheduleTyp
 
 import { formatDate, derivePrimetime } from '@/utils/schedule/dateHelpers';
 import { normalizeStatus } from '@/utils/schedule/scheduleNormalizer';
-import type { GameStatus } from '@/utils/schedule/scheduleTypes';
+import type { GameStatus, ScoringPlayDTO } from '@/utils/schedule/scheduleTypes';
+
 export class EspnScheduleClient {
   async getWeekEvents(year: number, seasonType: number, week: number): Promise<WeekScheduleDTO> {
     const listUrl = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/types/${seasonType}/weeks/${week}/events`;
@@ -77,21 +78,23 @@ export class EspnScheduleClient {
 
           // Status
           const rawStatus =
-          comp?.status?.type?.shortDetail ||
-          comp?.status?.type?.detail ||
-          comp?.status?.type?.description ||
-          e.status?.type?.name ||
-          "Scheduled";
+            comp?.status?.type?.shortDetail ||
+            comp?.status?.type?.detail ||
+            comp?.status?.type?.description ||
+            e.status?.type?.name ||
+            'Scheduled';
 
           let statusNormalized: GameStatus;
 
           //---------------- Start status Normalization ------------------------------
           // Intelligent scoring-aware override logic:
-        
 
-          if ((this.gameHasScores(homeScore) || this.gameHasScores(awayScore) ) && (homeWinner || awayWinner)) {
+          if (
+            (this.gameHasScores(homeScore) || this.gameHasScores(awayScore)) &&
+            (homeWinner || awayWinner)
+          ) {
             statusNormalized = 'Final';
-          } else if ((this.gameHasScores(homeScore) || this.gameHasScores(awayScore) ) ) {
+          } else if (this.gameHasScores(homeScore) || this.gameHasScores(awayScore)) {
             statusNormalized = 'In Progress';
           } else {
             statusNormalized = normalizeStatus(rawStatus); // already returns GameStatus
@@ -106,6 +109,24 @@ export class EspnScheduleClient {
 
           // Primetime
           const { isPrimetime, primetimeType } = derivePrimetime(date);
+          // -----------------------------------------------
+          // Scoring plays (live, from summary endpoint)
+          // -----------------------------------------------
+          let scoringSummaryShort: string | null = null;
+          let scoringPlays: ScoringPlayDTO[] = [];
+
+          try {
+            const plays = await this.fetchScoringPlays(eventId);
+
+            scoringPlays = plays;
+
+            const latest = plays.length > 0 ? plays[plays.length - 1] : null;
+            scoringSummaryShort = latest ? latest.text : null;
+          } catch (err) {
+            console.warn(`[EspnScheduleClient] Scoring plays failed for event ${eventId}`, err);
+            scoringPlays = [];
+            scoringSummaryShort = null;
+          }
 
           const game: NormalizedGameDTO = {
             id: eventId,
@@ -134,6 +155,9 @@ export class EspnScheduleClient {
 
             isPrimetime,
             primetimeType,
+
+            scoringSummaryShort,
+            scoringPlays,
           };
 
           return game;
@@ -154,9 +178,9 @@ export class EspnScheduleClient {
 
   private gameHasScores(teamScore: number): boolean {
     let rc: boolean = false;
-    if(teamScore !== null && teamScore > 0) {
-      rc =  true;
-    }else{
+    if (teamScore !== null && teamScore > 0) {
+      rc = true;
+    } else {
       rc = false;
     }
     return rc;
@@ -168,6 +192,77 @@ export class EspnScheduleClient {
       return data ?? null;
     } catch {
       return null;
+    }
+  }
+
+  // ... inside class EspnScheduleClient { ... }
+
+  private async fetchScoringPlays(eventId: number): Promise<ScoringPlayDTO[]> {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${eventId}`;
+
+    try {
+      const { data } = await axios.get(url, { timeout: 15000 });
+
+      const rawPlays: any[] = Array.isArray(data?.scoringPlays) ? data.scoringPlays : [];
+
+      return rawPlays
+        .map((p: any): ScoringPlayDTO | null => {
+          const textRaw =
+            typeof p.text === 'string' && p.text.trim().length > 0
+              ? p.text
+              : typeof p.description === 'string'
+                ? p.description
+                : '';
+
+          const text = textRaw.trim();
+          if (!text) {
+            return null;
+          }
+
+          const period =
+            typeof p.period?.number === 'number'
+              ? p.period.number
+              : typeof p.period === 'number'
+                ? p.period
+                : 0;
+
+          const clockDisplay =
+            typeof p.clock?.displayValue === 'string'
+              ? p.clock.displayValue
+              : typeof p.clock === 'string'
+                ? p.clock
+                : '';
+
+          const homeScore =
+            typeof p.homeScore === 'number'
+              ? p.homeScore
+              : typeof p.homeTeamScore === 'number'
+                ? p.homeTeamScore
+                : null;
+
+          const awayScore =
+            typeof p.awayScore === 'number'
+              ? p.awayScore
+              : typeof p.awayTeamScore === 'number'
+                ? p.awayTeamScore
+                : null;
+
+          const type = (p.scoringType?.name ?? p.type ?? null) as string | null;
+
+          return {
+            id: Number(p.id ?? 0),
+            text,
+            period,
+            clockDisplay,
+            homeScore,
+            awayScore,
+            type,
+          };
+        })
+        .filter((p): p is ScoringPlayDTO => p !== null);
+    } catch (err) {
+      console.warn(`[EspnScheduleClient] Failed to fetch scoring plays for event ${eventId}`, err);
+      return [];
     }
   }
 }

@@ -1,0 +1,1972 @@
+// src/espn/espnClient.ts
+import axios, { AxiosInstance } from 'axios';
+import pRetry, { AbortError } from 'p-retry';
+import pLimit from 'p-limit';
+import crypto from 'node:crypto';
+import { MemoryCache } from './cache/memoryCache';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { endpoints } from './endpoints';
+
+const BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
+
+export type SeasonType = 1 | 2 | 3; // 1=pre, 2=reg, 3=post
+
+// Preferred: pass { year, seasonType, week? } or { date: 'YYYYMMDD' }
+export interface ScoreboardParams {
+  date?: string; // e.g. "20250810"
+  year?: number; // e.g. 2025  <-- use 'year' (NOT 'season')
+  seasonType?: SeasonType;
+  week?: number;
+}
+
+const limit = pLimit(Number(process.env.ESPN_MAX_CONCURRENCY ?? 4));
+const cache = new MemoryCache<any>({ max: 1000 });
+const TTL = 60_000;
+const DEFAULT_TTL = Number(process.env.ESPN_TTL_MS ?? 5 * 60 * 1000);
+
+async function httpGet(params: Record<string, string | number | undefined>) {
+  const res = await axios.get(BASE, {
+    params,
+    timeout: 15000,
+    headers: {
+      'User-Agent': 'MyNFL/1.0 (+https://draftproanalytics.com)',
+      Accept: 'application/json, text/plain, */*',
+    },
+    validateStatus: () => true,
+  });
+  if (res.status >= 200 && res.status < 300) return res.data;
+  const detail = (res.data && (res.data.detail || res.data.message)) || `HTTP ${res.status}`;
+  if (res.status >= 500) throw new Error(`ESPN 5xx: ${detail}`);
+  throw new AbortError(`ESPN non-2xx: ${detail}`);
+}
+
+export async function fetchScoreboard(params: ScoreboardParams) {
+  // translate legacy 'season' to 'year'
+  if (params.year != null && params.year == null) {
+    console.warn('[scoreboardClient] Received legacy param season=. Translating to year.');
+    params.year = params.year;
+    delete (params as any).season;
+  }
+
+  // build canonical query
+  const q: Record<string, string | number | undefined> = {};
+  if (params.date) q.dates = params.date;
+  if (params.year != null) q.year = params.year;
+  if (params.seasonType != null) q.seasontype = params.seasonType;
+  if (params.week != null) q.week = params.week;
+
+  try {
+    return await pRetry(() => httpGet(q), { retries: 2, factor: 2, minTimeout: 500 });
+  } catch (e) {
+    // fallback to a computed date if we had year/type/week
+    if (!params.date && params.year != null && params.seasonType != null && params.week != null) {
+      const fallbackDate = weekToSunday(params.year, params.week, params.seasonType);
+      return await pRetry(() => httpGet({ dates: fallbackDate }), {
+        retries: 2,
+        factor: 2,
+        minTimeout: 500,
+      });
+    }
+    throw e;
+  }
+}
+function weekToSunday(year: number, week: number, seasonType: SeasonType) {
+  // naive anchor; good enough to form a date fallback
+  const base =
+    seasonType === 2
+      ? new Date(Date.UTC(year, 8, 1)) // Sep 1
+      : seasonType === 1
+        ? new Date(Date.UTC(year, 7, 1)) // Aug 1
+        : new Date(Date.UTC(year + 1, 0, 1)); // Jan 1 (post)
+  const day = base.getUTCDay();
+  const delta = (7 - day) % 7;
+  const firstSunday = new Date(base);
+  firstSunday.setUTCDate(base.getUTCDate() + delta);
+  const target = new Date(firstSunday);
+  target.setUTCDate(firstSunday.getUTCDate() + (week - 1) * 7);
+  const y = target.getUTCFullYear();
+  const m = String(target.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(target.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
+export async function getJson(url: string) {
+  const now = Date.now();
+  const cached = cache.get(url);
+  if (cached && now - cached.ts < TTL) return cached.data;
+
+  if (process.env.ESPN_OFFLINE === '1') {
+    const date = process.env.FIXTURE_DATE || new Date().toISOString().slice(0, 10);
+    const rel = url.includes('/scoreboard')
+      ? `fixtures/espn/scoreboard/${date.replace(/-/g, '')}.json`
+      : url.includes('/teams')
+        ? `fixtures/espn/teams/${date}.json`
+        : `fixtures/espn/players/unknown-${date}.json`;
+    const p = path.resolve(process.cwd(), rel);
+    const raw = await readFile(p, 'utf-8');
+    const data = JSON.parse(raw);
+    cache.set(url, { ts: now, data });
+    return data;
+  }
+
+  const data = await pRetry(() => httpGetJson(url), {
+    retries: 3,
+    factor: 2,
+    minTimeout: 500,
+  });
+  cache.set(url, { ts: now, data });
+  return data;
+}
+
+// ------------------------------------------------------------
+// ⭐ NEW: fetchWeekEvents(year, seasonType, week)
+// Uses ESPN Core API (sports.core.api.espn.com)
+// ------------------------------------------------------------
+
+export async function fetchWeekEvents(year: number, seasonType: number, week: number) {
+  const url = endpoints.weekEvents(year, seasonType, week);
+
+  const now = Date.now();
+  const cached = cache.get(url);
+  if (cached && now - cached.ts < DEFAULT_TTL) {
+    return cached.data;
+  }
+
+  const data = await pRetry(() => httpGetJson(url), {
+    retries: 3,
+    factor: 2,
+    minTimeout: 500,
+  });
+
+  cache.set(url, { ts: now, data });
+  return data;
+}
+
+async function httpGetJson(url: string) {
+  const res = await axios.get(url, {
+    timeout: 15_000,
+    headers: {
+      'User-Agent': 'MyNFL/1.0 (+https://draftproanalytics.com)',
+      Accept: 'application/json, text/plain, */*',
+    },
+    validateStatus: () => true, // let us handle non-2xx
+  });
+  if (res.status >= 200 && res.status < 300) return res.data;
+  const detail = (res.data && (res.data.detail || res.data.message)) || `HTTP ${res.status}`;
+  // ESPN returns 500 for bad params. Don’t retry forever on a parameter error if we detect it.
+  if (res.status >= 500) throw new Error(`ESPN 5xx: ${detail}`);
+  throw new AbortError(`ESPN non-2xx: ${detail}`);
+}
+
+// src/infrastructure/espn/scoreboardClient.ts
+import axios from 'axios'
+import pRetry, { AbortError } from 'p-retry'
+
+const BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
+export type SeasonType = 1 | 2 | 3 // 1=pre, 2=reg, 3=post
+
+export interface ScoreboardParams {
+  date?: string        // YYYYMMDD, e.g. "20250810"
+  year?: number        // e.g. 2025 (preferred)
+  seasonType?: SeasonType
+  week?: number
+  /** legacy; will be translated to `year` if provided */
+  season?: number
+}
+
+function weekToSunday(year: number, week: number, seasonType: SeasonType) {
+  const base =
+    seasonType === 2 ? new Date(Date.UTC(year, 8, 1)) :           // Sep 1
+    seasonType === 1 ? new Date(Date.UTC(year, 7, 1)) :           // Aug 1
+                       new Date(Date.UTC(year + 1, 0, 1))         // Jan 1 next year (post)
+  const day = base.getUTCDay()
+  const delta = (7 - day) % 7
+  const firstSunday = new Date(base); firstSunday.setUTCDate(base.getUTCDate() + delta)
+  const target = new Date(firstSunday); target.setUTCDate(firstSunday.getUTCDate() + (week - 1) * 7)
+  const y = target.getUTCFullYear(), m = String(target.getUTCMonth() + 1).padStart(2, '0'), d = String(target.getUTCDate()).padStart(2, '0')
+  return `${y}${m}${d}`
+}
+
+async function httpGet(params: Record<string, string | number | undefined>) {
+  const res = await axios.get(BASE, {
+    params,
+    timeout: 15000,
+    headers: {
+      'User-Agent': 'MyNFL/1.0 (+https://draftproanalytics.com)',
+      Accept: 'application/json, text/plain, */*',
+    },
+    validateStatus: () => true,
+  })
+  if (res.status >= 200 && res.status < 300) return res.data
+  const detail = (res.data && (res.data.detail || res.data.message)) || `HTTP ${res.status}`
+  if (res.status >= 500) throw new Error(`ESPN 5xx: ${detail}`)
+  throw new AbortError(`ESPN non-2xx: ${detail}`)
+}
+
+/** Canonical entry point */
+/** Canonical entry point */
+export async function fetchScoreboard(params: ScoreboardParams) {
+  // translate legacy param
+  if (params.season != null && params.year == null) {
+    console.warn('[scoreboardClient] Received legacy param season=. Translating to year.')
+    params.year = params.season
+    delete (params as any).season
+  }
+
+  // build canonical query
+  const q: Record<string, string | number | undefined> = {}
+  if (params.date) q.dates = params.date
+  if (params.year != null) q.seasonYear = params.year        // <-- fix key
+  if (params.seasonType != null) q.seasontype = params.seasonType
+  if (params.week != null) q.week = params.week
+
+  let raw: any
+  try {
+    raw = await pRetry(() => httpGet(q), { retries: 2, factor: 2, minTimeout: 500 })
+  } catch (e) {
+    // fallback to computed date if week-based fetch fails
+    if (!params.date && params.year != null && params.seasonType != null && params.week != null) {
+      const fallbackDate = weekToSunday(params.year, params.week, params.seasonType)
+      raw = await pRetry(() => httpGet({ dates: fallbackDate }), { retries: 2, factor: 2, minTimeout: 500 })
+    } else {
+      throw e
+    }
+  }
+
+  // 🔍 Normalize ESPN’s structure into usable format
+  const events = (raw?.events ?? []).map((ev: any) => {
+    const comp = ev.competitions?.[0]
+    const home = comp?.competitors?.find((c: any) => c.homeAway === 'home')
+    const away = comp?.competitors?.find((c: any) => c.homeAway === 'away')
+
+    return {
+      id: ev.id,
+      date: ev.date,
+      status: comp?.status?.type?.name ?? 'scheduled',
+      homeTeamId: home ? Number(home.team.id) : undefined,
+      awayTeamId: away ? Number(away.team.id) : undefined,
+      homeScore: home?.score ? Number(home.score) : null,
+      awayScore: away?.score ? Number(away.score) : null,
+      homeTeamName: home?.team?.displayName ?? null,
+      awayTeamName: away?.team?.displayName ?? null,
+    }
+  })
+
+  console.log(
+    `(src/infrastructure/espn/scoreboardClient.ts) Parsed ${events.length} events from ESPN for`,
+    params.date ?? `${params.year}-W${params.week}`
+  )
+
+  return { events }
+}
+
+
+// src/espn/mappers/espnEventMapper.ts
+
+import { ITeamRepository } from '../../domain/team/repositories/ITeamRepository'
+import { z } from 'zod'
+
+// ESPN CORE EVENT SCHEMA (minimal for our purposes)
+const competitorSchema = z.object({
+  id: z.string().optional(),
+  type: z.string().optional(),
+  team: z.object({
+    id: z.string().optional(),
+    uid: z.string().optional(),
+    slug: z.string().optional(),
+    href: z.string().optional(),
+  }).optional(),
+})
+
+const competitionSchema = z.object({
+  id: z.string(),
+  competitors: z.array(competitorSchema),
+  date: z.string().optional(), // kickoff timestamp
+})
+
+const eventSchema = z.object({
+  id: z.string(),
+  uid: z.string().optional(),
+  name: z.string().optional(),
+  date: z.string().optional(),
+  competitions: z.array(competitionSchema),
+})
+
+export type NormalizedEventGame = {
+  espnEventId: string
+  espnCompetitionId: string
+  seasonYear: number
+  seasonType: number
+  week: number
+  homeTeamId: number
+  awayTeamId: number
+  gameDate: Date
+}
+
+export async function mapEspnEventToGame(
+  rawEvent: any,
+  seasonYear: number,
+  seasonType: number,
+  week: number,
+  teamRepo: ITeamRepository
+): Promise<NormalizedEventGame | null> {
+  const parsed = eventSchema.safeParse(rawEvent)
+  if (!parsed.success) return null
+  const evt = parsed.data
+
+  if (!evt.competitions.length) return null
+  const comp = evt.competitions[0]
+
+  const compId = comp.id
+  const kickoff = comp.date ?? evt.date
+  if (!kickoff) return null
+  const gameDate = new Date(kickoff)
+
+  // Extract team IDs from CORE team href:
+  // https://sports.core.api.espn.com/.../teams/12
+  const competitors = comp.competitors
+  if (competitors.length !== 2) return null
+
+  const extractTeamId = (href?: string) => {
+    if (!href) return null
+    const parts = href.split('/')
+    const id = parts[parts.length - 1]
+    return /^\d+$/.test(id) ? Number(id) : null
+  }
+
+  // Identify home/away based on ESPN competitor.order or type
+  // ESPN often marks home with order = "1"
+  let homeEspnId: number | null = null
+  let awayEspnId: number | null = null
+
+  const cA = competitors[0]
+  const cB = competitors[1]
+
+  const idA = extractTeamId(cA.team?.href)
+  const idB = extractTeamId(cB.team?.href)
+  if (!idA || !idB) return null
+
+  // ESPN uses "home" in competitor.type for CORE
+  if (cA.type === "home") {
+    homeEspnId = idA
+    awayEspnId = idB
+  } else if (cB.type === "home") {
+    homeEspnId = idB
+    awayEspnId = idA
+  } else {
+    // fallback: first = away, second = home (common in CORE)
+    homeEspnId = idB
+    awayEspnId = idA
+  }
+
+  const homeTeam = await teamRepo.findByEspnTeamId(homeEspnId)
+  const awayTeam = await teamRepo.findByEspnTeamId(awayEspnId)
+  if (!homeTeam || !awayTeam) return null
+  if (!homeTeam.id || !awayTeam.id) {
+  throw new Error(`Mapper error: missing team ids (home=${homeTeam.id}, away=${awayTeam.id})`);
+}
+  return {
+    espnEventId: evt.id,
+    espnCompetitionId: compId,
+    seasonYear,
+    seasonType,
+    week,
+    homeTeamId: homeTeam.id,
+    awayTeamId: awayTeam.id,
+    gameDate,
+  }
+}
+
+// src/domain/game/entities/Game.ts
+/**
+ * Game Entity - Domain Model
+ * Represents a single NFL game with business logic
+ */
+
+import type { GameStatusType } from '../types/GameTypes';
+import { isValidGameStatus } from '../types/GameTypes';
+
+export interface GameProps {
+  id?: number;
+  seasonYear: string;
+  gameWeek?: number;
+  seasonType?: number;
+  gameDate?: Date;
+  homeTeamId: number;
+  awayTeamId: number;
+  gameLocation?: string;
+  gameCity?: string;
+  gameStateProvince?: string;
+  gameCountry?: string;
+  homeScore?: number;
+  awayScore?: number;
+  gameStatus?: GameStatusType;
+  espnEventId?: string;
+  espnCompetitionId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  // Relations (attached by repository)
+  homeTeam?: any;
+  awayTeam?: any;
+}
+
+export class Game {
+  private props: GameProps;
+
+  private constructor(props: GameProps) {
+    this.props = props;
+  }
+
+  // Factory method
+  static create(props: GameProps): Game {
+    // Business rule validations
+    if (props.homeTeamId === props.awayTeamId) {
+      throw new Error('Home team and away team cannot be the same');
+    }
+
+    if (props.gameWeek !== undefined && (props.gameWeek < 0 || props.gameWeek > 22)) {
+      throw new Error('Game week must be between 1 and 22');
+    }
+
+    if (props.seasonType !== undefined && (props.seasonType < 1 || props.seasonType > 3)) {
+      throw new Error('Preseason week must be between 1 and 3');
+    }
+
+    return new Game(props);
+  }
+
+  // Getters
+  get id(): number | undefined {
+    return this.props.id;
+  }
+
+  get seasonYear(): string {
+    return this.props.seasonYear;
+  }
+
+  get gameWeek(): number | undefined {
+    return this.props.gameWeek;
+  }
+
+  get seasonType(): number | undefined {
+    return this.props.seasonType;
+  }
+
+  get gameDate(): Date | undefined {
+    return this.props.gameDate;
+  }
+
+  get homeTeamId(): number {
+    return this.props.homeTeamId;
+  }
+
+  get awayTeamId(): number {
+    return this.props.awayTeamId;
+  }
+
+  get gameLocation(): string | undefined {
+    return this.props.gameLocation;
+  }
+
+  get gameCity(): string | undefined {
+    return this.props.gameCity;
+  }
+
+  get gameStateProvince(): string | undefined {
+    return this.props.gameStateProvince;
+  }
+
+  get gameCountry(): string | undefined {
+    return this.props.gameCountry;
+  }
+
+  get homeScore(): number | undefined {
+    return this.props.homeScore;
+  }
+
+  get awayScore(): number | undefined {
+    return this.props.awayScore;
+  }
+
+  get gameStatus(): string | undefined {
+    return this.props.gameStatus;
+  }
+
+  get espnEventId(): string | undefined {
+    return this.props.espnEventId;
+  }
+
+  get espnCompetitionId(): string | undefined {
+    return this.props.espnCompetitionId;
+  }
+
+  get createdAt(): Date | undefined {
+    return this.props.createdAt;
+  }
+
+  get updatedAt(): Date | undefined {
+    return this.props.updatedAt;
+  }
+
+  // Relation getters
+  get homeTeam(): any | undefined {
+    return this.props.homeTeam;
+  }
+
+  get awayTeam(): any | undefined {
+    return this.props.awayTeam;
+  }
+
+  // Relation setters (used by repository to hydrate relations)
+  set homeTeam(team: any) {
+    this.props.homeTeam = team;
+  }
+
+  set awayTeam(team: any) {
+    this.props.awayTeam = team;
+  }
+
+  // Business logic methods
+  updateScore(homeScore: number, awayScore: number, status?: GameStatusType): void {
+    if (homeScore < 0 || awayScore < 0) {
+      throw new Error('Scores cannot be negative');
+    }
+    this.props.homeScore = homeScore;
+    this.props.awayScore = awayScore;
+    if (status) {
+      if (!isValidGameStatus(status)) {
+        throw new Error(`Invalid game status: ${status}`);
+      }
+      this.props.gameStatus = status;
+    }
+  }
+
+  isCompleted(): boolean {
+    return this.props.gameStatus === 'completed';
+  }
+
+  isTie(): boolean {
+    return (
+      this.isCompleted() &&
+      this.props.homeScore !== undefined &&
+      this.props.awayScore !== undefined &&
+      this.props.homeScore === this.props.awayScore
+    );
+  }
+
+  getWinningTeamId(): number | null {
+    if (!this.isCompleted() || this.props.homeScore === undefined || this.props.awayScore === undefined) {
+      return null;
+    }
+    if (this.props.homeScore > this.props.awayScore) {
+      return this.props.homeTeamId;
+    }
+    if (this.props.awayScore > this.props.homeScore) {
+      return this.props.awayTeamId;
+    }
+    return null; // Tie
+  }
+
+  isPreseason(): boolean {
+    return this.props.seasonType !== undefined && this.props.seasonType === 1;
+  }
+
+  isRegularSeason(): boolean {
+    return !this.isPreseason();
+  }
+
+  // Persistence methods
+  toPersistence(): any {
+    return {
+      id: this.props.id,
+      seasonYear: this.props.seasonYear,
+      gameWeek: this.props.gameWeek,
+      seasonType: this.props.seasonType,
+      gameDate: this.props.gameDate,
+      homeTeamId: this.props.homeTeamId,
+      awayTeamId: this.props.awayTeamId,
+      gameLocation: this.props.gameLocation,
+      gameCity: this.props.gameCity,
+      gameStateProvince: this.props.gameStateProvince,
+      gameCountry: this.props.gameCountry,
+      homeScore: this.props.homeScore,
+      awayScore: this.props.awayScore,
+      gameStatus: this.props.gameStatus,
+      espnEventId: this.props.espnEventId,
+      espnCompetitionId: this.props.espnCompetitionId,
+      createdAt: this.props.createdAt,
+      updatedAt: this.props.updatedAt,
+    };
+  }
+
+  toPlainObject(): GameProps {
+    return {
+      id: this.props.id,
+      seasonYear: this.props.seasonYear,
+      gameWeek: this.props.gameWeek,
+      seasonType: this.props.seasonType,
+      gameDate: this.props.gameDate,
+      homeTeamId: this.props.homeTeamId,
+      awayTeamId: this.props.awayTeamId,
+      gameLocation: this.props.gameLocation,
+      gameCity: this.props.gameCity,
+      gameStateProvince: this.props.gameStateProvince,
+      gameCountry: this.props.gameCountry,
+      homeScore: this.props.homeScore,
+      awayScore: this.props.awayScore,
+      gameStatus: this.props.gameStatus,
+      espnEventId: this.props.espnEventId,
+      espnCompetitionId: this.props.espnCompetitionId,
+      createdAt: this.props.createdAt,
+      updatedAt: this.props.updatedAt,
+      homeTeam: this.props.homeTeam,
+      awayTeam: this.props.awayTeam,
+    };
+  }
+
+  static fromPersistence(data: any): Game {
+    return new Game({
+      id: data.id,
+      seasonYear: data.seasonYear,
+      gameWeek: data.gameWeek,
+      seasonType: data.seasonType,
+      gameDate: data.gameDate ? new Date(data.gameDate) : undefined,
+      homeTeamId: data.homeTeamId,
+      awayTeamId: data.awayTeamId,
+      gameLocation: data.gameLocation,
+      gameCity: data.gameCity,
+      gameStateProvince: data.gameStateProvince,
+      gameCountry: data.gameCountry,
+      homeScore: data.homeScore,
+      awayScore: data.awayScore,
+      gameStatus: data.gameStatus,
+      espnEventId: data.espnEventId,
+      espnCompetitionId: data.espnCompetitionId,
+      createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+      updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
+    });
+  }
+}
+
+// src/types/upcomingSchedule.ts
+
+
+export interface UpcomingApiEvent {
+  id: number
+  date: string
+  name: string
+  shortName?: string
+  status: string
+  seasonYear: number
+  seasonType: number
+  week: number
+}
+
+export interface UpcomingApiResponse {
+  year: number
+  seasonType: number
+  week: number
+  events: UpcomingApiEvent[]
+}
+
+// Frontend friendly format
+export interface UpcomingGame {
+  id: number
+  dateFormatted: string
+  homeTeamName: string
+  awayTeamName: string
+  homeLogo: string
+  awayLogo: string
+  status: string
+}
+
+// src/application/schedule/dto/ScheduleDto.ts
+import { z } from 'zod';
+
+export const CreateScheduleDtoSchema = z.object({
+  teamId: z.number().positive().optional(),
+  seasonYear: z.number().min(1990).max(2030).optional(),
+  oppTeamId: z.number().positive('Opponent team ID is required'),
+  oppTeamConference: z.string().max(45).optional(),
+  oppTeamDivision: z.string().max(45).optional(),
+  scheduleWeek: z.number().min(1).max(20).optional(),
+  gameDate: z.string().transform((str) => new Date(str)).optional(),
+  gameCity: z.string().max(45).optional(),
+  gameStateProvince: z.string().max(45).optional(),
+  gameCountry: z.string().max(45).optional(),
+  gameLocation: z.string().max(75).optional(),
+  wonLostFlag: z.string().length(1).optional(),
+  homeOrAway: z.string().length(1).optional(),
+  oppTeamScore: z.number().min(0).optional(),
+  teamScore: z.number().min(0).optional(),
+});
+
+export const UpdateScheduleDtoSchema = CreateScheduleDtoSchema.partial();
+
+export const ScheduleFiltersDtoSchema = z.object({
+  teamId: z.number().positive().optional(),
+  seasonYear: z.number().min(1990).max(2030).optional(),
+  oppTeamId: z.number().positive().optional(),
+  oppTeamConference: z.string().optional(),
+  oppTeamDivision: z.string().optional(),
+  scheduleWeek: z.number().min(1).max(20).optional(),
+  gameCity: z.string().optional(),
+  gameStateProvince: z.string().optional(),
+  gameCountry: z.string().optional(),
+  wonLostFlag: z.string().length(1).optional(),
+  homeOrAway: z.string().length(1).optional(),
+  completed: z.boolean().optional(),
+});
+
+export const PaginationDtoSchema = z.object({
+  page: z.number().min(1).optional().default(1),
+  limit: z.number().min(1).max(100).optional().default(10),
+});
+
+export type CreateScheduleDto = z.infer<typeof CreateScheduleDtoSchema>;
+export type UpdateScheduleDto = z.infer<typeof UpdateScheduleDtoSchema>;
+export type ScheduleFiltersDto = z.infer<typeof ScheduleFiltersDtoSchema>;
+export type PaginationDto = z.infer<typeof PaginationDtoSchema>;
+
+export interface ScheduleResponseDto {
+  id: number;
+  teamId?: number;
+  seasonYear?: number;
+  oppTeamId: number;
+  oppTeamConference?: string;
+  oppTeamDivision?: string;
+  scheduleWeek?: number;
+  gameDate?: string;
+  gameCity?: string;
+  gameStateProvince?: string;
+  gameCountry?: string;
+  gameLocation?: string;
+  wonLostFlag?: string;
+  homeOrAway?: string;
+  oppTeamScore?: number;
+  teamScore?: number;
+  gameCompleted: boolean;
+  gameResult?: string;
+  isHomeGame: boolean;
+  fullGameLocation: string;
+}
+
+// src/services/scheduleService.ts
+import { UpcomingApiResponse } from '@/types/upcomingSchedule';
+import { apiService } from './api'
+import type { Schedule, ApiResponse, PaginatedResponse } from '@/types'
+
+export class ScheduleService {
+  private readonly endpoint = '/schedules'
+
+  async getUpcomingSchedule(year: number, seasonType: number, week: number): 
+  Promise<UpcomingApiResponse>  {
+    console.log("src/services/secheduleService::getUpcomingSchedule entryPoint");
+    const url = `${this.endpoint}/upcomingSchedule?seasonYear=${year}&seasonType=${seasonType}&week=${week}`;
+    const res = await apiService.get(url);
+    return res.data as UpcomingApiResponse
+  }
+  
+  // paginated-queries: Fix for double nesting on server
+  async getAll(page = 1, limit = 10): Promise<PaginatedResponse<Schedule>> {
+    const pageNum = Number(page)
+    const limitNum = Number(limit)
+    
+    // Build URL manually to avoid axios params encoding issues
+    const url = `${this.endpoint}?page=${pageNum}&limit=${limitNum}`
+  
+    try {
+      const response = await apiService.get<ApiResponse<Schedule[], any>>(url)
+      
+      // Check if backend respected our parameters
+      const backendPage = response.data.pagination?.page
+      const backendLimit = response.data.pagination?.limit
+      console.log(`🔍 Parameter check: requested page=${pageNum}, got page=${backendPage}`)
+      console.log(`🔍 Parameter check: requested limit=${limitNum}, got limit=${backendLimit}`)
+      
+      if (backendPage !== pageNum) {
+        console.warn(`⚠️ Backend page mismatch! Requested: ${pageNum}, Got: ${backendPage}`)
+      }
+      if (backendLimit !== limitNum) {
+        console.warn(`⚠️ Backend limit mismatch! Requested: ${limitNum}, Got: ${backendLimit}`)
+      }
+      
+      const result = {
+        data: response.data.data,
+        pagination: response.data.pagination
+      }
+      
+      return result
+      
+    } catch (error) {
+      console.error('❌ API call failed:', error)
+      throw error
+    }
+  }
+
+  // non-paginated queries: fix for double nesting from server
+  async getById(id: number): Promise<Schedule> {
+    const response = await apiService.get<ApiResponse<Schedule>>(
+      `${this.endpoint}/${id}`
+    )
+    return response.data.data
+  }
+
+  // ✅ Replace old "no such route" call with filtered index route
+  async getByTeam(teamId: number, page = 1, limit = 10): Promise<PaginatedResponse<Schedule>> {
+    const url = `${this.endpoint}?teamId=${Number(teamId)}&page=${Number(page)}&limit=${Number(limit)}`
+    const { data } = await apiService.get<{ success: boolean; data: Schedule[]; pagination: any }>(url)
+    return { data: data.data, pagination: data.pagination }
+  }
+
+  // ✅ Replace old "no such route" call with filtered index route
+  async getBySeason(seasonYear: number, page = 1, limit = 10): Promise<PaginatedResponse<Schedule>> {
+    const url = `${this.endpoint}?seasonYear=${Number(seasonYear)}&page=${Number(page)}&limit=${Number(limit)}`
+    const { data } = await apiService.get<{ success: boolean; data: Schedule[]; pagination: any }>(url)
+    return { data: data.data, pagination: data.pagination }
+  }
+
+  // ✅ Add explicit team+season method to use the existing param route
+  async getByTeamSeason(teamId: number, seasonYear: number, page = 1, limit = 10): Promise<PaginatedResponse<Schedule>> {
+    // Option 2 (prefer): keep one code path via filtered index route, with pagination
+    const url = `${this.endpoint}?teamId=${Number(teamId)}&seasonYear=${Number(seasonYear)}&page=${Number(page)}&limit=${Number(limit)}`
+    const { data } = await apiService.get<{ success: boolean; data: Schedule[]; pagination: any }>(url)
+    return { data: data.data, pagination: data.pagination }
+  }
+
+  async create(data: Omit<Schedule, 'id'>): Promise<Schedule> {
+    const response = await apiService.post<ApiResponse<Schedule>>(this.endpoint, data)
+    return response.data.data
+  }
+
+  async update(id: number, data: Partial<Schedule>): Promise<Schedule> {
+    const response = await apiService.put<ApiResponse<Schedule>>(`${this.endpoint}/${id}`, data)
+    return response.data.data
+  }
+
+  async delete(id: number): Promise<void> {
+    await apiService.delete(`${this.endpoint}/${id}`)
+  }
+}
+
+export const scheduleService = new ScheduleService()
+
+// src/stores/upcomingScheduleStore.ts
+import { defineStore } from 'pinia'
+import { format } from 'date-fns'
+import { scheduleService } from '@/services/scheduleService'
+import type { UpcomingGame } from '@/types/upcomingSchedule'
+import type { UpcomingApiResponse } from '@/types/upcomingSchedule'
+import { resolveTeamLogo } from '@/util/resolveTeamLogo'
+
+export const useUpcomingScheduleStore = defineStore('upcomingSchedule', {
+  state: () => ({
+    loading: false,
+    upcomingEvents: [] as UpcomingGame[],
+  }),
+
+  actions: {
+    async fetchUpcomingSchedule(year: number, seasonType: number, week: number) {
+      this.loading = true
+      try {
+        const api: UpcomingApiResponse = 
+          await scheduleService.getUpcomingSchedule(year, seasonType, week)
+
+        this.upcomingEvents = api.events.map(ev => {
+          const [away, home] = ev.name.split(' at ')
+
+          return {
+            id: ev.id,
+            dateFormatted: format(new Date(ev.date), 'MM-dd-yyyy h:mm a'),
+            homeTeamName: home,
+            awayTeamName: away,
+            homeLogo: resolveTeamLogo(home),
+            awayLogo: resolveTeamLogo(away),
+            status: ev.status || 'Scheduled',
+          }
+        })
+      } finally {
+        this.loading = false
+      }
+    }
+  }
+})
+
+// src/stores/schedule/upcomingGamesStore.ts
+import { defineStore } from 'pinia'
+
+import type { UpcomingGameDto, UpcomingGameUI } from '@/util/schedule/upcomingGamesHelpers'
+import { mapUpcomingGamesToUI } from '@/util/schedule/upcomingGamesHelpers'
+import { api } from '@/services/api'
+
+export const useUpcomingScheduleStore = defineStore('upcomingSchedule', {
+  state: () => ({
+    games: [] as UpcomingGameUI[],
+    isLoading: false,
+    error: null as string | null,
+  }),
+
+  actions: {
+    /**
+     * Fetches upcoming schedule for the given year/type/week
+     * then normalizes to UI-ready models.
+     */
+    async fetchUpcomingGames(seasonYear: number, seasonType: number, week: number) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const { data } = await api.get(`/schedules/upcomingSchedule`, {
+          params: {
+            seasonYear,
+            seasonType,
+            week,
+          },
+        })
+
+        if (!data?.events || !Array.isArray(data.events)) {
+          this.games = []
+          return
+        }
+
+        // -------------------------------------------------------
+        // Convert raw events → DTO → UI Model
+        // -------------------------------------------------------
+        this.games = mapUpcomingGamesToUI(data.events)
+
+        
+      } catch (err: any) {
+        console.error('[upcomingScheduleStore] Error:', err)
+        this.error = err?.message || 'Unknown error fetching schedule'
+      } finally {
+        this.isLoading = false
+      }
+    },
+  },
+})
+
+// src/presentation/routes/scheduleRoutes.ts
+import { Router } from 'express';
+import { ScheduleController } from '../controllers/ScheduleController';
+import { ScheduleService } from '@/application/schedule/services/ScheduleService';
+import { PrismaScheduleRepository } from '@/infrastructure/repositories/PrismaScheduleRepository';
+import { validateBody, validateParams, validateQuery } from '../middleware/validation';
+import {
+  CreateScheduleDtoSchema,
+  UpdateScheduleDtoSchema,
+  ScheduleFiltersDtoSchema,
+  PaginationDtoSchema,
+} from '@/application/schedule/dto/ScheduleDto';
+import { z } from 'zod';
+
+import { EspnScheduleClient } from '../../infrastructure/espn/EspnScheduleClient';
+import { GetWeekScheduleService } from '@/application/schedule/services/GetWeekScheduleService';
+
+
+const weekScheduleService = new GetWeekScheduleService(new EspnScheduleClient());
+
+const router = Router();
+
+// Dependency injection
+const scheduleRepository = new PrismaScheduleRepository();
+const scheduleService = new ScheduleService(scheduleRepository);
+const scheduleController = new ScheduleController(scheduleService);
+
+// ---------------------
+// Zod schemas (coerce + passthrough + defaults)
+// ---------------------
+const IdParamsSchema = z.object({
+  id: z.coerce.number().int().positive(),
+}).passthrough();
+
+const TeamSeasonParamsSchema = z.object({
+  teamId: z.coerce.number().int().positive(),
+  // keep seasonYear numeric; change to string+regex if your controller expects a string
+  seasonYear: z.coerce.number().int().min(1900).max(3000),
+}).passthrough();
+
+const OpponentParamsSchema = z.object({
+  oppTeamId: z.coerce.number().int().positive(),
+}).passthrough();
+
+// Bodies often arrive as strings; coerce and validate
+const GameResultSchema = z.object({
+  teamScore: z.coerce.number().int().min(0, 'Team score cannot be negative'),
+  oppTeamScore: z.coerce.number().int().min(0, 'Opponent team score cannot be negative'),
+  wonLostFlag: z.string().length(1, 'Won/Lost flag must be a single character'),
+}).passthrough();
+
+// Keep your existing list filters, but allow extra keys
+const QuerySchema = ScheduleFiltersDtoSchema.merge(PaginationDtoSchema).passthrough();
+
+// Optional per-route query with sensible defaults
+// (Use when you want defaults like regular season)
+const ScheduleQuerySchema = z.object({
+  week: z.coerce.number().int().min(0).max(25).optional(),
+  seasonType: z.coerce.number().int().min(1).max(3).default(2), // 2 = regular season
+}).passthrough();
+
+// ---------------------
+// Routes
+// ---------------------
+router.post(
+  '/',
+  validateBody(CreateScheduleDtoSchema),
+  scheduleController.createSchedule
+);
+
+router.get(
+  '/',
+  validateQuery(QuerySchema),
+  scheduleController.getAllSchedules
+);
+
+router.get('/upcomingSchedule', async (req, res) => {
+  try {
+    const year = Number(req.query.seasonYear)
+    const seasonType = Number(req.query.seasonType)
+    const week = Number(req.query.week)
+
+    console.log('➡️ Incoming params:', { year, seasonType, week, raw: req.query })
+
+    if (!year || !seasonType || !week) {
+      return res.status(400).json({ success: false, message: 'Missing year, seasonType, or week' })
+    }
+
+    const result = await weekScheduleService.execute(year, seasonType, week)
+    return res.json(result)
+  } catch (err: any) {
+    console.error('❌ /upcomingSchedule failed:', err)
+    return res.status(500).json({ success: false, message: err.message, error: err.message })
+  }
+})
+
+router.get('/upcomingGames', scheduleController.getUpcomingGames);
+
+router.get('/completed', scheduleController.getCompletedGames);
+
+router.get(
+  '/team/:teamId/season/:seasonYear',
+  validateParams(TeamSeasonParamsSchema),
+  validateQuery(ScheduleQuerySchema), // ← adds seasonType default=2, optional week
+  scheduleController.getTeamSchedule
+);
+
+router.get(
+  '/opponent/:oppTeamId',
+  validateParams(OpponentParamsSchema),
+  scheduleController.getOpponentHistory
+);
+
+router.get(
+  '/:id',
+  validateParams(IdParamsSchema),
+  scheduleController.getScheduleById
+);
+
+router.put(
+  '/:id',
+  validateParams(IdParamsSchema),
+  validateBody(UpdateScheduleDtoSchema),
+  scheduleController.updateSchedule
+);
+
+router.patch(
+  '/:id/result',
+  validateParams(IdParamsSchema),
+  validateBody(GameResultSchema),
+  scheduleController.updateGameResult
+);
+
+router.delete(
+  '/:id',
+  validateParams(IdParamsSchema),
+  scheduleController.deleteSchedule
+);
+
+export { router as scheduleRoutes };
+
+
+// src/infrastructure/espn/EspnScheduleClient.ts
+
+import axios from 'axios';
+import { resolveTeamLogo } from '@/utils/resolveTeamLogo';
+import { TEAM_COLOR_MAP } from '@/utils/TEAM_COLOR_MAP';
+
+import { NormalizedGameDTO, WeekScheduleDTO } from '@/utils/schedule/scheduleTypes';
+
+import { formatDate, derivePrimetime } from '@/utils/schedule/dateHelpers';
+import { normalizeStatus } from '@/utils/schedule/scheduleNormalizer';
+import type { GameStatus } from '@/utils/schedule/scheduleTypes';
+export class EspnScheduleClient {
+  async getWeekEvents(year: number, seasonType: number, week: number): Promise<WeekScheduleDTO> {
+    const listUrl = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/types/${seasonType}/weeks/${week}/events`;
+    const { data } = await axios.get(listUrl);
+    const items = data.items ?? [];
+
+    const normalizedEvents = await Promise.all(
+      items.map(async (item: any) => {
+        try {
+          const match = item.$ref?.match(/\/events\/(\d+)/);
+          const eventId = match ? Number(match[1]) : null;
+          if (!eventId) return null;
+
+          // Fetch event root
+          const eventRes = await axios.get(item.$ref);
+          const e = eventRes.data;
+
+          const competitions = Array.isArray(e.competitions) ? e.competitions : [];
+          const comp = competitions[0];
+
+          if (!comp || !Array.isArray(comp.competitors)) {
+            console.warn(`⚠️ Event ${eventId} missing competitor info`);
+            return null;
+          }
+
+          // Competitors
+          const competitors = comp.competitors;
+
+          const homeRaw = competitors.find((c: any) => c.homeAway === 'home');
+          const awayRaw = competitors.find((c: any) => c.homeAway === 'away');
+
+          if (!homeRaw || !awayRaw) {
+            console.warn(`⚠️ Event ${eventId} missing home/away structure`);
+            return null;
+          }
+
+          // Fetch team objects
+          const homeTeamObj = await this.fetchRefObject(homeRaw.team?.$ref);
+          const awayTeamObj = await this.fetchRefObject(awayRaw.team?.$ref);
+
+          const homeTeamName =
+            homeTeamObj?.displayName || homeTeamObj?.shortDisplayName || homeTeamObj?.name || 'TBD';
+
+          const awayTeamName =
+            awayTeamObj?.displayName || awayTeamObj?.shortDisplayName || awayTeamObj?.name || 'TBD';
+
+          // ESPN logos
+          const homeLogoEspn = homeTeamObj?.logos?.[0]?.href ?? null;
+          const awayLogoEspn = awayTeamObj?.logos?.[0]?.href ?? null;
+
+          // Local logos
+          const homeLogoLocal = resolveTeamLogo(homeTeamName);
+          const awayLogoLocal = resolveTeamLogo(awayTeamName);
+
+          // Scores
+          const homeScoreObj = await this.fetchRefObject(homeRaw.score?.$ref);
+          const awayScoreObj = await this.fetchRefObject(awayRaw.score?.$ref);
+
+          const homeScore = typeof homeScoreObj?.value === 'number' ? homeScoreObj.value : null;
+
+          const awayScore = typeof awayScoreObj?.value === 'number' ? awayScoreObj.value : null;
+
+          // Winner flags
+          const homeWinner = homeRaw?.winner === true;
+          const awayWinner = awayRaw?.winner === true;
+
+          // Status
+          const rawStatus =
+          comp?.status?.type?.shortDetail ||
+          comp?.status?.type?.detail ||
+          comp?.status?.type?.description ||
+          e.status?.type?.name ||
+          "Scheduled";
+
+          let statusNormalized: GameStatus;
+
+          //---------------- Start status Normalization ------------------------------
+          // Intelligent scoring-aware override logic:
+        
+
+          if ((this.gameHasScores(homeScore) || this.gameHasScores(awayScore) ) && (homeWinner || awayWinner)) {
+            statusNormalized = 'Final';
+          } else if ((this.gameHasScores(homeScore) || this.gameHasScores(awayScore) ) ) {
+            statusNormalized = 'In Progress';
+          } else {
+            statusNormalized = normalizeStatus(rawStatus); // already returns GameStatus
+          }
+          // ALWAYS sync statusDetail to normalized status
+          const statDetail = statusNormalized;
+          //---------------- End status Normalization ------------------------------
+          // Date
+          const date = comp?.date || e.date || item?.date || null;
+
+          const dateFormatted = formatDate(date);
+
+          // Primetime
+          const { isPrimetime, primetimeType } = derivePrimetime(date);
+
+          const game: NormalizedGameDTO = {
+            id: eventId,
+
+            date,
+            dateFormatted,
+
+            homeTeamId: Number(homeTeamObj?.id) || null,
+            homeTeamName,
+            homeLogoLocal,
+            homeLogoEspn,
+            homeScore,
+            homeWinner,
+            teamColorHome: TEAM_COLOR_MAP[homeTeamName] ?? '#666',
+
+            awayTeamId: Number(awayTeamObj?.id) || null,
+            awayTeamName,
+            awayLogoLocal,
+            awayLogoEspn,
+            awayScore,
+            awayWinner,
+            teamColorAway: TEAM_COLOR_MAP[awayTeamName] ?? '#666',
+
+            status: statusNormalized,
+            statusDetail: statDetail,
+
+            isPrimetime,
+            primetimeType,
+          };
+
+          return game;
+        } catch (err) {
+          console.error('❌ Failed to normalize event:', err);
+          return null;
+        }
+      })
+    );
+
+    return {
+      year,
+      seasonType,
+      week,
+      events: normalizedEvents.filter(Boolean) as NormalizedGameDTO[],
+    };
+  }
+
+  private gameHasScores(teamScore: number): boolean {
+    let rc: boolean = false;
+    if(teamScore !== null && teamScore > 0) {
+      rc =  true;
+    }else{
+      rc = false;
+    }
+    return rc;
+  }
+  private async fetchRefObject(ref: string | undefined): Promise<any | null> {
+    try {
+      if (!ref) return null;
+      const { data } = await axios.get(ref);
+      return data ?? null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+// CLIENT CODE
+// src/stores/schedule/upcomingGamesStore.ts
+import { defineStore } from 'pinia'
+
+import type { UpcomingGameDto, UpcomingGameUI } from '@/util/schedule/upcomingGamesHelpers'
+import { mapUpcomingGamesToUI } from '@/util/schedule/upcomingGamesHelpers'
+import { api } from '@/services/api'
+
+export const useUpcomingScheduleStore = defineStore('upcomingSchedule', {
+  state: () => ({
+    games: [] as UpcomingGameUI[],
+    isLoading: false,
+    error: null as string | null,
+  }),
+
+  actions: {
+    /**
+     * Fetches upcoming schedule for the given year/type/week
+     * then normalizes to UI-ready models.
+     */
+    async fetchUpcomingGames(seasonYear: number, seasonType: number, week: number) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const { data } = await api.get(`/schedules/upcomingSchedule`, {
+          params: {
+            seasonYear,
+            seasonType,
+            week,
+          },
+        })
+
+        if (!data?.events || !Array.isArray(data.events)) {
+          this.games = []
+          return
+        }
+
+        // -------------------------------------------------------
+        // Convert raw events → DTO → UI Model
+        // -------------------------------------------------------
+        this.games = mapUpcomingGamesToUI(data.events)
+
+        
+      } catch (err: any) {
+        console.error('[upcomingScheduleStore] Error:', err)
+        this.error = err?.message || 'Unknown error fetching schedule'
+      } finally {
+        this.isLoading = false
+      }
+    },
+  },
+})
+
+// src/util/upcomingGamesHelpers.ts
+// Full DTO + helper suite for upcoming games view
+
+import { DateTime } from 'luxon'
+import { resolveTeamLogo } from '@/util/resolveTeamLogo'
+
+// ---------------------------------------------
+// DTO
+// ---------------------------------------------
+export interface UpcomingGameDto {
+  id: number
+  dateFormatted: {
+    day: string
+    time: string
+  }
+  homeTeamName: string
+  awayTeamName: string
+  homeLogo: string
+  awayLogo: string
+  homeScore: number | null
+  awayScore: number | null
+  status: 'Scheduled' | 'In Progress' | 'Final' | 'Postponed'
+  statusDetail: string
+  isPrimetime: boolean
+  primetimeType: 'TNF' | 'SNF' | 'MNF' | null
+  teamColorHome: string
+  teamColorAway: string
+}
+
+// ---------------------------------------------
+// Full 32-team dictionary
+// ---------------------------------------------
+interface TeamInfo {
+  abbr: string
+  name: string
+  primaryColor: string
+  secondaryColor: string
+}
+
+const TEAM_MAP: Record<string, TeamInfo> = {
+  'Arizona Cardinals': { abbr: 'ARI', name: 'Arizona Cardinals', primaryColor: '#97233F', secondaryColor: '#000000' },
+  'Atlanta Falcons': { abbr: 'ATL', name: 'Atlanta Falcons', primaryColor: '#A71930', secondaryColor: '#000000' },
+  'Baltimore Ravens': { abbr: 'BAL', name: 'Baltimore Ravens', primaryColor: '#241773', secondaryColor: '#9E7C0C' },
+  'Buffalo Bills': { abbr: 'BUF', name: 'Buffalo Bills', primaryColor: '#00338D', secondaryColor: '#C60C30' },
+  'Carolina Panthers': { abbr: 'CAR', name: 'Carolina Panthers', primaryColor: '#0085CA', secondaryColor: '#101820' },
+  'Chicago Bears': { abbr: 'CHI', name: 'Chicago Bears', primaryColor: '#0B162A', secondaryColor: '#C83803' },
+  'Cincinnati Bengals': { abbr: 'CIN', name: 'Cincinnati Bengals', primaryColor: '#FB4F14', secondaryColor: '#000000' },
+  'Cleveland Browns': { abbr: 'CLE', name: 'Cleveland Browns', primaryColor: '#311D00', secondaryColor: '#FF3C00' },
+  'Dallas Cowboys': { abbr: 'DAL', name: 'Dallas Cowboys', primaryColor: '#002244', secondaryColor: '#B0B7BC' },
+  'Denver Broncos': { abbr: 'DEN', name: 'Denver Broncos', primaryColor: '#FB4F14', secondaryColor: '#002244' },
+  'Detroit Lions': { abbr: 'DET', name: 'Detroit Lions', primaryColor: '#0076B6', secondaryColor: '#B0B7BC' },
+  'Green Bay Packers': { abbr: 'GB', name: 'Green Bay Packers', primaryColor: '#203731', secondaryColor: '#FFB612' },
+  'Houston Texans': { abbr: 'HOU', name: 'Houston Texans', primaryColor: '#03202F', secondaryColor: '#A71930' },
+  'Indianapolis Colts': { abbr: 'IND', name: 'Indianapolis Colts', primaryColor: '#002C5F', secondaryColor: '#A2AAAD' },
+  'Jacksonville Jaguars': { abbr: 'JAX', name: 'Jacksonville Jaguars', primaryColor: '#006778', secondaryColor: '#9F792C' },
+  'Kansas City Chiefs': { abbr: 'KC', name: 'Kansas City Chiefs', primaryColor: '#E31837', secondaryColor: '#FFB81C' },
+  'Las Vegas Raiders': { abbr: 'LV', name: 'Las Vegas Raiders', primaryColor: '#000000', secondaryColor: '#A5ACAF' },
+  'Los Angeles Chargers': { abbr: 'LAC', name: 'Los Angeles Chargers', primaryColor: '#0080C6', secondaryColor: '#FFC20E' },
+  'Los Angeles Rams': { abbr: 'LAR', name: 'Los Angeles Rams', primaryColor: '#003594', secondaryColor: '#FFA300' },
+  'Miami Dolphins': { abbr: 'MIA', name: 'Miami Dolphins', primaryColor: '#008E97', secondaryColor: '#F58220' },
+  'Minnesota Vikings': { abbr: 'MIN', name: 'Minnesota Vikings', primaryColor: '#4F2683', secondaryColor: '#FFC62F' },
+  'New England Patriots': { abbr: 'NE', name: 'New England Patriots', primaryColor: '#002244', secondaryColor: '#C60C30' },
+  'New Orleans Saints': { abbr: 'NO', name: 'New Orleans Saints', primaryColor: '#D3BC8D', secondaryColor: '#101820' },
+  'New York Giants': { abbr: 'NYG', name: 'New York Giants', primaryColor: '#0B2265', secondaryColor: '#A71930' },
+  'New York Jets': { abbr: 'NYJ', name: 'New York Jets', primaryColor: '#125740', secondaryColor: '#FFFFFF' },
+  'Philadelphia Eagles': { abbr: 'PHI', name: 'Philadelphia Eagles', primaryColor: '#004C54', secondaryColor: '#A5ACAF' },
+  'Pittsburgh Steelers': { abbr: 'PIT', name: 'Pittsburgh Steelers', primaryColor: '#FFB612', secondaryColor: '#101820' },
+  'San Francisco 49ers': { abbr: 'SF', name: 'San Francisco 49ers', primaryColor: '#AA0000', secondaryColor: '#B3995D' },
+  'Seattle Seahawks': { abbr: 'SEA', name: 'Seattle Seahawks', primaryColor: '#002244', secondaryColor: '#69BE28' },
+  'Tampa Bay Buccaneers': { abbr: 'TB', name: 'Tampa Bay Buccaneers', primaryColor: '#D50A0A', secondaryColor: '#34302B' },
+  'Tennessee Titans': { abbr: 'TEN', name: 'Tennessee Titans', primaryColor: '#4B92DB', secondaryColor: '#0C2340' },
+  'Washington Commanders': { abbr: 'WAS', name: 'Washington Commanders', primaryColor: '#5A1414', secondaryColor: '#FFB612' }
+}
+
+// ---------------------------------------------
+// Customized Date formatting (America/New_York)
+// ---------------------------------------------
+export function formatDate(raw: string) {
+  if (!raw) return { day: '--', time: '--' };
+
+  // ESPN always gives ISO UTC, e.g. "2025-11-14T01:15Z"
+  const dt = DateTime.fromISO(raw, { zone: 'utc' })
+    .setZone('America/New_York');  // << force U.S. Eastern Time
+
+  return {
+    day: dt.toFormat('LLL dd'),   // e.g. "Nov 13"
+    time: dt.toFormat('h:mm a'),  // e.g. "7:15 PM"
+  };
+}
+// ---------------------------------------------
+// Standard Date formatting (America/New_York)
+// ---------------------------------------------
+export function formatStandardDate(raw: string) {
+  if (!raw) return { day: '--', time: '--' };
+
+  const d = new Date(raw);
+
+  return {
+    day: d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'America/Chicago',   // <<< FIX
+    }),
+    time: d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/Chicago',   // <<< FIX
+    })
+  };
+
+// ---------------------------------------------
+// Date formatting (America/New_York)
+// ---------------------------------------------
+export function formatStandardDate(raw: string) {
+  if (!raw) return { day: '--', time: '--' };
+
+  const d = new Date(raw);
+
+  return {
+    day: d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'America/New_York',   // <<< FIX
+    }),
+    time: d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/New_York',   // <<< FIX
+    })
+  };
+}
+
+
+
+// ---------------------------------------------
+// Primetime logic
+// ---------------------------------------------
+export function derivePrimetime(iso: string) {
+  const dt = DateTime.fromISO(iso, { zone: 'utc' }).setZone('America/New_York')
+  const hour = dt.hour
+
+  // Thursday Night (approx 8:15 PM ET)
+  if (dt.weekday === 4 && hour >= 20 && hour <= 21) {
+    return { isPrimetime: true, primetimeType: 'TNF' as const }
+  }
+
+  // Sunday Night (8:20 PM)
+  if (dt.weekday === 7 && hour >= 20 && hour <= 21) {
+    return { isPrimetime: true, primetimeType: 'SNF' as const }
+  }
+
+  // Monday Night (8:15 PM)
+  if (dt.weekday === 1 && hour >= 20 && hour <= 21) {
+    return { isPrimetime: true, primetimeType: 'MNF' as const }
+  }
+
+  return { isPrimetime: false, primetimeType: null }
+}
+
+// ---------------------------------------------
+// Status logic
+// ---------------------------------------------
+export function deriveStatus(competition: any) {
+  if (!competition) {
+    return { status: 'Scheduled' as const, detail: '' }
+  }
+
+  const state = competition.status?.type?.state ?? 'pre'
+  const detail = competition.status?.type?.detail ?? ''
+
+  switch (state) {
+    case 'pre':
+      return { status: 'Scheduled' as const, detail }
+    case 'in':
+      return { status: 'In Progress' as const, detail }
+    case 'post':
+      return { status: 'Final' as const, detail: detail || 'Final' }
+    case 'postponed':
+      return { status: 'Postponed' as const, detail: 'Postponed' }
+    default:
+      return { status: 'Scheduled' as const, detail }
+  }
+}
+
+// ---------------------------------------------
+// Score derivation
+// ---------------------------------------------
+export function deriveScores(competition: any) {
+  if (!competition) {
+    return { homeScore: null, awayScore: null }
+  }
+
+  const competitors = competition.competitors ?? []
+  const home = competitors.find((c: any) => c.homeAway === 'home')
+  const away = competitors.find((c: any) => c.homeAway === 'away')
+
+  return {
+    homeScore: home ? Number(home.score ?? null) : null,
+    awayScore: away ? Number(away.score ?? null) : null
+  }
+}
+
+// ---------------------------------------------
+// Map event → DTO
+// ---------------------------------------------
+export function mapEventToDto(
+  scheduleEvent: any,
+  scoreboardEvent: any
+): UpcomingGameDto {
+  // -------------------------------
+  // Parse team names
+  // shortName example: "NYJ @ NE"
+  // name example: "New York Jets at New England Patriots"
+  // -------------------------------
+  const fullName = scheduleEvent.name as string
+  const [awayFull, homeFull] = fullName.split(' at ')
+
+  const awayTeam = TEAM_MAP[awayFull.trim()]
+  const homeTeam = TEAM_MAP[homeFull.trim()]
+
+  // -------------------------------
+  // Date formatting
+  // -------------------------------
+  const dateFormatted = formatDate(scheduleEvent.date)
+
+  // -------------------------------
+  // Scoreboard competition
+  // -------------------------------
+  const competition =
+    scoreboardEvent?.competitions?.[0] ??
+    null
+
+  const { status, detail } = deriveStatus(competition)
+  const { homeScore, awayScore } = deriveScores(competition)
+
+  // -------------------------------
+  // Primetime
+  // -------------------------------
+  const { isPrimetime, primetimeType } = derivePrimetime(scheduleEvent.date)
+
+  // -------------------------------
+  // Logo / Colors
+  // -------------------------------
+  const homeLogo = resolveTeamLogo(homeTeam.name)
+  const awayLogo = resolveTeamLogo(awayTeam.name)
+
+  return {
+    id: scheduleEvent.id,
+    dateFormatted,
+    homeTeamName: homeTeam.name,
+    awayTeamName: awayTeam.name,
+    homeLogo,
+    awayLogo,
+    homeScore,
+    awayScore,
+    status,
+    statusDetail: detail,
+    isPrimetime,
+    primetimeType,
+    teamColorHome: homeTeam.primaryColor,
+    teamColorAway: awayTeam.primaryColor
+  }
+}
+
+<!-- src/views/ShowUpcomingGamesView.vue -->
+<script setup lang="ts">
+import { ref, onMounted, Ref } from 'vue'
+import { useUpcomingGamesController } from '@/composables/schedule/useUpcomingGamesController'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+
+// ✅ CREATE THE CONTROLLER (it handles the store internally)
+const controller = useUpcomingGamesController()
+
+const staticWeekOptions: { label: string; value: number }[] = [
+  { label: 'Preseason', value: 0 },
+  ...Array.from({ length: 18 }, (_, i) => ({
+    label: `Week ${i + 1}`,
+    value: i + 1,
+  })),
+  { label: 'Postseason', value: 99 },
+]
+
+onMounted(() => {
+})
+</script>
+
+<template>
+  <div class="p-4">
+    <h2 class="text-2xl font-bold mb-3">Upcoming NFL Games</h2>
+
+    <!-- FILTER CONTROLS -->
+    <div class="controls-row">
+
+      <!-- YEAR -->
+      <select v-model="controller.selectedYear.value" class="control-select">
+        <option v-for="y in [2023, 2024, 2025, 2026, 2027]" :key="y" :value="y">
+          {{ y }}
+        </option>
+      </select>
+
+      <!-- SEASON TYPE -->
+      <select v-model="controller.selectedSeasonType.value" class="control-select">
+        <option value="1">Preseason</option>
+        <option value="2">Regular Season</option>
+        <option value="3">Postseason</option>
+      </select>
+
+      <!-- WEEK -->
+      <select v-model="controller.selectedWeek.value" class="control-select">
+        <option v-for="opt in staticWeekOptions" :key="opt.value" :value="opt.value">
+          {{ opt.label }}
+        </option>
+      </select>
+
+      <button class="submit-btn" @click="controller.submitControls()">
+        Submit
+      </button>
+
+      <button icon="pi pi-cloud-download" class="refresh-btn" :loading="controller.loading"
+        @click="controller.runImportScoresWeek">
+        Refresh
+      </button>
+
+    </div>
+
+    <DataTable :value="controller.store.games" :loading="controller.store.isLoading" tableStyle="min-width: 100%"
+      rowHover>
+      <!-- DATE/TIME COLUMN -->
+      <Column header="Date/Time" style="width: 160px">
+        <template #body="{ data }">
+          <div class="flex flex-col leading-tight">
+            <span class="date-day">{{ data.dateFormatted.day }}</span>
+            <span class="date-time">{{ data.dateFormatted.time }}</span>
+          </div>
+        </template>
+      </Column>
+
+      <!-- MATCHUP COLUMN -->
+      <Column header="Matchup">
+        <template #body="{ data }">
+          <div class="matchup-row">
+
+            <!-- AWAY TEAM -->
+            <div class="team-horizontal">
+              <img :src="data.awayLogo" class="team-logo" />
+              <span :class="['team-name', data.awayWinner ? 'winner-text' : 'loser-text']">
+                {{ data.awayTeamName }}
+                <span class="score" v-if="data.awayScore !== null">({{ data.awayScore }})</span>
+                <span v-if="data.awayWinner" class="winner-check">✔</span>
+              </span>
+            </div>
+
+            <span class="vs">@</span>
+
+            <!-- HOME TEAM -->
+            <div class="team-horizontal">
+              <img :src="data.homeLogo" class="team-logo" />
+              <span :class="['team-name', data.homeWinner ? 'winner-text' : 'loser-text']">
+                {{ data.homeTeamName }}
+                <span class="score" v-if="data.homeScore !== null">({{ data.homeScore }})</span>
+                <span v-if="data.homeWinner" class="winner-check">✔</span>
+              </span>
+            </div>
+
+          </div>
+        </template>
+
+      </Column>
+
+
+      <!-- STATUS COLUMN -->
+      <Column header="Status" style="width: 140px">
+        <template #body="{ data }">
+          <span :class="[
+            'status-tag',
+            data.status === 'Final'
+              ? 'final'
+              : data.status === 'In Progress'
+                ? 'in-progress'
+                : 'scheduled'
+          ]">
+            {{ data.statusDetail || data.status }}
+          </span>
+        </template>
+      </Column>
+    </DataTable>
+
+  </div>
+</template>
+
+<style scoped>
+img {
+  object-fit: contain;
+}
+
+.toolbar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.small-input :deep(.p-inputtext),
+.small-input :deep(.p-dropdown),
+.small-input :deep(.p-dropdown-label) {
+  height: 32px !important;
+  padding: 4px 8px !important;
+  font-size: 14px;
+}
+
+.small-input :deep(.p-dropdown-trigger) {
+  width: 24px;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.team-logo {
+  width: 110px;
+  height: 70px;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* DATE / TIME */
+.date-day {
+  font-weight: 600;
+  color: #fff;
+}
+
+.date-time {
+  color: #bbb;
+  font-size: 0.85rem;
+}
+
+/* TEAM LOGOS */
+.team-logo {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* TEAM NAME TEXT */
+.team-name {
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* WINNER = Red Bold */
+.winner-text {
+  color: #ff4d4d;
+  font-weight: 700;
+}
+
+/* LOSER = White */
+.loser-text {
+  color: #fff;
+  opacity: 0.9;
+}
+
+/* CHECKMARK */
+.winner-check {
+  color: #00e600;
+  margin-left: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* STATUS TAGS */
+.status-tag {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-tag.in-progress {
+  background: #e63946;
+  color: #fff;
+}
+
+.status-tag.final {
+  background: #2a9d8f;
+  color: #fff;
+}
+
+.status-tag.scheduled {
+  background: #777;
+  color: #000;
+}
+
+.controls-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  align-items: center;
+}
+
+.control-select {
+  background: #222;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 1.05rem;
+}
+
+.submit-btn {
+  background: #0a84ff;
+  color: #fff;
+  padding: 0.45rem 0.8rem;
+  font-size: 1.05rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.refresh-btn {
+  background: green;
+  color: #fff;
+  padding: 0.45rem 0.8rem;
+  font-size: 1.05rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+
+.date-day {
+  color: #fff;
+  font-weight: 600;
+}
+
+.date-time {
+  color: #bbb;
+  font-size: 0.85rem;
+}
+
+.matchup-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.team-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* ensures perfect vertical centering */
+  gap: 0.5rem;
+}
+
+.team-logo {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.team-name {
+  font-weight: 500;
+  font-size: 1rem;
+  white-space: nowrap;
+  /* prevents wrapping (stays single-row) */
+}
+
+.vs {
+  font-weight: 600;
+  color: #ddd;
+  padding: 0 0.5rem;
+}
+
+.winner-check {
+  color: #00e600;
+  margin-left: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.score {
+  font-size: larger;
+  color:yellow
+}
+</style>
+
+
+// src/utils/schedule/scheduleTypes.ts
+export type GameStatus = 'Scheduled' | 'In Progress' | 'Final' | 'Postponed';
+export type PrimetimeType = 'TNF' | 'SNF' | 'MNF' | null;
+
+export interface WeekScheduleDTO {
+  year: number;          // e.g., 2025
+  seasonType: number;    // 1 = preseason, 2 = regular, 3 = postseason
+  week: number;          // 1–18 (or 0 for preseason)
+  events: NormalizedGameDTO[];
+}
+
+export interface EventDTO {
+  id: number;
+  date: string | null;
+  name: string | null;
+  shortName: string | null;
+  status: string | null;
+  seasonYear: number;
+  seasonType: number;
+  week: number;
+  competitions?: any;
+}
+
+export interface NormalizedGameDTO {
+  id: number;
+
+  date: string | null;
+  dateFormatted: {
+    day: string;
+    time: string;
+  };
+
+  homeTeamId: number | null;
+  homeTeamName: string;
+  homeLogoEspn: string;
+  homeLogoLocal: string,
+  homeScore: number | null;
+  homeWinner: boolean;
+  teamColorHome: string;
+
+  awayTeamId: number | null;
+  awayTeamName: string;
+  awayLogoEspn: string;
+  awayLogoLocal: string;
+  awayScore: number | null;
+  awayWinner: boolean;
+  teamColorAway: string;
+
+  status: GameStatus;
+  statusDetail: string;
+
+  isPrimetime: boolean;
+  primetimeType: PrimetimeType;
+}
+
+

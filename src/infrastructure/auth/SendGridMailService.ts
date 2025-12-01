@@ -1,4 +1,4 @@
-// src/infrastructure/mail/SendGridMailService.ts
+// src/infrastructure/email/SendGridMailService.ts
 import sgMail, { MailDataRequired } from '@sendgrid/mail';
 import type { MailService } from '@/domain/mail/services/MailService';
 import type { MailMessage } from '@/domain/mail/value-objects/MailMessage';
@@ -18,7 +18,7 @@ export class SendGridMailService implements MailService {
       from: this.defaultFrom,
       subject: message.subject,
       html: message.html,
-      // text: message.text, // if you later extend MailMessage
+      // if your MailMessage carries text/plain, you can add text: message.text,
     };
 
     await sgMail.send(mail);

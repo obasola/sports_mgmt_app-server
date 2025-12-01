@@ -1,11 +1,12 @@
 // src/utils/schedule/scheduleTypes.ts
+
 export type GameStatus = 'Scheduled' | 'In Progress' | 'Final' | 'Postponed';
 export type PrimetimeType = 'TNF' | 'SNF' | 'MNF' | null;
 
 export interface WeekScheduleDTO {
-  year: number;          // e.g., 2025
-  seasonType: number;    // 1 = preseason, 2 = regular, 3 = postseason
-  week: number;          // 1–18 (or 0 for preseason)
+  year: number;       // e.g., 2025
+  seasonType: number; // 1 = preseason, 2 = regular, 3 = postseason
+  week: number;       // 1–18 (or 0 for preseason)
   events: NormalizedGameDTO[];
 }
 
@@ -21,6 +22,20 @@ export interface EventDTO {
   competitions?: any;
 }
 
+// NEW: Scoring play DTO
+export interface ScoringPlayDTO {
+  id: number;
+  text: string;
+  /** Quarter number (0 if unknown) */
+  period: number;
+  /** Clock display like "10:21" */
+  clockDisplay: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  /** e.g. "Pass", "Rush", "FG", or null if ESPN doesn't provide it */
+  type: string | null;
+}
+
 export interface NormalizedGameDTO {
   id: number;
 
@@ -33,7 +48,7 @@ export interface NormalizedGameDTO {
   homeTeamId: number | null;
   homeTeamName: string;
   homeLogoEspn: string;
-  homeLogoLocal: string,
+  homeLogoLocal: string;
   homeScore: number | null;
   homeWinner: boolean;
   teamColorHome: string;
@@ -51,4 +66,8 @@ export interface NormalizedGameDTO {
 
   isPrimetime: boolean;
   primetimeType: PrimetimeType;
+
+  // NEW: scoring text and full play list
+  scoringSummaryShort: string | null;
+  scoringPlays: ScoringPlayDTO[];
 }

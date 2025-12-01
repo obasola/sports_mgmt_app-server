@@ -1,0 +1,480 @@
+// src/util/upcomingGamesHelpers.ts
+// Full DTO + helper suite for upcoming games view
+
+import { DateTime } from 'luxon'
+import { resolveTeamLogo } from '@/util/resolveTeamLogo'
+import type { NormalizedGameDTO, ScoringPlayDTO } from '@/util/schedule/scheduleTypes';
+
+// ---------------------------------------------
+// DTO
+// ---------------------------------------------s
+export interface UpcomingGameDto {
+  id: number
+  dateFormatted: {
+    day: string
+    time: string
+  }
+  homeTeamName: string
+  awayTeamName: string
+  homeLogo: string
+  awayLogo: string
+  homeScore: number | null
+  awayScore: number | null
+  status: 'Scheduled' | 'In Progress' | 'Final' | 'Postponed'
+  statusDetail: string
+  isPrimetime: boolean
+  primetimeType: 'TNF' | 'SNF' | 'MNF' | null
+  teamColorHome: string
+  teamColorAway: string
+    // NEW: short blurb + full list
+  scoringSummaryShort: string | null;
+  scoringDetails: string[];
+}
+
+// ---------------------------------------------
+// Full 32-team dictionary
+// ---------------------------------------------
+interface TeamInfo {
+  abbr: string
+  name: string
+  primaryColor: string
+  secondaryColor: string
+}
+
+const TEAM_MAP: Record<string, TeamInfo> = {
+  'Arizona Cardinals': { abbr: 'ARI', name: 'Arizona Cardinals', primaryColor: '#97233F', secondaryColor: '#000000' },
+  'Atlanta Falcons': { abbr: 'ATL', name: 'Atlanta Falcons', primaryColor: '#A71930', secondaryColor: '#000000' },
+  'Baltimore Ravens': { abbr: 'BAL', name: 'Baltimore Ravens', primaryColor: '#241773', secondaryColor: '#9E7C0C' },
+  'Buffalo Bills': { abbr: 'BUF', name: 'Buffalo Bills', primaryColor: '#00338D', secondaryColor: '#C60C30' },
+  'Carolina Panthers': { abbr: 'CAR', name: 'Carolina Panthers', primaryColor: '#0085CA', secondaryColor: '#101820' },
+  'Chicago Bears': { abbr: 'CHI', name: 'Chicago Bears', primaryColor: '#0B162A', secondaryColor: '#C83803' },
+  'Cincinnati Bengals': { abbr: 'CIN', name: 'Cincinnati Bengals', primaryColor: '#FB4F14', secondaryColor: '#000000' },
+  'Cleveland Browns': { abbr: 'CLE', name: 'Cleveland Browns', primaryColor: '#311D00', secondaryColor: '#FF3C00' },
+  'Dallas Cowboys': { abbr: 'DAL', name: 'Dallas Cowboys', primaryColor: '#002244', secondaryColor: '#B0B7BC' },
+  'Denver Broncos': { abbr: 'DEN', name: 'Denver Broncos', primaryColor: '#FB4F14', secondaryColor: '#002244' },
+  'Detroit Lions': { abbr: 'DET', name: 'Detroit Lions', primaryColor: '#0076B6', secondaryColor: '#B0B7BC' },
+  'Green Bay Packers': { abbr: 'GB', name: 'Green Bay Packers', primaryColor: '#203731', secondaryColor: '#FFB612' },
+  'Houston Texans': { abbr: 'HOU', name: 'Houston Texans', primaryColor: '#03202F', secondaryColor: '#A71930' },
+  'Indianapolis Colts': { abbr: 'IND', name: 'Indianapolis Colts', primaryColor: '#002C5F', secondaryColor: '#A2AAAD' },
+  'Jacksonville Jaguars': { abbr: 'JAX', name: 'Jacksonville Jaguars', primaryColor: '#006778', secondaryColor: '#9F792C' },
+  'Kansas City Chiefs': { abbr: 'KC', name: 'Kansas City Chiefs', primaryColor: '#E31837', secondaryColor: '#FFB81C' },
+  'Las Vegas Raiders': { abbr: 'LV', name: 'Las Vegas Raiders', primaryColor: '#000000', secondaryColor: '#A5ACAF' },
+  'Los Angeles Chargers': { abbr: 'LAC', name: 'Los Angeles Chargers', primaryColor: '#0080C6', secondaryColor: '#FFC20E' },
+  'Los Angeles Rams': { abbr: 'LAR', name: 'Los Angeles Rams', primaryColor: '#003594', secondaryColor: '#FFA300' },
+  'Miami Dolphins': { abbr: 'MIA', name: 'Miami Dolphins', primaryColor: '#008E97', secondaryColor: '#F58220' },
+  'Minnesota Vikings': { abbr: 'MIN', name: 'Minnesota Vikings', primaryColor: '#4F2683', secondaryColor: '#FFC62F' },
+  'New England Patriots': { abbr: 'NE', name: 'New England Patriots', primaryColor: '#002244', secondaryColor: '#C60C30' },
+  'New Orleans Saints': { abbr: 'NO', name: 'New Orleans Saints', primaryColor: '#D3BC8D', secondaryColor: '#101820' },
+  'New York Giants': { abbr: 'NYG', name: 'New York Giants', primaryColor: '#0B2265', secondaryColor: '#A71930' },
+  'New York Jets': { abbr: 'NYJ', name: 'New York Jets', primaryColor: '#125740', secondaryColor: '#FFFFFF' },
+  'Philadelphia Eagles': { abbr: 'PHI', name: 'Philadelphia Eagles', primaryColor: '#004C54', secondaryColor: '#A5ACAF' },
+  'Pittsburgh Steelers': { abbr: 'PIT', name: 'Pittsburgh Steelers', primaryColor: '#FFB612', secondaryColor: '#101820' },
+  'San Francisco 49ers': { abbr: 'SF', name: 'San Francisco 49ers', primaryColor: '#AA0000', secondaryColor: '#B3995D' },
+  'Seattle Seahawks': { abbr: 'SEA', name: 'Seattle Seahawks', primaryColor: '#002244', secondaryColor: '#69BE28' },
+  'Tampa Bay Buccaneers': { abbr: 'TB', name: 'Tampa Bay Buccaneers', primaryColor: '#D50A0A', secondaryColor: '#34302B' },
+  'Tennessee Titans': { abbr: 'TEN', name: 'Tennessee Titans', primaryColor: '#4B92DB', secondaryColor: '#0C2340' },
+  'Washington Commanders': { abbr: 'WAS', name: 'Washington Commanders', primaryColor: '#5A1414', secondaryColor: '#FFB612' }
+}
+
+// ---------------------------------------------
+// Customized Date formatting (America/New_York)
+// ---------------------------------------------
+export function formatDate(raw: string) {
+  if (!raw) return { day: '--', time: '--' };
+
+  // ESPN always gives ISO UTC, e.g. "2025-11-14T01:15Z"
+  const dt = DateTime.fromISO(raw, { zone: 'utc' })
+    .setZone('America/New_York');  // << force U.S. Eastern Time
+
+  return {
+    day: dt.toFormat('LLL dd'),   // e.g. "Nov 13"
+    time: dt.toFormat('h:mm a'),  // e.g. "7:15 PM"
+  };
+}
+// ---------------------------------------------
+// Standard Date formatting (America/New_York)
+// ---------------------------------------------
+export function formatStandardDate(raw: string) {
+  if (!raw) return { day: '--', time: '--' };
+
+  const d = new Date(raw);
+
+  return {
+    day: d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'America/Chicago',   // <<< FIX
+    }),
+    time: d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/Chicago',   // <<< FIX
+    })
+  };
+}
+
+
+// ---------------------------------------------
+// Primetime logic
+// ---------------------------------------------
+export function derivePrimetime(iso: string) {
+  const dt = DateTime.fromISO(iso, { zone: 'utc' }).setZone('America/New_York')
+  const hour = dt.hour
+
+  // Thursday Night (approx 8:15 PM ET)
+  if (dt.weekday === 4 && hour >= 20 && hour <= 21) {
+    return { isPrimetime: true, primetimeType: 'TNF' as const }
+  }
+
+  // Sunday Night (8:20 PM)
+  if (dt.weekday === 7 && hour >= 20 && hour <= 21) {
+    return { isPrimetime: true, primetimeType: 'SNF' as const }
+  }
+
+  // Monday Night (8:15 PM)
+  if (dt.weekday === 1 && hour >= 20 && hour <= 21) {
+    return { isPrimetime: true, primetimeType: 'MNF' as const }
+  }
+
+  return { isPrimetime: false, primetimeType: null }
+}
+
+// ---------------------------------------------
+// Status logic
+// ---------------------------------------------
+export function deriveStatus(competition: any) {
+  if (!competition) {
+    return { status: 'Scheduled' as const, detail: '' }
+  }
+
+  const state = competition.status?.type?.state ?? 'pre'
+  const detail = competition.status?.type?.detail ?? ''
+
+  switch (state) {
+    case 'pre':
+      return { status: 'Scheduled' as const, detail }
+    case 'in':
+      return { status: 'In Progress' as const, detail }
+    case 'post':
+      return { status: 'Final' as const, detail: detail || 'Final' }
+    case 'postponed':
+      return { status: 'Postponed' as const, detail: 'Postponed' }
+    default:
+      return { status: 'Scheduled' as const, detail }
+  }
+}
+
+// ---------------------------------------------
+// Score derivation
+// ---------------------------------------------
+export function deriveScores(competition: any) {
+  if (!competition) {
+    return { homeScore: null, awayScore: null }
+  }
+
+  const competitors = competition.competitors ?? []
+  const home = competitors.find((c: any) => c.homeAway === 'home')
+  const away = competitors.find((c: any) => c.homeAway === 'away')
+
+  return {
+    homeScore: home ? Number(home.score ?? null) : null,
+    awayScore: away ? Number(away.score ?? null) : null
+  }
+}
+// ---------------------------------------------
+// Helpers
+// ---------------------------------------------
+function toDateFormatted(dateIso: string | null): { day: string; time: string } {
+  if (!dateIso) {
+    return { day: '', time: '' };
+  }
+  const dt = DateTime.fromISO(dateIso);
+  if (!dt.isValid) {
+    return { day: '', time: '' };
+  }
+  return {
+    day: dt.toFormat('ccc L/d'),
+    time: dt.toFormat('h:mm a'),
+  };
+}
+
+function mapScoringPlaysToDetails(plays: ScoringPlayDTO[] | undefined): string[] {
+  if (!plays || !plays.length) {
+    return [];
+  }
+
+  return plays.map((p) => {
+    const parts: string[] = [];
+
+    if (p.period > 0 || p.clockDisplay) {
+      const qLabel = p.period > 0 ? `Q${p.period}` : '';
+      const timeLabel = p.clockDisplay || '';
+      const when = [qLabel, timeLabel].filter(Boolean).join(' ');
+      if (when) {
+        parts.push(when);
+      }
+    }
+
+    if (p.text) {
+      parts.push(p.text);
+    }
+
+    if (p.homeScore != null || p.awayScore != null) {
+      parts.push(`(Score: ${p.awayScore ?? '-'}–${p.homeScore ?? '-'})`);
+    }
+
+    return parts.join(' — ');
+  });
+}
+
+// ---------------------------------------------
+// Map event → DTO
+// ---------------------------------------------
+export function mapEventToDto(
+  scheduleEvent: any,
+  scoreboardEvent: any
+): UpcomingGameDto {
+  // -------------------------------
+  // Parse team names
+  // shortName example: "NYJ @ NE"
+  // name example: "New York Jets at New England Patriots"
+  // -------------------------------
+  const fullName = scheduleEvent.name as string
+  const [awayFull, homeFull] = fullName.split(' at ')
+
+  const awayTeam = TEAM_MAP[awayFull.trim()]
+  const homeTeam = TEAM_MAP[homeFull.trim()]
+
+  // -------------------------------
+  // Date formatting
+  // -------------------------------
+  const dateFormatted = formatDate(scheduleEvent.date)
+
+  // -------------------------------
+  // Scoreboard competition
+  // -------------------------------
+  const competition =
+    scoreboardEvent?.competitions?.[0] ??
+    null
+
+  const { status, detail } = deriveStatus(competition)
+  const { homeScore, awayScore } = deriveScores(competition)
+
+  // -------------------------------
+  // Primetime
+  // -------------------------------
+  const { isPrimetime, primetimeType } = derivePrimetime(scheduleEvent.date)
+
+  // -------------------------------
+  // Logo / Colors
+  // -------------------------------
+  const homeLogo = resolveTeamLogo(homeTeam.name)
+  const awayLogo = resolveTeamLogo(awayTeam.name)
+
+  return {
+    id: scheduleEvent.id,
+    dateFormatted,
+    homeTeamName: homeTeam.name,
+    awayTeamName: awayTeam.name,
+    homeLogo,
+    awayLogo,
+    homeScore,
+    awayScore,
+    status,
+    statusDetail: detail,
+    isPrimetime,
+    primetimeType,
+    teamColorHome: homeTeam.primaryColor,
+    teamColorAway: awayTeam.primaryColor
+  }
+}
+// ---------------------------------------------
+// Main mapper: API → UI
+// ---------------------------------------------
+export function mapUpcomingGamesToUI(events: NormalizedGameDTO[]): UpcomingGameUI[] {
+  return events.map((e) => {
+    const dateFormatted = e.dateFormatted ?? toDateFormatted(e.date);
+
+    const homeLogo =
+      e.homeLogoLocal || e.homeLogoEspn || resolveTeamLogo(e.homeTeamName);
+    const awayLogo =
+      e.awayLogoLocal || e.awayLogoEspn || resolveTeamLogo(e.awayTeamName);
+
+    const scoringDetails = mapScoringPlaysToDetails(e.scoringPlays);
+    const scoringSummaryShort =
+      e.scoringSummaryShort || (scoringDetails.length ? scoringDetails[scoringDetails.length - 1] : null);
+
+    const dto: UpcomingGameDto = {
+      id: e.id,
+      dateFormatted,
+      homeTeamName: e.homeTeamName,
+      awayTeamName: e.awayTeamName,
+      homeLogo,
+      awayLogo,
+      homeScore: e.homeScore,
+      awayScore: e.awayScore,
+      status: e.status,
+      statusDetail: e.statusDetail,
+      isPrimetime: e.isPrimetime,
+      primetimeType: e.primetimeType,
+      teamColorHome: e.teamColorHome,
+      teamColorAway: e.teamColorAway,
+      scoringSummaryShort,
+      scoringDetails,
+    };
+
+    return dto;
+  });
+}
+
+
+// src/util/schedule/upcomingGamesHelpers.ts
+//------------------------------------------------------
+// This file consumes BACKEND NormalizedGameDTO
+// and produces FRONTEND UpcomingGameUI
+//------------------------------------------------------
+
+import type { GameStatus, PrimetimeType } from '@/types/schedule/upcomingGames'
+
+//------------------------------------------------------
+// TYPES (FROM BACKEND)
+//------------------------------------------------------
+export interface NormalizedGameDTO {
+  id: number
+
+  date: string | null
+  dateFormatted: { day: string; time: string }
+
+  homeTeamId: number | null
+  homeTeamName: string
+  homeLogoLocal: string
+  homeLogoEspn: string | null
+  homeScore: number | null
+  homeWinner: boolean
+  teamColorHome: string
+
+  awayTeamId: number | null
+  awayTeamName: string
+  awayLogoLocal: string
+  awayLogoEspn: string | null
+  awayScore: number | null
+  awayWinner: boolean
+  teamColorAway: string
+
+  status: GameStatus
+  statusDetail: string
+
+  isPrimetime: boolean
+  primetimeType: PrimetimeType
+}
+
+//------------------------------------------------------
+// FRONTEND DTO
+//------------------------------------------------------
+export interface UpcomingGameDto {
+  id: number
+
+  date: string | null
+  dateFormatted: { day: string; time: string }
+
+  homeTeamId: number | null
+  homeTeamName: string
+  homeLogo: string
+  homeScore: number | null
+  homeWinner: boolean
+  teamColorHome: string
+
+  awayTeamId: number | null
+  awayTeamName: string
+  awayLogo: string
+  awayScore: number | null
+  awayWinner: boolean
+  teamColorAway: string
+
+  status: GameStatus
+  statusDetail: string
+
+  isPrimetime: boolean
+  primetimeType: PrimetimeType
+}
+
+//------------------------------------------------------
+// UI MODEL
+//------------------------------------------------------
+export interface UpcomingGameUI extends UpcomingGameDto {
+  homeIsWinner: boolean
+  awayIsWinner: boolean
+  statusClass: string
+}
+
+//------------------------------------------------------
+// UTILS
+//------------------------------------------------------
+export function getWinner(h: number | null, a: number | null): 'home' | 'away' | null {
+  if (h == null || a == null) return null
+  if (h > a) return 'home'
+  if (a > h) return 'away'
+  return null
+}
+
+//------------------------------------------------------
+// MAIN NORMALIZER: server DTO → client DTO
+//------------------------------------------------------
+export function normalizeToUpcomingDto(game: NormalizedGameDTO): UpcomingGameDto {
+  return {
+    id: game.id,
+
+    date: game.date,
+    dateFormatted: game.dateFormatted,
+
+    homeTeamId: game.homeTeamId,
+    homeTeamName: game.homeTeamName,
+    homeLogo: game.homeLogoLocal,       // 👈 LOCAL LOGO
+    homeScore: game.homeScore,
+    homeWinner: game.homeWinner,
+    teamColorHome: game.teamColorHome,
+
+    awayTeamId: game.awayTeamId,
+    awayTeamName: game.awayTeamName,
+    awayLogo: game.awayLogoLocal,       // 👈 LOCAL LOGO
+    awayScore: game.awayScore,
+    awayWinner: game.awayWinner,
+    teamColorAway: game.teamColorAway,
+
+    status: game.status,
+    statusDetail: game.statusDetail,
+
+    isPrimetime: game.isPrimetime,
+    primetimeType: game.primetimeType,
+  }
+}
+
+//------------------------------------------------------
+// UI MAPPER
+//------------------------------------------------------
+export function toUpcomingGameUI(dto: UpcomingGameDto): UpcomingGameUI {
+  const w = getWinner(dto.homeScore, dto.awayScore)
+
+  const statusClass =
+    dto.status === 'Final'
+      ? 'final'
+      : dto.status === 'In Progress'
+      ? 'in-progress'
+      : 'scheduled'
+
+  return {
+    ...dto,
+    homeIsWinner: w === 'home',
+    awayIsWinner: w === 'away',
+    statusClass,
+  }
+}
+
+//------------------------------------------------------
+// MAP MANY GAMES
+//------------------------------------------------------
+export function mapUpcomingGamesToUI(list: NormalizedGameDTO[]): UpcomingGameUI[] {
+  return list.map(ev => toUpcomingGameUI(normalizeToUpcomingDto(ev)))
+}
+

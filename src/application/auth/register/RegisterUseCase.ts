@@ -1,16 +1,13 @@
 import { IPersonRepository } from "@/domain/person/repositories/IPersonRepository";
 import { PasswordHasher } from "@/domain/auth/services/PasswordHasher";
 import { SecureTokenGenerator } from "@/domain/auth/services/SecureTokenGenerator";
-import { MailService } from "@/domain/mail/services/MailService";
+import type { MailService } from '@/domain/mail/services/MailService';
+import type { MailMessage } from '@/domain/mail/value-objects/MailMessage';
 import { Person } from "@/domain/person/entities/Person";
 import { NewPersonInput } from "@/domain/person/entities/Person";
 import { EmailVerificationToken } from "@/domain/auth/entities/EmailVerificationToken";
 import { PersonMapper } from "@/domain/person/mapper/PersonMapper";
-
-interface RegisterResponse {
-  pid: number;
-  emailVerificationToken: string;
-}
+import { RegisterInputDTO, RegisterResponse } from "./RegisterDTO";
 
 export class RegisterUseCase {
   constructor(
@@ -18,54 +15,75 @@ export class RegisterUseCase {
     private readonly hasher: PasswordHasher,
     private readonly tokenGen: SecureTokenGenerator,
     private readonly mailer: MailService
+    //private readonly mailer: { send: (opts: { to: string; subject: string; html: string }) => Promise<void> }
   ) {}
 
-  async execute(input: NewPersonInput): Promise<RegisterResponse> {
+  async execute(input: RegisterInputDTO): Promise<RegisterResponse> {
+    // 1. Uniqueness checks
     const existing = await this.personRepo.findByUserName(input.userName);
     if (existing) {
-      throw new Error("Username already exists");
+      throw new Error('Username already exists');
     }
+
     const existingEmail = await this.personRepo.findByEmail(input.emailAddress);
     if (existingEmail) {
-      throw new Error("Email already exists");
+      throw new Error('Email already exists');
     }
 
-    // Hash password
-    const hashedPassword = await this.hasher.hash(input.passwordHash);
+    // 2. Hash password (use plain text from DTO)
+    if (!input.password) {
+      throw new Error('Password is required');
+    }
 
-    // Create Person entity
+    const hashedPassword = await this.hasher.hash(input.password);
+
+    // 3. Create Person entity
     const person = Person.create({
-      ...input,
-      passwordHash: hashedPassword
+      userName: input.userName,
+      emailAddress: input.emailAddress,
+      passwordHash: hashedPassword,
+      firstName: input.firstName,
+      lastName: input.lastName,
     });
 
     const saved = await this.personRepo.createPerson(
-      PersonMapper.mapPersonToNewPersonInput(person));
+      PersonMapper.mapPersonToNewPersonInput(person)
+    );
 
-    // Create email verification token
+    // 4. Create email verification token
     const { token, expiresAt } = this.tokenGen.generateExpiring(60 * 24); // 24 hours
+
     const tokenEntity = new EmailVerificationToken(
       null,
       saved.pid!,
-      token,
-      expiresAt,
-      new Date()
+      token,      
+      new Date(),
+      expiresAt
     );
+
+    
+
     await this.personRepo.createEmailVerificationToken(tokenEntity);
 
-    // Send email
-    await this.mailer.send({
+    // 5. Send email
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) {
+      // fail fast if misconfigured
+      throw new Error('FRONTEND_URL is not configured');
+    }
+
+    const message: MailMessage = {
       to: saved.emailAddress,
-      subject: "Verify Your Email",
+      subject: 'Verify Your Email',
       html: `
         <h1>Welcome to Sports Mgmt App</h1>
         <p>Click below to verify your email:</p>
-        <a href="${process.env.FRONTEND_URL}/verify-email/${token}">
+        <a href="${frontendUrl}/verify-email/${token}">
           Verify Email
         </a>
-      `
-    });
-
-    return { pid: saved.pid!, emailVerificationToken: token };
+      `,
+    };
+    await this.mailer.send(message);
+    return { pid: saved.pid!, emailVerificationToken: tokenEntity.token };
   }
 }

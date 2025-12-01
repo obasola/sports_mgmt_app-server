@@ -1,5 +1,5 @@
 // src/utils/schedule/scheduleNormalizer.ts
-import type { EventDTO, GameStatus, NormalizedGameDTO } from './scheduleTypes';
+import type { EventDTO, GameStatus, NormalizedGameDTO, ScoringPlayDTO } from './scheduleTypes';
 import { formatDate, derivePrimetime } from './dateHelpers';
 import { resolveTeamLogo } from '../resolveTeamLogo';
 import { TEAM_COLOR_MAP } from '../TEAM_COLOR_MAP';
@@ -16,6 +16,9 @@ export function normalizeEvent(ev: EventDTO): NormalizedGameDTO {
 
   const homeName: string = homeTeam.displayName ?? homeTeam.name ?? 'TBD';
   const awayName: string = awayTeam.displayName ?? awayTeam.name ?? 'TBD';
+
+  const scoringSummaryShort: string | null = '';
+  const scoringPlays: ScoringPlayDTO[] = [];   // ✅ matches DTO
 
   const homeScore: number | null =
     homeRaw?.score != null ? Number(homeRaw.score) : null;
@@ -55,7 +58,7 @@ export function normalizeEvent(ev: EventDTO): NormalizedGameDTO {
     homeTeamName: homeName,
     homeLogoEspn: '',
     homeLogoLocal: resolveTeamLogo(homeName),
-  
+
     homeScore,
     homeWinner,
     teamColorHome: TEAM_COLOR_MAP[homeName] ?? '#666',
@@ -72,9 +75,13 @@ export function normalizeEvent(ev: EventDTO): NormalizedGameDTO {
     statusDetail: statusRaw,
 
     isPrimetime,
-    primetimeType
+    primetimeType,
+
+    scoringSummaryShort,
+    scoringPlays,      // ✅ property name matches interface
   };
 }
+
 
 export function normalizeEvents(events: EventDTO[]): NormalizedGameDTO[] {
   return events.map(ev => normalizeEvent(ev));

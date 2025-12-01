@@ -2,7 +2,12 @@
 import { Router } from "express";
 import { AuthController } from "@/presentation/controllers/AuthController";
 
-const controller = new AuthController();
+import { prisma } from "@/infrastructure/prisma";
+import { PrismaPersonRepository } from "@/infrastructure/repositories/PrismaPersonRepository";
+import { MailService } from "@/domain/mail/services/MailService";
+import { buildAuthController } from "@/bootstrap/auth/authModule";
+
+const controller = buildAuthController();
 export const authRoutes = Router();
 
 authRoutes.post("/register", controller.register.bind(controller));
