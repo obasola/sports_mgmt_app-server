@@ -75,7 +75,6 @@ export class EspnScheduleClient {
           // Winner flags
           const homeWinner = homeRaw?.winner === true;
           const awayWinner = awayRaw?.winner === true;
-
           // Status
           const rawStatus =
             comp?.status?.type?.shortDetail ||
@@ -84,21 +83,36 @@ export class EspnScheduleClient {
             e.status?.type?.name ||
             'Scheduled';
 
+          // ESPN state: 'pre' | 'in' | 'post' | 'postponed' | etc.
+          const state: string = comp?.status?.type?.state ?? e?.status?.type?.state ?? 'pre';
+
           let statusNormalized: GameStatus;
 
-          //---------------- Start status Normalization ------------------------------
-          // Intelligent scoring-aware override logic:
+          // ---------------- Start status Normalization ------------------------------
+          // 1) Use ESPN state as primary truth
+          if (state === 'post' || state === 'completed') {
+            statusNormalized = 'Final';
+          } else if (state === 'in') {
+            // 👈 THIS is the key change: mark in-progress as soon as game is live,
+            // regardless of whether anyone has scored yet.
+            statusNormalized = 'In Progress';
+          } else if (state === 'postponed') {
+            statusNormalized = 'Postponed';
+          } else {
+            // 2) Fallback to string-based normalizer for odd cases
+            statusNormalized = normalizeStatus(rawStatus);
+          }
 
+          // 3) Optional score-based override for edge cases
+          //    If ESPN missed 'post' but we clearly have a winner + non-zero score:
           if (
+            statusNormalized !== 'Final' &&
             (this.gameHasScores(homeScore) || this.gameHasScores(awayScore)) &&
             (homeWinner || awayWinner)
           ) {
             statusNormalized = 'Final';
-          } else if (this.gameHasScores(homeScore) || this.gameHasScores(awayScore)) {
-            statusNormalized = 'In Progress';
-          } else {
-            statusNormalized = normalizeStatus(rawStatus); // already returns GameStatus
           }
+
           // ALWAYS sync statusDetail to normalized status
           const statDetail = statusNormalized;
           //---------------- End status Normalization ------------------------------
