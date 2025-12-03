@@ -9,48 +9,28 @@ import { validateQuery } from '../middleware/validation';
 
 import { PrismaGameRepository } from '@/infrastructure/repositories/PrismaGameRepository';
 import { PrismaStandingsRepository } from '@/infrastructure/repositories/PrismaStandingsRepository';
-import { GeneratePlayoffBracketService } from '@/application/playoffs/services/GeneratePlayoffBracketService';
 import { PlayoffSeedingService } from '@/application/playoffs/services/PlayoffSeedingService';
+import { GeneratePlayoffBracketService } from '@/application/playoffs/services/GeneratePlayoffBracketService';
 
 const router = Router();
 
-/* -----------------------------------------------------------------------------
- * Dependencies
- * -------------------------------------------------------------------------- */
+const gameRepo = new PrismaGameRepository(prismaClient);
+const standingsRepo = new PrismaStandingsRepository(prismaClient);
+const seeding = new PlayoffSeedingService();
 
-const gameRepository = new PrismaGameRepository(prismaClient);
-const standingsRepository = new PrismaStandingsRepository(prismaClient);
-const seedingService = new PlayoffSeedingService();
+const service = new GeneratePlayoffBracketService(gameRepo, standingsRepo, seeding);
 
-const playoffBracketService = new GeneratePlayoffBracketService(
-  gameRepository,
-  standingsRepository,
-  seedingService
-);
+const controller = new PlayoffBracketController(service);
 
-const playoffBracketController = new PlayoffBracketController(playoffBracketService);
-
-/* -----------------------------------------------------------------------------
- * Zod schemas (HTTP edge: query only)
- * -------------------------------------------------------------------------- */
-
-const PlayoffBracketQuerySchema = z
+const QuerySchema = z
   .object({
-    seasonYear: z
-      .string()
-      .regex(/^\d{4}$/, 'seasonYear must be a 4-digit year'),
+    seasonYear: z.string().regex(/^\d{4}$/),
+    mode: z.enum(['actual', 'projected']).optional(),
   })
   .passthrough();
 
-/* -----------------------------------------------------------------------------
- * Routes
- * -------------------------------------------------------------------------- */
-
-// GET /api/playoffs/bracket?seasonYear=2025
-router.get(
-  '/bracket',
-  validateQuery(PlayoffBracketQuerySchema),
-  (req, res) => playoffBracketController.getBracket(req, res)
+router.get('/bracket', validateQuery(QuerySchema), (req, res) =>
+  controller.getBracket(req, res)
 );
 
 export { router as playoffsRoutes };

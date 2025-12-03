@@ -3,9 +3,11 @@ import type { PlayoffBracket } from '@/domain/playoffs/valueObjects/PlayoffBrack
 
 export interface PlayoffBracketService {
   /**
-   * Build the current playoff bracket view for a given season.
-   * This should be driven by the latest standings and any existing
-   * playoff games already in the database.
+   * Returns either:
+   *  - the actual playoff bracket (real games + projected missing rounds)
+   *  - the projected bracket ("if playoffs started today")
+   *
+   * The mode is chosen by the caller.
    */
-  getBracketForSeason(seasonYear: number): Promise<PlayoffBracket>;
+  getBracketForSeason(seasonYear: number, mode?: 'actual' | 'projected'): Promise<PlayoffBracket>;
 }

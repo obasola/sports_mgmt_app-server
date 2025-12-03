@@ -1,28 +1,35 @@
 // src/presentation/controllers/PlayoffBracketController.ts
 import type { Request, Response } from 'express';
-import type { PlayoffBracketService } from '@/application/playoffs/services/PlayoffBracketService';
+import type { PlayoffBracketService } from '@/application/playoffs/services/PlayoffBracketServiceInterface';
 
 export class PlayoffBracketController {
   constructor(private readonly bracketService: PlayoffBracketService) {}
 
-  // GET /api/playoffs/bracket?seasonYear=2025
   async getBracket(req: Request, res: Response): Promise<void> {
-    const seasonYearParam = req.query.seasonYear;
-    const seasonYear = typeof seasonYearParam === 'string' ? Number(seasonYearParam) : NaN;
+    const seasonYear = Number(req.query.seasonYear);
+    const mode = (req.query.mode as 'actual' | 'projected') ?? 'actual';
 
     if (!Number.isInteger(seasonYear)) {
-      res.status(400).json({ error: 'seasonYear query param is required and must be an integer' });
+      res.status(400).json({
+        error: 'seasonYear must be a valid integer',
+      });
+      return;
+    }
+
+    if (mode !== 'actual' && mode !== 'projected') {
+      res.status(400).json({ error: 'mode must be actual or projected' });
       return;
     }
 
     try {
-      const bracket = await this.bracketService.getBracketForSeason(seasonYear);
-      const dto = bracket; // mapping is trivial for now
-      res.json(dto);
+      const bracket = await this.bracketService.getBracketForSeason(
+        seasonYear,
+        mode
+      );
+      res.json(bracket);
     } catch (err) {
-      const error = err as Error;
-      res.status(500).json({ error: error.message });
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      res.status(500).json({ error: message });
     }
   }
 }
-

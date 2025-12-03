@@ -1,0 +1,1491 @@
+- Backend -
+/src/domain/playoffs/valueObjects/PlayoffBracket.ts
+// src/domain/playoffs/valueObjects/PlayoffBracket.ts
+
+import { PlayoffConference, PlayoffMatchup } from "./PlayoffTypes";
+
+export interface PlayoffRoundGroup {
+  round: 'WILDCARD' | 'DIVISIONAL' | 'CONFERENCE';
+  conference: PlayoffConference;
+  matchups: PlayoffMatchup[];
+}
+
+export interface SuperBowlMatchup extends PlayoffMatchup {
+  conference: 'AFC' | 'NFC'; // still track which side each team came from
+}
+
+export interface PlayoffBracket {
+  seasonYear: number;
+  afcRounds: PlayoffRoundGroup[];
+  nfcRounds: PlayoffRoundGroup[];
+  superBowl: SuperBowlMatchup | null;
+}
+
+
+/src/domain/playoffs/valueObjects/PlayoffTypes.ts
+// src/domain/playoffs/valueObjects/PlayoffTypes.ts
+export type PlayoffRound = 'WILDCARD' | 'DIVISIONAL' | 'CONFERENCE' | 'SUPERBOWL';
+export type PlayoffConference = 'AFC' | 'NFC';
+
+export interface PlayoffMatchup {
+  gameId: number | null;        // null if not scheduled yet
+  seasonYear: number;
+  round: PlayoffRound;
+  conference: PlayoffConference;
+  slot: string;                 // e.g. "AFC_WC_2v7", "NFC_DIV_1v4"
+  homeTeamId: number | null;
+  awayTeamId: number | null;
+  homeSeed: number | null;
+  awaySeed: number | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  winnerTeamId: number | null;
+  gameDate: Date | null;
+}
+
+
+/src/application/playoffs/dtos/PlayoffBracketDTO.ts
+// src/application/playoffs/dtos/PlayoffBracketDTO.ts
+import type { PlayoffBracket } from '@/domain/playoffs/valueObjects/PlayoffBracket';
+
+export type PlayoffBracketDTO = PlayoffBracket; // 1:1 mapping for now
+
+
+// src/application/playoffs/services/GeneratePlayoffBracketService.ts
+import type {
+  PlayoffBracket,
+  PlayoffRoundGroup,
+} from '@/domain/playoffs/valueObjects/PlayoffBracket';
+import type {
+  PlayoffMatchup,
+  PlayoffConference,
+  PlayoffRound,
+} from '@/domain/playoffs/valueObjects/PlayoffTypes';
+import type {
+  IGameRepository,
+  PlayoffGameSummary,
+} from '@/domain/game/repositories/IGameRepository';
+import type { ITeamStandingsRepository } from '@/domain/standings/repositories/ITeamStandingsRepository';
+import type { TeamStanding } from '@/domain/standings/interface/TeamStanding';
+import type { SeededTeam } from './PlayoffSeedingService';
+import { PlayoffSeedingService } from './PlayoffSeedingService';
+import type { PlayoffBracketService } from './PlayoffBracketService';
+
+export class GeneratePlayoffBracketService implements PlayoffBracketService {
+  private readonly gameRepository: IGameRepository;
+  private readonly standingsRepository: ITeamStandingsRepository;
+  private readonly seedingService: PlayoffSeedingService;
+
+  constructor(
+    gameRepository: IGameRepository,
+    standingsRepository: ITeamStandingsRepository,
+    seedingService: PlayoffSeedingService
+  ) {
+    this.gameRepository = gameRepository;
+    this.standingsRepository = standingsRepository;
+    this.seedingService = seedingService;
+  }
+
+  public async getBracketForSeason(seasonYear: number): Promise<PlayoffBracket> {
+    // Use regular season (seasonType = 2) for seeding
+    const seasonType = 2;
+
+    const [allStandings, playoffGames] = await Promise.all([
+      this.standingsRepository.computeStandings(seasonYear, seasonType),
+      this.gameRepository.findPlayoffGamesBySeason(seasonYear),
+    ]);
+
+    const afcStandings = this.filterByConference(allStandings, 'AFC');
+    const nfcStandings = this.filterByConference(allStandings, 'NFC');
+
+    const afcSeeds = this.seedingService.computeSeeds(afcStandings);
+    const nfcSeeds = this.seedingService.computeSeeds(nfcStandings);
+
+    const afcRounds = this.buildConferenceBracket(
+      'AFC',
+      seasonYear,
+      afcSeeds,
+      playoffGames
+    );
+
+    const nfcRounds = this.buildConferenceBracket(
+      'NFC',
+      seasonYear,
+      nfcSeeds,
+      playoffGames
+    );
+
+    const superBowl = this.buildSuperBowl(seasonYear, playoffGames);
+
+    return {
+      seasonYear,
+      afcRounds,
+      nfcRounds,
+      superBowl,
+    };
+  }
+
+  private filterByConference(
+    standings: TeamStanding[],
+    conference: PlayoffConference
+  ): TeamStanding[] {
+    return standings.filter((row) => row.conference === conference);
+  }
+
+  private buildConferenceBracket(
+    conference: PlayoffConference,
+    seasonYear: number,
+    seeds: SeededTeam[],
+    playoffGames: PlayoffGameSummary[]
+  ): PlayoffRoundGroup[] {
+    const wildcard = this.buildRound(
+      'WILDCARD',
+      conference,
+      seasonYear,
+      seeds,
+      playoffGames
+    );
+    const divisional = this.buildRound(
+      'DIVISIONAL',
+      conference,
+      seasonYear,
+      seeds,
+      playoffGames
+    );
+    const conferenceChamp = this.buildRound(
+      'CONFERENCE',
+      conference,
+      seasonYear,
+      seeds,
+      playoffGames
+    );
+
+    return [wildcard, divisional, conferenceChamp];
+  }
+
+  private buildRound(
+    round: Extract<PlayoffRound, 'WILDCARD' | 'DIVISIONAL' | 'CONFERENCE'>,
+    conference: PlayoffConference,
+    seasonYear: number,
+    seeds: SeededTeam[],
+    playoffGames: PlayoffGameSummary[]
+  ): PlayoffRoundGroup {
+    const gamesForRound = playoffGames.filter(
+      (g) =>
+        g.playoffConference === conference &&
+        g.playoffRound === round &&
+        g.seasonYear === seasonYear
+    );
+
+    const matchups: PlayoffMatchup[] =
+      gamesForRound.length > 0
+        ? gamesForRound.map((g, index) => ({
+            gameId: g.id,
+            seasonYear,
+            round,
+            conference,
+            slot: `${conference}_${round}_${index + 1}`,
+            homeTeamId: g.homeTeamId,
+            awayTeamId: g.awayTeamId,
+            homeSeed: g.homeSeed,
+            awaySeed: g.awaySeed,
+            homeScore: g.homeScore,
+            awayScore: g.awayScore,
+            winnerTeamId: this.computeWinner(
+              g.homeTeamId,
+              g.awayTeamId,
+              g.homeScore,
+              g.awayScore
+            ),
+            gameDate: g.gameDate,
+          }))
+        : this.projectHypotheticalMatchups(round, conference, seasonYear, seeds);
+
+    return {
+      round,
+      conference,
+      matchups,
+    };
+  }
+
+  private buildSuperBowl(
+    seasonYear: number,
+    playoffGames: PlayoffGameSummary[]
+  ): PlayoffMatchup | null {
+    const sb = playoffGames.find(
+      (g) => g.playoffRound === 'SUPERBOWL' && g.seasonYear === seasonYear
+    );
+
+    if (!sb) {
+      return null;
+    }
+
+    return {
+      gameId: sb.id,
+      seasonYear,
+      round: 'SUPERBOWL',
+      conference: 'AFC', // arbitrary; teams themselves know their conference elsewhere
+      slot: 'SUPERBOWL',
+      homeTeamId: sb.homeTeamId,
+      awayTeamId: sb.awayTeamId,
+      homeSeed: sb.homeSeed,
+      awaySeed: sb.awaySeed,
+      homeScore: sb.homeScore,
+      awayScore: sb.awayScore,
+      winnerTeamId: this.computeWinner(
+        sb.homeTeamId,
+        sb.awayTeamId,
+        sb.homeScore,
+        sb.awayScore
+      ),
+      gameDate: sb.gameDate,
+    };
+  }
+
+  private computeWinner(
+    homeTeamId: number,
+    awayTeamId: number,
+    homeScore: number | null,
+    awayScore: number | null
+  ): number | null {
+    if (homeScore == null || awayScore == null) {
+      return null;
+    }
+    if (homeScore > awayScore) {
+      return homeTeamId;
+    }
+    if (awayScore > homeScore) {
+      return awayTeamId;
+    }
+    return null;
+  }
+
+  private projectHypotheticalMatchups(
+    round: Extract<PlayoffRound, 'WILDCARD' | 'DIVISIONAL' | 'CONFERENCE'>,
+    conference: PlayoffConference,
+    seasonYear: number,
+    seeds: SeededTeam[]
+  ): PlayoffMatchup[] {
+    if (round === 'WILDCARD') {
+      // #1 seed bye; WC = (2–7, 3–6, 4–5)
+      const findSeed = (seedNumber: number): SeededTeam | undefined =>
+        seeds.find((s) => s.seed === seedNumber);
+
+      const pairs: Array<{ from: [number, number]; label: string }> = [
+        { from: [2, 7], label: '2v7' },
+        { from: [3, 6], label: '3v6' },
+        { from: [4, 5], label: '4v5' },
+      ];
+
+      return pairs.map((slot) => {
+        const home = findSeed(slot.from[0]);
+        const away = findSeed(slot.from[1]);
+
+        return {
+          gameId: null,
+          seasonYear,
+          round,
+          conference,
+          slot: `${conference}_${round}_${slot.label}`,
+          homeTeamId: home?.teamId ?? null,
+          awayTeamId: away?.teamId ?? null,
+          homeSeed: home?.seed ?? null,
+          awaySeed: away?.seed ?? null,
+          homeScore: null,
+          awayScore: null,
+          winnerTeamId: null,
+          gameDate: null,
+        };
+      });
+    }
+
+    // For now we only project WC; DIV/CONF will populate once games exist.
+    return [];
+  }
+}
+
+
+// src/application/playoffs/services/PlayoffBracketService.ts
+import type { PlayoffBracket } from '@/domain/playoffs/valueObjects/PlayoffBracket';
+
+export interface PlayoffBracketService {
+  getBracketForSeason(seasonYear: number): Promise<PlayoffBracket>;
+}
+
+
+// src/application/playoffs/services/PlayoffBracketService.ts
+import type { PlayoffBracket } from '@/domain/playoffs/valueObjects/PlayoffBracket';
+
+export interface PlayoffBracketService {
+  /**
+   * Build the current playoff bracket view for a given season.
+   * This should be driven by the latest standings and any existing
+   * playoff games already in the database.
+   */
+  getBracketForSeason(seasonYear: number): Promise<PlayoffBracket>;
+}
+
+// src/application/playoffs/services/PlayoffSeedingService.ts
+import type { TeamStanding } from '@/domain/standings/interface/TeamStanding';
+
+export interface SeededTeam {
+  teamId: number;
+  seed: number;
+  isDivisionWinner: boolean;
+}
+
+export class PlayoffSeedingService {
+  public computeSeeds(standings: TeamStanding[]): SeededTeam[] {
+    if (standings.length === 0) {
+      return [];
+    }
+
+    // 1) Division winners
+    const divisionWinners: TeamStanding[] = [];
+    const remaining: TeamStanding[] = [];
+
+    const byDivision: Record<string, TeamStanding[]> = {};
+    for (const row of standings) {
+      const key = row.division; // e.g. "AFC West", or whatever your data uses
+      if (!byDivision[key]) {
+        byDivision[key] = [];
+      }
+      byDivision[key].push(row);
+    }
+
+    for (const divisionKey of Object.keys(byDivision)) {
+      const teamsInDivision = byDivision[divisionKey];
+      const sorted = this.sortByRecord(teamsInDivision);
+      if (sorted.length > 0) {
+        divisionWinners.push(sorted[0]);
+      }
+    }
+
+    const divisionWinnerIds = new Set<number>(
+      divisionWinners.map((t) => t.teamId)
+    );
+
+    for (const row of standings) {
+      if (!divisionWinnerIds.has(row.teamId)) {
+        remaining.push(row);
+      }
+    }
+
+    // 2) Order division winners by conference record (seed 1–4)
+    const sortedDivisionWinners = this.sortByRecord(divisionWinners);
+
+    // 3) Order wildcards (best remaining teams) for seeds 5–7
+    const sortedWildcards = this.sortByRecord(remaining);
+
+    const seeded: SeededTeam[] = [];
+
+    sortedDivisionWinners.forEach((row, index) => {
+      const seed = index + 1;
+      seeded.push({
+        teamId: row.teamId,
+        seed,
+        isDivisionWinner: true,
+      });
+    });
+
+    sortedWildcards.slice(0, 3).forEach((row, index) => {
+      const seed = 5 + index;
+      seeded.push({
+        teamId: row.teamId,
+        seed,
+        isDivisionWinner: false,
+      });
+    });
+
+    return seeded.sort((a, b) => a.seed - b.seed);
+  }
+
+  /**
+   * Sort teams by:
+   *   1) winPct (desc)
+   *   2) point differential (desc)
+   *   3) pointsFor (desc)
+   */
+  private sortByRecord(teams: TeamStanding[]): TeamStanding[] {
+    const clone = [...teams];
+
+    clone.sort((a, b) => {
+      if (b.winPct !== a.winPct) {
+        return b.winPct - a.winPct;
+      }
+
+      const diffA = a.pointsFor - a.pointsAgainst;
+      const diffB = b.pointsFor - b.pointsAgainst;
+      if (diffB !== diffA) {
+        return diffB - diffA;
+      }
+
+      return b.pointsFor - a.pointsFor;
+    });
+
+    return clone;
+  }
+}
+
+
+// src/presentation/controllers/PlayoffBracketController.ts
+import type { Request, Response } from 'express';
+import type { PlayoffBracketService } from '@/application/playoffs/services/PlayoffBracketService';
+
+export class PlayoffBracketController {
+  constructor(private readonly bracketService: PlayoffBracketService) {}
+
+  // GET /api/playoffs/bracket?seasonYear=2025
+  async getBracket(req: Request, res: Response): Promise<void> {
+    const seasonYearParam = req.query.seasonYear;
+    const seasonYear = typeof seasonYearParam === 'string' ? Number(seasonYearParam) : NaN;
+
+    if (!Number.isInteger(seasonYear)) {
+      res.status(400).json({ error: 'seasonYear query param is required and must be an integer' });
+      return;
+    }
+
+    try {
+      const bracket = await this.bracketService.getBracketForSeason(seasonYear);
+      const dto = bracket; // mapping is trivial for now
+      res.json(dto);
+    } catch (err) {
+      const error = err as Error;
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
+
+
+// src/presentation/routes/playoffsRoutes.ts
+import { Router } from 'express';
+import { z } from 'zod';
+
+import { prisma as prismaClient } from '../../infrastructure/prisma';
+
+import { PlayoffBracketController } from '../controllers/PlayoffBracketController';
+import { validateQuery } from '../middleware/validation';
+
+import { PrismaGameRepository } from '@/infrastructure/repositories/PrismaGameRepository';
+import { PrismaStandingsRepository } from '@/infrastructure/repositories/PrismaStandingsRepository';
+import { GeneratePlayoffBracketService } from '@/application/playoffs/services/GeneratePlayoffBracketService';
+import { PlayoffSeedingService } from '@/application/playoffs/services/PlayoffSeedingService';
+
+const router = Router();
+
+/* -----------------------------------------------------------------------------
+ * Dependencies
+ * -------------------------------------------------------------------------- */
+
+const gameRepository = new PrismaGameRepository(prismaClient);
+const standingsRepository = new PrismaStandingsRepository(prismaClient);
+const seedingService = new PlayoffSeedingService();
+
+const playoffBracketService = new GeneratePlayoffBracketService(
+  gameRepository,
+  standingsRepository,
+  seedingService
+);
+
+const playoffBracketController = new PlayoffBracketController(playoffBracketService);
+
+/* -----------------------------------------------------------------------------
+ * Zod schemas (HTTP edge: query only)
+ * -------------------------------------------------------------------------- */
+
+const PlayoffBracketQuerySchema = z
+  .object({
+    seasonYear: z
+      .string()
+      .regex(/^\d{4}$/, 'seasonYear must be a 4-digit year'),
+  })
+  .passthrough();
+
+/* -----------------------------------------------------------------------------
+ * Routes
+ * -------------------------------------------------------------------------- */
+
+// GET /api/playoffs/bracket?seasonYear=2025
+router.get(
+  '/bracket',
+  validateQuery(PlayoffBracketQuerySchema),
+  (req, res) => playoffBracketController.getBracket(req, res)
+);
+
+export { router as playoffsRoutes };
+
+- Frontend -
+
+// src/modules/playoffs/application/playoffStore.ts
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import type { PlayoffBracket } from '../domain/PlayoffTypes';
+import { PlayoffsApi } from '../infrastructure/PlayoffsApi';
+
+export const usePlayoffStore = defineStore('playoffs', () => {
+  const bracket = ref<PlayoffBracket | null>(null);
+  const loading = ref<boolean>(false);
+  const error = ref<string | null>(null);
+
+  const hasBracket = computed<boolean>(() => bracket.value != null);
+
+  async function fetchBracket(seasonYear: number): Promise<void> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const data = await PlayoffsApi.getBracket(seasonYear);
+      bracket.value = data;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load playoff bracket';
+      error.value = message;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return {
+    bracket,
+    loading,
+    error,
+    hasBracket,
+    fetchBracket
+  };
+});
+
+
+// src/modules/playoffs/domain/PlayoffTypes.ts
+export type PlayoffRound = 'WILDCARD' | 'DIVISIONAL' | 'CONFERENCE' | 'SUPERBOWL';
+export type PlayoffConference = 'AFC' | 'NFC';
+
+export interface PlayoffMatchup {
+  gameId: number | null;
+  seasonYear: number;
+  round: PlayoffRound;
+  conference: PlayoffConference;
+  slot: string;
+  homeTeamId: number | null;
+  awayTeamId: number | null;
+  homeSeed: number | null;
+  awaySeed: number | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  winnerTeamId: number | null;
+  gameDate: string | null;
+}
+
+export interface PlayoffRoundGroup {
+  round: 'WILDCARD' | 'DIVISIONAL' | 'CONFERENCE';
+  conference: PlayoffConference;
+  matchups: PlayoffMatchup[];
+}
+
+export interface PlayoffBracket {
+  seasonYear: number;
+  afcRounds: PlayoffRoundGroup[];
+  nfcRounds: PlayoffRoundGroup[];
+  superBowl: PlayoffMatchup | null;
+}
+
+
+// src/modules/playoffs/infrastructure/PlayoffsApi.ts
+import {api} from '@/services/api';
+import type { PlayoffBracket } from '../domain/PlayoffTypes';
+
+export class PlayoffsApi {
+  static async getBracket(seasonYear: number): Promise<PlayoffBracket> {
+    const response = await api.get<PlayoffBracket>('/playoffs/bracket', {
+      params: { seasonYear }
+    });
+    return response.data;
+  }
+}
+
+
+<!-- src/modules/playoffs/presentation/components/PlayoffGameCard.vue -->
+<script setup lang="ts">
+import { computed } from "vue";
+import type { PlayoffMatchup } from "../../domain/PlayoffTypes";
+import { useStandingsStore } from "@/stores/standingsStore";
+import { TeamStandingDto } from "@/types/TeamStandingDto";
+
+interface Props {
+  game: PlayoffMatchup;
+}
+
+const props = defineProps<Props>();
+const standingsStore = useStandingsStore();
+
+const homeStanding = computed<TeamStandingDto | null>(() =>
+  props.game.homeTeamId != null
+    ? standingsStore.getByTeamId(props.game.homeTeamId)
+    : null
+);
+
+const awayStanding = computed<TeamStandingDto | null>(() =>
+  props.game.awayTeamId != null
+    ? standingsStore.getByTeamId(props.game.awayTeamId)
+    : null
+);
+
+const homeLogoInfo = computed(() =>
+  standingsStore.getLogoInfoByTeamId(props.game.homeTeamId)
+);
+
+const awayLogoInfo = computed(() =>
+  standingsStore.getLogoInfoByTeamId(props.game.awayTeamId)
+);
+
+const homeDisplayName = computed<string>(() =>
+  standingsStore.getDisplayNameByTeamId(props.game.homeTeamId)
+);
+
+const awayDisplayName = computed<string>(() =>
+  standingsStore.getDisplayNameByTeamId(props.game.awayTeamId)
+);
+
+const homeRecord = computed<string | null>(() =>
+  standingsStore.getRecordByTeamId(props.game.homeTeamId)
+);
+
+const awayRecord = computed<string | null>(() =>
+  standingsStore.getRecordByTeamId(props.game.awayTeamId)
+);
+
+const hasScore = computed<boolean>(
+  () => props.game.homeScore != null && props.game.awayScore != null
+);
+
+const isHomeWinner = computed<boolean>(
+  () =>
+    hasScore.value &&
+    props.game.winnerTeamId != null &&
+    props.game.winnerTeamId === props.game.homeTeamId
+);
+
+const isAwayWinner = computed<boolean>(
+  () =>
+    hasScore.value &&
+    props.game.winnerTeamId != null &&
+    props.game.winnerTeamId === props.game.awayTeamId
+);
+</script>
+
+<template>
+  <article class="playoff-game-card">
+    <header class="game-header">
+      <span class="game-slot">{{ game.slot }}</span>
+      <span class="game-round">{{ game.round }}</span>
+    </header>
+
+    <div class="team-row" :class="{ 'team-row--winner': isHomeWinner }">
+      <div class="team-seed" v-if="game.homeSeed != null">#{{ game.homeSeed }}</div>
+
+      <img
+        v-if="homeLogoInfo?.logoUrl"
+        :src="homeLogoInfo.logoUrl"
+        alt=""
+        class="team-logo"
+      />
+
+      <div class="team-name-score">
+        <div class="team-text">
+          <span class="team-name">
+            {{ homeDisplayName }}
+          </span>
+          <span v-if="homeRecord" class="team-record">
+            ({{ homeRecord }})
+          </span>
+        </div>
+        <span v-if="game.homeScore != null" class="team-score">
+          {{ game.homeScore }}
+        </span>
+      </div>
+    </div>
+
+    <div class="team-row" :class="{ 'team-row--winner': isAwayWinner }">
+      <div class="team-seed" v-if="game.awaySeed != null">#{{ game.awaySeed }}</div>
+
+      <img
+        v-if="awayLogoInfo?.logoUrl"
+        :src="awayLogoInfo.logoUrl"
+        alt=""
+        class="team-logo"
+      />
+
+      <div class="team-name-score">
+        <div class="team-text">
+          <span class="team-name">
+            {{ awayDisplayName }}
+          </span>
+          <span v-if="awayRecord" class="team-record">
+            ({{ awayRecord }})
+          </span>
+        </div>
+        <span v-if="game.awayScore != null" class="team-score">
+          {{ game.awayScore }}
+        </span>
+      </div>
+    </div>
+
+    <footer class="game-footer">
+      <span v-if="game.gameDate" class="game-date">
+        {{ new Date(game.gameDate).toLocaleString() }}
+      </span>
+      <span v-else class="game-date game-date--tbd">
+        Date TBD
+      </span>
+    </footer>
+  </article>
+</template>
+
+<style scoped>
+.playoff-game-card {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color, #222);
+  padding: 0.7rem 0.9rem;
+  background-color: #254290;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.25rem 0.1rem;
+}
+
+.team-row--winner {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 0.4rem;
+}
+
+.team-seed {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  min-width: 2.2rem;
+  text-align: right;
+}
+
+.team-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.team-name-score {
+  display: flex;
+  justify-content: space-between;
+  flex: 1;
+  gap: 0.5rem;
+}
+
+.team-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.team-name {
+  font-size: 1.0rem;
+  font-weight: 600;
+}
+
+.team-record {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.team-score {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.game-footer {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.game-date--tbd {
+  font-style: italic;
+}
+</style>
+
+
+<!-- src/modules/playoffs/presentation/views/PlayoffBracketView.vue -->
+<script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
+import { storeToRefs } from "pinia";
+import Button from "primevue/button";
+
+import { usePlayoffStore } from "../../application/playoffStore";
+import { useStandingsStore } from "@/stores/standingsStore";
+import { useAuthStore } from "@/stores/authStore";
+import PlayoffGameCard from "../components/PlayoffGameCard.vue";
+import type { PlayoffRoundGroup } from "../../domain/PlayoffTypes";
+import type { TeamStandingDto } from "@/types/TeamStandingDto";
+
+
+const playoffStore = usePlayoffStore();
+const standingsStore = useStandingsStore();
+const auth = useAuthStore();
+
+// ✅ keep reactivity when destructuring
+const { bracket, loading, error } = storeToRefs(playoffStore);
+
+const selectedSeasonYear = ref<number>(2025);
+const SEASON_TYPE_REGULAR = 2;
+
+const canRefresh = computed<boolean>(() => (auth.role ?? 1) >= 2);
+const hasBracket = computed<boolean>(() => bracket.value != null);
+
+
+function getRound(
+    groups: PlayoffRoundGroup[] | undefined,
+    round: "WILDCARD" | "DIVISIONAL" | "CONFERENCE"
+) {
+    return groups?.find((r) => r.round === round)?.matchups ?? [];
+}
+
+// Division winners per conference
+const afcDivisionWinners = computed<TeamStandingDto[]>(() =>
+    standingsStore.getDivisionWinnersByConference("AFC")
+);
+
+const nfcDivisionWinners = computed<TeamStandingDto[]>(() =>
+    standingsStore.getDivisionWinnersByConference("NFC")
+);
+
+
+async function handleRefresh(): Promise<void> {
+    await loadBracket();
+}
+
+const mode = ref<"projected" | "actual">("projected");
+
+async function loadBracket(targetMode: "projected" | "actual" = mode.value): Promise<void> {
+  mode.value = targetMode;
+
+  // Always load standings for display (names/records/logos)
+  await standingsStore.fetchStandings(selectedSeasonYear.value, SEASON_TYPE_REGULAR);
+
+  // For now, both modes call same backend. Later:
+  // await playoffStore.fetchBracket(selectedSeasonYear.value, targetMode);
+  await playoffStore.fetchBracket(selectedSeasonYear.value);
+}
+
+async function handleSimulateNow(): Promise<void> {
+  await loadBracket("projected");
+}
+
+async function handleShowActual(): Promise<void> {
+  await loadBracket("actual");
+}
+
+onMounted(async () => {
+    await loadBracket();
+});
+</script>
+
+<template>
+    <div class="playoff-bracket-page">
+        <header class="playoff-header">
+            <div class="header-left">
+                <h2>NFL Playoff Bracket — {{ selectedSeasonYear }}</h2>
+            </div>
+
+            <div class="header-actions">
+                <Button label="Simulate: If Playoffs Started Today" icon="pi pi-play"
+                    class="p-button-sm p-button-rounded" @click="handleSimulateNow" />
+                  <Button
+                        label="Show Actual Bracket"
+                        icon="pi pi-flag"
+                        class="p-button-sm p-button-rounded p-button-info"
+                        @click="handleShowActual"
+                    />
+
+                <Button
+                    v-if="canRefresh"
+                    label="Refresh Data"
+                    icon="pi pi-refresh"
+                    class="p-button-sm p-button-rounded p-button-secondary"
+                    @click="handleRefresh"
+                />
+            </div>
+        </header>
+
+        <div v-if="loading" class="playoff-loading">
+            Loading bracket…
+        </div>
+
+        <div v-else-if="error" class="playoff-error">
+            {{ error }}
+        </div>
+
+        <div v-else-if="hasBracket && bracket" class="playoff-bracket-grid">
+            <!-- AFC -->
+            <section class="conference-column conference-column--afc">
+                <h3 class="conference-title">AFC</h3>
+
+                <div class="round-column">
+                    <h4>Wild Card</h4>
+                    <PlayoffGameCard v-for="game in getRound(bracket.afcRounds, 'WILDCARD')" :key="game.slot"
+                        :game="game" />
+                </div>
+
+                <div class="round-column">
+                    <h4>Divisional</h4>
+
+                    <!-- Division winners as it stands now -->
+                    <div v-if="afcDivisionWinners.length" class="division-winners">
+                        <h5 class="division-winners-title">
+                            Division Winners (current)
+                        </h5>
+
+                        <div v-for="(team, index) in afcDivisionWinners" :key="team.teamId" class="division-winner-row">
+                            <span class="division-seed">#{{ index + 1 }}</span>
+
+                            <img v-if="standingsStore.getLogoInfoByTeamId(team.teamId)?.logoUrl"
+                                :src="standingsStore.getLogoInfoByTeamId(team.teamId)!.logoUrl" alt=""
+                                class="division-logo" />
+
+                            <span class="division-name">
+                                {{ standingsStore.getDisplayNameByTeamId(team.teamId) }}
+                            </span>
+
+                            <span class="division-record">
+                                ({{ standingsStore.getRecordByTeamId(team.teamId) }})
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Actual Divisional games when present -->
+                    <PlayoffGameCard v-for="game in getRound(bracket.afcRounds, 'DIVISIONAL')" :key="game.slot"
+                        :game="game" />
+                </div>
+
+
+                <div class="round-column">
+                    <h4>Conference</h4>
+                    <PlayoffGameCard v-for="game in getRound(bracket.afcRounds, 'CONFERENCE')" :key="game.slot"
+                        :game="game" />
+                </div>
+            </section>
+
+            <!-- Super Bowl -->
+            <section class="superbowl-column">
+                <h3 class="conference-title">Super Bowl</h3>
+                <PlayoffGameCard v-if="bracket.superBowl" :game="bracket.superBowl" />
+                <div v-else class="placeholder-card">
+                    Super Bowl matchup TBD
+                </div>
+            </section>
+
+            <!-- NFC -->
+            <section class="conference-column conference-column--nfc">
+                <h3 class="conference-title">NFC</h3>
+
+                <div class="round-column">
+                    <h4>Wild Card</h4>
+                    <PlayoffGameCard v-for="game in getRound(bracket.nfcRounds, 'WILDCARD')" :key="game.slot"
+                        :game="game" />
+                </div>
+
+                <div class="round-column">
+                    <h4>Divisional</h4>
+                    <PlayoffGameCard
+                        v-for="game in getRound(bracket.nfcRounds, 'DIVISIONAL')"
+                        :key="game.slot"
+                        :game="game"
+                    />
+                </div>
+
+
+                <div class="round-column">
+                    <h4>Conference</h4>
+                    <PlayoffGameCard v-for="game in getRound(bracket.nfcRounds, 'CONFERENCE')" :key="game.slot"
+                        :game="game" />
+                </div>
+            </section>
+        </div>
+
+        <div v-else class="playoff-empty">
+            No playoff bracket data available.
+        </div>
+    </div>
+</template>
+
+<style scoped>
+.playoff-bracket-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: #4763ac;
+    padding: 1rem;
+    border-radius: 1rem;
+}
+
+.playoff-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.playoff-bracket-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1.5fr;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+.conference-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.conference-title {
+    text-align: center;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.round-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.round-column h4 {
+    text-align: center;
+    margin-bottom: 0.25rem;
+}
+
+.superbowl-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.placeholder-card {
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    border: 1px dashed var(--border-color, #666);
+    text-align: center;
+    font-style: italic;
+}
+
+.playoff-loading,
+.playoff-error,
+.playoff-empty {
+    text-align: center;
+}
+.division-winners {
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 0.5rem;
+}
+
+.division-winners-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  text-align: center;
+}
+
+.division-winner-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0;
+}
+
+.division-seed {
+  font-size: 0.85rem;
+  min-width: 1.7rem;
+  text-align: right;
+}
+
+.division-logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.division-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.division-record {
+  margin-left: auto;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+</style>
+
+// src/router/index.ts
+/* DO NOT import these at module level:
+ import { onMounted } from 'vue'
+ import { useThemeStore } from '@/stores/theme.store'
+ import { useRoute } from 'vue-router'
+*/
+import Home from '@/views/Home.vue'
+import PlayerDetail from '@/views/PlayerDetail.vue'
+import TeamDetail from '@/views/TeamDetail.vue'
+import PlayerAwardDetail from '@/views/PlayerAwardDetail.vue'
+import PlayerTeamDetail from '@/views/PlayerTeamDetail.vue'
+import CombineScoreDetail from '@/views/CombineScoreDetail.vue'
+import DraftPickDetail from '@/views/DraftPickDetail.vue'
+import ProspectDetail from '@/views/ProspectDetail.vue'
+import GameDetail from '@/views/GameDetail.vue'
+import DraftBoard from '@/views/DraftboardView.vue'
+
+import JobDetail from '../views/jobs/JobDetail.vue'
+import JobList from '@/views/jobs/JobList.vue'
+import ScheduleDetail from '@/views/GameScheduleView.vue'
+import TeamSelectionView from '@/views/TeamSelectionView.vue'
+import { draftPickRoutes } from './draftPickRoutes'
+import AppLayout from '@/components/ui/AppLayout.vue'
+import { requireAuth } from './authGuard'
+import { requireAdminOrDev } from './visitorGuard'
+
+const JobsPage = () => import('@/views/JobsPage.vue')
+// src/router/index.ts
+import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
+import { useAuthStore } from "@/stores/authStore";
+
+// Core views
+import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
+import ResetPasswordView from '@/views/auth/ResetPasswordView.vue'
+import DashboardView from '@/views/DashboardView.vue'
+// Auth views
+import LoginView from "@/views/auth/LoginView.vue";
+import RegisterView from "@/views/auth/RegisterView.vue";
+import VerifyEmailView from "@/views/auth/VerifyEmailView.vue";
+
+
+// Admin views
+import UserAdminView from "@/views/admin/UserAdminView.vue";
+import PlayoffBracketView from "@/modules/playoffs/presentation/views/PlayoffBrackView.vue";
+
+
+const routes: RouteRecordRaw[] = [
+  {
+    path: "/",
+    redirect: "/dashboard",
+      component: AppLayout,
+      children: [
+        {
+          path: '/',
+          name: 'Home',
+          component: Home,
+          beforeEnter: requireAuth
+        },
+        {
+          path: '/players/:id?',
+          name: 'PlayerDetail',
+          component: PlayerDetail,
+          beforeEnter: requireAdminOrDev
+        },
+        {
+          path: '/teams/:id?',
+          name: 'TeamDetail',
+          component: TeamDetail,
+          beforeEnter: requireAdminOrDev
+        },
+        {
+          path: '/standings',
+          name: 'StandingsView',
+          component: () => import('@/views/StandingsView.vue'),
+          beforeEnter: requireAuth
+        },
+        {
+          path: '/player-awards/:id?',
+          name: 'PlayerAwardDetail',
+          component: PlayerAwardDetail,
+          beforeEnter: requireAuth
+        },
+        {
+          path: '/player-teams/:id?',
+          name: 'PlayerTeamDetail',
+          component: PlayerTeamDetail,
+          beforeEnter: requireAdminOrDev
+        },
+        {
+          path: '/combine-scores/:id?',
+          name: 'CombineScoreDetail',
+          component: CombineScoreDetail,
+          beforeEnter: requireAdminOrDev
+        },
+        {
+          path: '/draft-simulator',
+          name: 'DraftBoard',
+          component: DraftBoard,
+          beforeEnter: requireAuth
+        },
+        ...draftPickRoutes,
+        {
+          path: '/admin/import-draft',
+          name: 'DraftImport',
+          component: () => import('@/views/DraftImportView.vue'),
+          beforeEnter: requireAdminOrDev,
+          meta: {
+            title: 'Import Draft Picks',
+            requiresAuth: true,
+            requiresAdmin: true,
+          },
+        },
+        {
+          path: '/admin/draft-pick-scraper',
+          name: 'DraftPickScraper',
+          component: () => import('@/views/admin/DraftPickScraperView.vue'),
+          beforeEnter: requireAuth,
+          meta: {
+            requiresAuth: true,
+            adminOnly: true,
+            title: 'Draft Pick Scraper',
+            icon: 'pi-cloud-download',
+          },
+        },
+        {
+          path: '/jobs',
+          name: 'Jobs',
+          component: () => import('@/views/jobs/JobsView.vue'),
+          beforeEnter: requireAuth,
+          meta: {
+            title: 'Jobs',
+            requiresAuth: true, // Adjust based on your auth requirements
+          },
+        },
+        {
+          path: '/jobs/:id',
+          name: 'JobDetail',
+          component: () => import('@/views/jobs/JobDetailView.vue'),
+          beforeEnter: requireAuth,
+          meta: {
+            title: 'Job Detail',
+            requiresAuth: true,
+          },
+        },
+        {
+          path: '/prospects/:id?',
+          name: 'ProspectDetail',
+          component: ProspectDetail,
+          beforeEnter: requireAdminOrDev
+        },
+        {
+          path: '/schedules',
+          name: 'schedules',
+          component: ScheduleDetail,
+          beforeEnter: requireAuth,
+          meta: {
+            title: 'NFL Schedule',
+            description: 'View and edit NFL game schedules',
+          },
+        },
+        {
+          path: '/show-upcoming-games',
+          name: 'show-upcoming-games',
+          component: () => import('@/views/ShowUpcomingGamesView.vue'),
+          beforeEnter: requireAuth,
+        },
+        {
+          path: "/playoffs/bracket",
+          name: "playoff-bracket",
+          component: PlayoffBracketView,
+          meta: {
+            requiresAuth: true,
+            allowedRoles: [1, 2, 3], // Visitor, Admin, Developer can view
+          },
+        },
+        {
+          path: '/player-awards/:id?',
+          name: 'PlayerAwardDetail',
+          component: PlayerAwardDetail,
+        },
+        // Add this route to your routes array
+        {
+          path: '/games/:id?',
+          name: 'GameDetail',
+          component: GameDetail,
+          beforeEnter: requireAuth,
+          meta: {
+            title: 'Games',
+            requiresAuth: true, // if you have authentication
+          },
+        },
+
+        // Alternative: Use lazy loading (recommended)
+        {
+          path: '/games/:id?',
+          name: 'GameDetail',
+          component: () => import('@/views/GameDetail.vue'),
+          meta: {
+            title: 'Games',
+            requiresAuth: true, // if you have authentication
+          },
+        },
+        {
+          path: '/jobs',
+          name: 'jobs',
+          component: JobsPage,
+          beforeEnter: requireAuth,
+        },
+
+        /*
+    {
+      path: '/team-needs/:id?',
+      name: 'TeamNeedDetail',
+      component: TeamNeedDetail,
+      beforeEnter: requireAdminOrDev
+    },
+    {
+      path: '/post-season-results/:id?',
+      name: 'PostSeasonResultDetail',
+      component: PostSeasonResultDetail,
+      beforeEnter: requireAdminOrDev
+    },
+    */
+  {
+    path: "/dashboard",
+    name: "Dashboard",
+    component: DashboardView,
+  },
+
+  // ─────────────────────────
+  // AUTH ROUTES
+  // ─────────────────────────
+  {
+    path: "/login",
+    name: "Login",
+    component: LoginView,
+    meta: {
+      public: true,
+      onlyWhenLoggedOut: true,
+    },
+  },
+  {
+    path: "/register",
+    name: "Register",
+    component: RegisterView,
+    meta: {
+      public: true,
+      onlyWhenLoggedOut: true,
+    },
+  },
+  {
+    path: "/verify-email/:token",
+    name: "VerifyEmail",
+    component: VerifyEmailView,
+    meta: {
+      public: true,
+    },
+  },
+  {
+    path: "/forgot-password",
+    name: "ForgotPassword",
+    component: ForgotPasswordView,
+    meta: {
+      public: true,
+      onlyWhenLoggedOut: true,
+    },
+  },
+  {
+    path: "/reset-password/:token",
+    name: "ResetPassword",
+    component: ResetPasswordView,
+    meta: {
+      public: true,
+      onlyWhenLoggedOut: true,
+    },
+  },
+
+  // ─────────────────────────
+  // ADMIN ROUTES (example)
+  // ─────────────────────────
+  {
+    path: "/admin/users",
+    name: "UserAdmin",
+    component: UserAdminView,
+    meta: {
+      requiresAuth: true,
+      minRole: 2, // 1=Visitor, 2=Admin, 3=Developer
+    },
+  },
+      ],
+    },
+  // ...keep your existing routes for Teams, Schedule, Draft, etc...
+];
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes,
+});
+
+// ─────────────────────────
+// Global Nav Guard
+// ─────────────────────────
+router.beforeEach((to, from, next) => {
+  const auth = useAuthStore();
+
+  const requiresAuth = Boolean(to.meta.requiresAuth);
+  const onlyWhenLoggedOut = Boolean(to.meta.onlyWhenLoggedOut);
+  const isLoggedIn = auth.isAuthenticated;
+
+  // auth-only routes
+  if (requiresAuth && !isLoggedIn) {
+    next({
+      name: "Login",
+      query: { redirect: to.fullPath },
+    });
+    return;
+  }
+
+  // redirect logged-in users away from login/register/forgot/reset
+  if (isLoggedIn && onlyWhenLoggedOut) {
+    const redirect = (to.query.redirect as string | undefined) ?? "/dashboard";
+    next(redirect);
+    return;
+  }
+
+  // optional: role check for admin pages
+  if (requiresAuth && typeof to.meta.minRole === "number") {
+    const minRole = to.meta.minRole as number;
+    const userRole = auth.role ?? 1;
+
+    if (userRole < minRole) {
+      // not authorized → send to dashboard (or a 403 page)
+      next("/dashboard");
+      return;
+    }
+  }
+
+  next();
+});
+
+export default router;
+
+
+
