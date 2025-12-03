@@ -92,7 +92,8 @@ export class EspnScheduleClient {
           // 1) Use ESPN state as primary truth
           if (state === 'post' || state === 'completed') {
             statusNormalized = 'Final';
-          } else if (state === 'in') {
+          } else if (state === 'in' || this.gameHasScores(homeScore) || this.gameHasScores(awayScore)) {
+            statusNormalized = 'In Progress';
             // 👈 THIS is the key change: mark in-progress as soon as game is live,
             // regardless of whether anyone has scored yet.
             statusNormalized = 'In Progress';
@@ -115,6 +116,8 @@ export class EspnScheduleClient {
 
           // ALWAYS sync statusDetail to normalized status
           const statDetail = statusNormalized;
+          // ---------------- End status Normalization ------------------------------
+
           //---------------- End status Normalization ------------------------------
           // Date
           const date = comp?.date || e.date || item?.date || null;

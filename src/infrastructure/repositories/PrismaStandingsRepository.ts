@@ -1,9 +1,9 @@
 import { PrismaClient, Game_gameStatus } from '@prisma/client'
-import { IStandingsRepository } from '@/domain/standings/repositories/IStandingsRepository'
+import { ITeamStandingsRepository } from '@/domain/standings/repositories/ITeamStandingsRepository'
 import { TeamStanding } from '@/domain/standings/interface/TeamStanding'
 import { GameProps } from '@/domain/game/entities/Game' // or wherever you define your GameProps
 
-export class PrismaStandingsRepository implements IStandingsRepository {
+export class PrismaStandingsRepository implements ITeamStandingsRepository {
   constructor(private prisma: PrismaClient) {}
 
   async getCompletedGames(year: number, seasonType: number): Promise<GameProps[]> {

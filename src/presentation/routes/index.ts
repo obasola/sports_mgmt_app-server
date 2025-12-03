@@ -20,6 +20,7 @@ import standingsRoutes from "./standingsRoutes";
 import { teamStandingsRoutes } from "./teamStandingsRoutes";
 import { buildScoreboardRouter } from "../controllers/ScoreboardController";
 import draftPickRoutes from "./draftPickRoute";
+import { playoffsRoutes } from "./playoffsRoutes"; // 👈 NEW
 
 const router = Router();
 
@@ -44,11 +45,13 @@ router.use("/games", gameRoutes);
 router.use("/draftpicks", draftPickRoutes);
 
 /* ─────────────────────────────
- * STANDINGS / SCOREBOARD
+ * STANDINGS / SCOREBOARD / PLAYOFFS
  * ───────────────────────────── */
 router.use("/standings", standingsRoutes);
-router.use("/teamStandings", teamStandingsRoutes);
+router.use("/teamStandings", standingsRoutes);
 router.use("/scoreboard", buildScoreboardRouter());
+router.use("/playoffs", playoffsRoutes); // 👈 NEW
+
 
 /* ─────────────────────────────
  * JOBS

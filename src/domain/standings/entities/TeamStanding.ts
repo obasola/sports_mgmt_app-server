@@ -1,3 +1,4 @@
+// src/domain/standings/entities/TeamStanding.ts
 export class TeamStanding {
   constructor(
     public teamId: number,
@@ -12,8 +13,10 @@ export class TeamStanding {
     public streak = '',
     public divisionWins = 0,
     public divisionLosses = 0,
+    public divisionRank = 0,
     public conferenceWins = 0,
     public conferenceLosses = 0,
+    public conferenceRank = 0,
     public pct = 0
  
   

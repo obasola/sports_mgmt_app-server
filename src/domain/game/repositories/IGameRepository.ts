@@ -2,6 +2,7 @@
 import { Prisma } from '@prisma/client';
 import type { Game, GameProps } from '../entities/Game';
 import type { PaginationParams, PaginatedResponse } from '@/shared/types/common';
+import { PlayoffConference, PlayoffRound } from '@/domain/playoffs/valueObjects/PlayoffTypes';
 
 export interface GameFilters {
   seasonYear?: string;
@@ -16,7 +17,20 @@ export interface GameFilters {
   dateFrom?: Date;
   dateTo?: Date;
 }
-
+/** Minimal shape the playoff service needs from games */
+export interface PlayoffGameSummary {
+  id: number;
+  seasonYear: number;
+  playoffConference: PlayoffConference | null;
+  playoffRound: PlayoffRound | null;
+  homeTeamId: number;
+  awayTeamId: number;
+  homeSeed: number | null;
+  awaySeed: number | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  gameDate: Date | null;
+}
 /**
  * Repository interface for Game entity
  * All methods that return Game(s) MUST include team relations (homeTeam, awayTeam)
@@ -52,6 +66,9 @@ export interface IGameRepository {
   findRegularSeasonGameByWeek(teamId?: number, seasonYear?: string, week?: number): Promise<Game[]>;
   findAllGamesForSeason(teamId?: number, seasonYear?: string): Promise<Game[]>;
 
+   // 🔽 NEW
+  findPlayoffGamesBySeason(seasonYear: number): Promise<PlayoffGameSummary[]>;
+  
   // Business logic helpers
   checkGameConflict(
     homeTeamId: number,

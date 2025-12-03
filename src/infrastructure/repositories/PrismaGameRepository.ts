@@ -4,6 +4,8 @@ import { Game } from '../../domain/game/entities/Game';
 import type { IGameRepository, GameFilters } from '../../domain/game/repositories/IGameRepository';
 import type { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import type { PlayoffGameSummary } from '@/domain/game/repositories/IGameRepository';
+import type { PlayoffConference, PlayoffRound } from '@/domain/playoffs/valueObjects/PlayoffTypes';
 
 // --------------------------------------------------------------
 // Map ESPN status.type.name -> Prisma Game_gameStatus enum values
@@ -359,6 +361,43 @@ export class PrismaGameRepository implements IGameRepository {
     });
     if (!row) return null;
     return this.hydrateGameWithTeams(row);
+  }
+
+  public async findPlayoffGamesBySeason(seasonYear: number): Promise<PlayoffGameSummary[]> {
+    const rows = await this.prisma.game.findMany({
+      where: {
+        seasonYear: String(seasonYear), // DB column is string
+        isPlayoff: true,
+      },
+      select: {
+        id: true,
+        // seasonYear: true, // we don’t actually need the DB value; we already know it
+        playoffConference: true,
+        playoffRound: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeSeed: true,
+        awaySeed: true,
+        homeScore: true,
+        awayScore: true,
+        gameDate: true,
+      },
+      orderBy: [{ playoffRound: 'asc' }, { gameDate: 'asc' }],
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      seasonYear, // normalize to the numeric input, not the DB string
+      playoffConference: row.playoffConference as PlayoffConference | null,
+      playoffRound: row.playoffRound as PlayoffRound | null,
+      homeTeamId: row.homeTeamId,
+      awayTeamId: row.awayTeamId,
+      homeSeed: row.homeSeed,
+      awaySeed: row.awaySeed,
+      homeScore: row.homeScore,
+      awayScore: row.awayScore,
+      gameDate: row.gameDate,
+    }));
   }
 
   // ---------- ESPN upsert ----------

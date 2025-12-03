@@ -1,3 +1,4 @@
+// src/domain/stamdings/interface/TeamStanding.ts
 export interface TeamStanding {
   teamId: number;
   teamName: string;

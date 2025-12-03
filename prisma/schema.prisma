@@ -55,26 +55,31 @@ model DraftPick {
 }
 
 model Game {
-  id                Int             @id @default(autoincrement())
-  seasonYear        String          @db.VarChar(4)
-  gameWeek          Int?            @db.TinyInt
-  gameDate          DateTime?       @db.DateTime(0)
+  id                Int                     @id @default(autoincrement())
+  seasonYear        String                  @db.VarChar(4)
+  gameWeek          Int?                    @db.TinyInt
+  gameDate          DateTime?               @db.DateTime(0)
   homeTeamId        Int
   awayTeamId        Int
-  gameLocation      String?         @db.VarChar(255)
-  gameCity          String?         @db.VarChar(100)
-  gameStateProvince String?         @db.VarChar(100)
-  gameCountry       String          @default("USA") @db.VarChar(50)
-  homeScore         Int?            @default(0)
-  awayScore         Int?            @default(0)
-  gameStatus        Game_gameStatus @default(scheduled)
-  createdAt         DateTime?       @default(now()) @db.Timestamp(0)
-  updatedAt         DateTime?       @default(now()) @db.Timestamp(0)
-  espnEventId       String?         @unique @db.VarChar(255)
-  espnCompetitionId String?         @unique @db.VarChar(255)
-  seasonType        Int?            @default(2) @db.TinyInt
-  homeTeam          Team            @relation("Game_homeTeamIdToTeam", fields: [homeTeamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Game_ibfk_1")
-  awayTeam          Team            @relation("Game_awayTeamIdToTeam", fields: [awayTeamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Game_ibfk_2")
+  gameLocation      String?                 @db.VarChar(255)
+  gameCity          String?                 @db.VarChar(100)
+  gameStateProvince String?                 @db.VarChar(100)
+  gameCountry       String                  @default("USA") @db.VarChar(50)
+  homeScore         Int?                    @default(0)
+  awayScore         Int?                    @default(0)
+  gameStatus        Game_gameStatus         @default(scheduled)
+  isPlayoff         Boolean                 @default(false)
+  playoffRound      Game_playoffRound?
+  playoffConference Game_playoffConference?
+  homeSeed          Int?
+  awaySeed          Int?
+  createdAt         DateTime?               @default(now()) @db.Timestamp(0)
+  updatedAt         DateTime?               @default(now()) @db.Timestamp(0)
+  espnEventId       String?                 @unique @db.VarChar(255)
+  espnCompetitionId String?                 @unique @db.VarChar(255)
+  seasonType        Int?                    @default(2) @db.TinyInt
+  homeTeam          Team                    @relation("Game_homeTeamIdToTeam", fields: [homeTeamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Game_ibfk_1")
+  awayTeam          Team                    @relation("Game_awayTeamIdToTeam", fields: [awayTeamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Game_ibfk_2")
 
   @@unique([seasonYear, gameDate, homeTeamId, awayTeamId], map: "unique_game")
   @@index([awayTeamId], map: "awayTeamId")
@@ -100,6 +105,7 @@ model Person {
   lastLoginAt            DateTime?                @db.DateTime(0)
   EmailVerificationToken EmailVerificationToken[]
   PasswordResetToken     PasswordResetToken[]
+  PersonIdentity         PersonIdentity[]
   refreshTokens          RefreshToken[]
 }
 
@@ -626,6 +632,19 @@ model PasswordResetToken {
   @@index([personId], map: "idx_password_reset_person")
 }
 
+model PersonIdentity {
+  id             Int      @id @default(autoincrement())
+  personId       Int
+  provider       String   @db.VarChar(32)
+  providerUserId String
+  email          String?
+  createdAt      DateTime @default(now())
+  Person         Person   @relation(fields: [personId], references: [pid], map: "fk_person_identity_person")
+
+  @@unique([provider, providerUserId], map: "uq_person_identity_provider_user")
+  @@index([personId], map: "idx_person_identity_personId")
+}
+
 enum data_processing_jobs_job_type {
   PLAYER_SYNC
   TEAM_SYNC
@@ -731,4 +750,16 @@ enum Game_gameStatus {
   postponed
   canceled
   final
+}
+
+enum Game_playoffRound {
+  WILDCARD
+  DIVISIONAL
+  CONFERENCE
+  SUPERBOWL
+}
+
+enum Game_playoffConference {
+  AFC
+  NFC
 }
