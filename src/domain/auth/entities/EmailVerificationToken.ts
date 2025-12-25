@@ -1,3 +1,4 @@
+// src/domain/auth/entities/EmailVerificationToken.ts
 import { DebugLogger } from "@/infrastructure/logging/DebugLogger";
 
 export class EmailVerificationToken {

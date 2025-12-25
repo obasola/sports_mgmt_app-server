@@ -21,6 +21,8 @@ import { teamStandingsRoutes } from "./teamStandingsRoutes";
 import { buildScoreboardRouter } from "../controllers/ScoreboardController";
 import draftPickRoutes from "./draftPickRoute";
 import { playoffsRoutes } from "./playoffsRoutes"; // 👈 NEW
+import { prisma } from "@/infrastructure/prisma";
+import { buildDraftSimulatorModule } from "@/modules/draftSimulator/moduleFactory";
 
 const router = Router();
 
@@ -50,6 +52,8 @@ router.use("/draftpicks", draftPickRoutes);
 router.use("/standings", standingsRoutes);
 router.use("/teamStandings", standingsRoutes);
 router.use("/scoreboard", buildScoreboardRouter());
+router.use('/draftSimulator', buildDraftSimulatorModule(prisma))
+
 router.use("/playoffs", playoffsRoutes); // 👈 NEW
 
 

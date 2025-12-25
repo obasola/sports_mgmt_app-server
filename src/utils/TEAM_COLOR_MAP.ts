@@ -1,3 +1,4 @@
+// ..server/src/utils/TEAM_COLOR_MAP.ts
 export const TEAM_COLOR_MAP: Record<string, string> = {
   "New England Patriots": "#002244",
   "New York Jets": "#125740",

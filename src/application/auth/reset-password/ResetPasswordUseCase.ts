@@ -1,3 +1,4 @@
+// src/application/auth/reset-password/ResetPasswordUseCase.ts
 import { IPersonRepository } from "@/domain/person/repositories/IPersonRepository";
 import { PasswordHasher } from "@/domain/auth/services/PasswordHasher";
 import { PasswordResetToken } from "@/domain/auth/entities/PasswordResetToken";

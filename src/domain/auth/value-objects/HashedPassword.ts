@@ -1,3 +1,4 @@
+// src/domain/auth/value-objects/HashedPassword.ts
 export class HashedPassword {
   private constructor(private readonly value: string) {}
 

@@ -1,3 +1,4 @@
+// mtfpictures-server/src/presentation/middleware/errorHandler.ts
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../../shared/errors/AppError';
 import { ApiResponse } from '../../shared/types/common';

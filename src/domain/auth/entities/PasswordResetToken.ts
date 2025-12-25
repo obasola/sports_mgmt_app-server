@@ -1,3 +1,4 @@
+// src/domain/auth/entities/PasswordResetToken.ts
 export class PasswordResetToken {
   constructor(
     public readonly id: number | null,

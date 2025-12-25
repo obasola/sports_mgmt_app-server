@@ -1,21 +1,4 @@
-/*
-import { createMailService } from '@/infrastructure/mail/MailServiceFactory';
-import { SendEmailUseCase } from '@/application/mail/SendEmailUseCase';
-
-const mailer = createMailService();
-const sendEmailUseCase = new SendEmailUseCase(mailer);
-
-// Example: send confirmation email
-export async function sendVerificationEmail(user: any, token: string) {
-  const link = `https://draftproanalytics.com/verify/${token}`;
-
-  await sendEmailUseCase.execute({
-    to: user.emailAddress,
-    subject: "Verify Your DraftProAnalytics Account",
-    html: `<p>Click to verify: <a href="${link}">${link}</a></p>`,
-  });
-}
-*/
+// src/presentation/controllers/AuthController.ts
 import { Request, Response } from "express";
 import {
   verifyEmailUseCase,
@@ -115,22 +98,26 @@ export class AuthController {
     }
   }
 
-  async logout(req: Request, res: Response): Promise<void> {
-    try {
-      const refreshToken = req.cookies.refreshToken;
-      const personId = Number(req.body.personId);
 
-      if (refreshToken) {
-        await logoutUseCase.execute(refreshToken, personId);
-      }
 
-      res.clearCookie("refreshToken");
-      res.json({ message: "Logged out" });
-    } catch (err: unknown) {
-      const e = err as Error;
-      res.status(400).json({ error: e.message });
-    }
+async logout(req: Request, res: Response): Promise<void> {
+  const body = req.body as { refreshToken?: string } | undefined;
+  const refreshToken = (req as Request & { cookies?: Record<string, string> }).cookies?.refreshToken;
+
+  // Support both body and cookie-based refresh token (optional)
+
+
+  // If there’s nothing to revoke, don’t throw. Just succeed.
+  if (!refreshToken) {
+    res.status(204).send();
+    return;
   }
+
+  // TODO: revoke token in DB/allowlist/denylist (your implementation)
+  // await authService.revokeRefreshToken(refreshToken)
+
+  res.status(204).send();
+}
 
   async forgotPassword(req: Request, res: Response): Promise<void> {
     try {

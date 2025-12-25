@@ -1,3 +1,4 @@
+// src/domain/auth/value-objects/UserName.ts
 export class Username {
   private constructor(private readonly value: string) {}
 

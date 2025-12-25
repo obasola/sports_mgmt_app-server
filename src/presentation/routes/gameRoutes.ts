@@ -121,3 +121,6 @@ router.patch(
 router.delete('/:id', validateParams(IdParamsSchema), gameController.deleteGame);
 
 export { router as gameRoutes };
+
+
+///Utilities

@@ -16,6 +16,8 @@ import { useCorsFromEnv } from './presentation/middleware/cors';
 
 
 const app = express();
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ---- core config
 const PORT = CONFIG.port;
@@ -32,8 +34,6 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ---- health
 app.get('/health', (_req, res) => {
@@ -52,8 +52,6 @@ app.get('/health', (_req, res) => {
 
 // ---- routes
 app.use(API_BASE, apiRoutes);
-// optional non-versioned convenience (keep if you want to support both)
-app.use('/api', apiRoutes);
 
 // Jobs module redundant with "src/presentation/routes/jobRoutes.ts"
 //const { routes: jobsRoutes } = buildJobsModule();

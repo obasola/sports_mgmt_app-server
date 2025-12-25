@@ -1,3 +1,4 @@
+// src/application/auth/logout/LogoutUseCase.ts
 import { IPersonRepository } from "@/domain/person/repositories/IPersonRepository";
 import { PasswordHasher } from "@/domain/auth/services/PasswordHasher";
 

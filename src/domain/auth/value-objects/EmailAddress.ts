@@ -1,3 +1,4 @@
+// src/domain/auth/value-objects/EmailAddress.ts
 export class EmailAddress {
   private constructor(private readonly value: string) {}
 

@@ -1,3 +1,4 @@
+// src/domain/auth/services/EmailVerificationService.ts
 export class EmailVerificationService {
   generateToken(): string {
     return crypto.randomUUID().replace(/-/g, '');
