@@ -87,6 +87,7 @@ model Game {
   @@index([espnCompetitionId], map: "idx_game_competitionId")
   @@index([gameStatus], map: "idx_game_status")
   @@index([seasonYear, gameWeek], map: "idx_game_year_week")
+  @@index([seasonYear, seasonType, gameStatus, gameWeek], map: "idx_game_year_type_status_week")
 }
 
 model Person {
@@ -265,6 +266,7 @@ model Team {
   scheduleId                                                   Int?
   abbreviation                                                 String?               @unique(map: "abbreviation") @db.VarChar(255)
   espnTeamId                                                   Int?                  @unique(map: "espnTeamId")
+  DraftOrderEntry                                              DraftOrderEntry[]
   DraftPick                                                    DraftPick[]
   DraftSimulationPick_DraftSimulationPick_currentTeamIdToTeam  DraftSimulationPick[] @relation("DraftSimulationPick_currentTeamIdToTeam")
   DraftSimulationPick_DraftSimulationPick_originalTeamIdToTeam DraftSimulationPick[] @relation("DraftSimulationPick_originalTeamIdToTeam")
@@ -540,18 +542,19 @@ model workflow_step_results {
 }
 
 model Job {
-  id           Int        @id @default(autoincrement())
-  type         String     @db.VarChar(100)
-  payload      Json?
-  status       Job_status @default(pending)
-  createdAt    DateTime   @default(now())
-  startedAt    DateTime?
-  finishedAt   DateTime?
-  cancelAt     DateTime?
-  cancelReason String?    @db.VarChar(255)
-  resultCode   String?    @db.VarChar(50)
-  resultJson   Json?
-  logs         JobLog[]
+  id                 Int                  @id @default(autoincrement())
+  type               String               @db.VarChar(100)
+  payload            Json?
+  status             Job_status           @default(pending)
+  createdAt          DateTime             @default(now())
+  startedAt          DateTime?
+  finishedAt         DateTime?
+  cancelAt           DateTime?
+  cancelReason       String?              @db.VarChar(255)
+  resultCode         String?              @db.VarChar(50)
+  resultJson         Json?
+  DraftOrderSnapshot DraftOrderSnapshot[]
+  logs               JobLog[]
 
   @@index([status])
 }
@@ -725,6 +728,69 @@ model ProspectRanking {
   @@index([source, overallRank], map: "idx_PR_source_rank")
 }
 
+model DraftOrderEntry {
+  id                      Int                       @id @default(autoincrement())
+  snapshotId              Int
+  teamId                  Int
+  draftSlot               Int                       @db.UnsignedTinyInt
+  isPlayoff               Boolean
+  isProjected             Boolean
+  wins                    Int                       @db.UnsignedTinyInt
+  losses                  Int                       @db.UnsignedTinyInt
+  ties                    Int                       @db.UnsignedTinyInt
+  winPct                  Decimal                   @db.Decimal(6, 5)
+  sos                     Decimal                   @db.Decimal(6, 5)
+  pointsFor               Int?                      @db.UnsignedSmallInt
+  pointsAgainst           Int?                      @db.UnsignedSmallInt
+  createdAt               DateTime                  @default(now())
+  snapshot DraftOrderSnapshot @relation("DraftOrderSnapshot_entries", fields: [snapshotId], references: [id], onDelete: Cascade, map: "fk_draftorderentry_snapshot")
+  Team                    Team                      @relation(fields: [teamId], references: [id], onUpdate: NoAction, map: "fk_draftorderentry_team")
+  audits                  DraftOrderTiebreakAudit[]
+
+  @@unique([snapshotId, draftSlot], map: "uq_draftorderentry_snapshot_slot")
+  @@unique([snapshotId, teamId], map: "uq_draftorderentry_snapshot_team")
+  @@index([snapshotId], map: "ix_draftorderentry_snapshot")
+  @@index([teamId], map: "ix_draftorderentry_team")
+  @@map("DraftOrderEntry")
+}
+
+model DraftOrderSnapshot {
+  id              Int                     @id @default(autoincrement())
+  mode            DraftOrderSnapshot_mode
+  strategy        String?                 @db.VarChar(64)
+  seasonYear      String                  @db.VarChar(4)
+  seasonType      Int                     @db.UnsignedTinyInt
+  throughWeek     Int?                    @db.UnsignedTinyInt
+  source          String                  @default("internal") @db.VarChar(32)
+  inputHash       String                  @db.Char(64)
+  computedAt      DateTime                @default(now())
+  jobId           Int?
+  entries         DraftOrderEntry[]       @relation("DraftOrderSnapshot_entries")
+  Job             Job?                    @relation(fields: [jobId], references: [id], onUpdate: NoAction, map: "fk_draftordersnapshot_job")
+
+  @@unique([mode, strategy, seasonYear, seasonType, throughWeek, inputHash], map: "uq_draftordersnapshot_mode_strategy_season_week_hash")
+  @@index([jobId], map: "ix_draftordersnapshot_job")
+  @@index([mode, strategy, seasonYear, seasonType, throughWeek, computedAt], map: "ix_draftordersnapshot_lookup")
+  @@map("DraftOrderSnapshot")
+}
+
+model DraftOrderTiebreakAudit {
+  id              Int             @id @default(autoincrement())
+  entryId         Int
+  stepNbr         Int             @db.UnsignedSmallInt
+  ruleCode        String          @db.VarChar(64)
+  resultCode      String          @db.VarChar(64)
+  resultSummary   String          @db.VarChar(255)
+  detailsJson     Json?
+  createdAt       DateTime        @default(now())
+  DraftOrderEntry DraftOrderEntry @relation(fields: [entryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_draftordertiebreakaudit_entry")
+
+  @@unique([entryId, stepNbr], map: "uq_draftordertiebreakaudit_entry_step")
+  @@index([entryId], map: "ix_draftordertiebreakaudit_entry")
+  @@map("DraftOrderTiebreakAudit")
+}
+
+
 enum data_processing_jobs_job_type {
   PLAYER_SYNC
   TEAM_SYNC
@@ -842,4 +908,14 @@ enum Game_playoffRound {
 enum Game_playoffConference {
   AFC
   NFC
+}
+
+enum DraftOrderSnapshot_mode {
+  current
+  projection
+}
+
+enum draft_order_snapshot_mode {
+  current
+  projection
 }
