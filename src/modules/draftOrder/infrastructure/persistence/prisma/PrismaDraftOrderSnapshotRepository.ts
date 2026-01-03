@@ -338,145 +338,186 @@ export class PrismaDraftOrderSnapshotRepository implements DraftOrderSnapshotRep
     }
   }
 
-  public async createSnapshot(req: CreateDraftOrderSnapshotRequest): Promise<DraftOrderSnapshotDetailDto> {
-    return this.prisma.$transaction(async (tx): Promise<DraftOrderSnapshotDetailDto> => {
-      // 1) create snapshot row ONLY (no nested entries)
-      const snapshotRow = await tx.draftOrderSnapshot.create({
-        data: {
-          mode: req.mode,
-          strategy: req.strategy,
-          seasonYear: req.seasonYear,
-          seasonType: req.seasonType,
-          throughWeek: req.throughWeek,
-          source: req.source,
-          inputHash: req.inputHash,
-          computedAt: req.computedAt,
-        },
-        select: {
-          id: true,
-          mode: true,
-          strategy: true,
-          seasonYear: true,
-          seasonType: true,
-          throughWeek: true,
-          source: true,
-          inputHash: true,
-          computedAt: true,
-          jobId: true,
-        },
-      })
+public async createSnapshot(req: CreateDraftOrderSnapshotRequest): Promise<DraftOrderSnapshotDetailDto> {
+    try {
+      return await this.prisma.$transaction(async (tx): Promise<DraftOrderSnapshotDetailDto> => {
+        // 1) create snapshot row ONLY (no nested entries)
+        const snapshotRow = await tx.draftOrderSnapshot.create({
+          data: {
+            mode: req.mode,
+            strategy: req.strategy,
+            seasonYear: req.seasonYear,
+            seasonType: req.seasonType,
+            throughWeek: req.throughWeek,
+            source: req.source,
+            inputHash: req.inputHash,
+            computedAt: req.computedAt,
+          },
+          select: {
+            id: true,
+            mode: true,
+            strategy: true,
+            seasonYear: true,
+            seasonType: true,
+            throughWeek: true,
+            source: true,
+            inputHash: true,
+            computedAt: true,
+            jobId: true,
+          },
+        })
 
-      // 2) create entries + audits
-      const entryDtos = await Promise.all(
-        req.entries.map(async (e) => {
-          const entryRow = await tx.draftOrderEntry.create({
-            data: {
-              snapshotId: snapshotRow.id,
-              teamId: e.teamId,
-              draftSlot: e.draftSlot,
-              isPlayoff: e.isPlayoff,
-              isProjected: e.isProjected,
-              wins: e.wins,
-              losses: e.losses,
-              ties: e.ties,
-              winPct: new PrismaNs.Decimal(e.winPct),
-              sos: new PrismaNs.Decimal(e.sos),
-              pointsFor: e.pointsFor,
-              pointsAgainst: e.pointsAgainst,
-            },
-            select: {
-              id: true,
-              teamId: true,
-              draftSlot: true,
-              isPlayoff: true,
-              isProjected: true,
-              wins: true,
-              losses: true,
-              ties: true,
-              winPct: true,
-              sos: true,
-              pointsFor: true,
-              pointsAgainst: true,
-              Team: { select: { id: true, name: true, abbreviation: true } },
-            },
-          })
+        // 2) create entries + audits
+        const entryDtos = await Promise.all(
+          req.entries.map(async (e) => {
+            const entryRow = await tx.draftOrderEntry.create({
+              data: {
+                snapshotId: snapshotRow.id,
+                teamId: e.teamId,
+                draftSlot: e.draftSlot,
+                isPlayoff: e.isPlayoff,
+                isProjected: e.isProjected,
+                wins: e.wins,
+                losses: e.losses,
+                ties: e.ties,
+                winPct: new PrismaNs.Decimal(e.winPct),
+                sos: new PrismaNs.Decimal(e.sos),
+                pointsFor: e.pointsFor,
+                pointsAgainst: e.pointsAgainst,
+              },
+              select: {
+                id: true,
+                teamId: true,
+                draftSlot: true,
+                isPlayoff: true,
+                isProjected: true,
+                wins: true,
+                losses: true,
+                ties: true,
+                winPct: true,
+                sos: true,
+                pointsFor: true,
+                pointsAgainst: true,
+                Team: { select: { id: true, name: true, abbreviation: true } },
+              },
+            })
 
-          if (e.audits.length > 0) {
-            await tx.draftOrderTiebreakAudit.createMany({
-              data: e.audits.map((a) => ({
-                entryId: entryRow.id,
+            if (e.audits.length > 0) {
+              await tx.draftOrderTiebreakAudit.createMany({
+                data: e.audits.map((a) => ({
+                  entryId: entryRow.id,
+                  stepNbr: a.stepNbr,
+                  ruleCode: a.ruleCode,
+                  resultCode: a.resultCode,
+                  resultSummary: a.resultSummary,
+                  detailsJson: toJsonInput(a.detailsJson),
+                })),
+              })
+            }
+
+            const auditsRows = await tx.draftOrderTiebreakAudit.findMany({
+              where: { entryId: entryRow.id },
+              orderBy: { stepNbr: 'asc' },
+              select: {
+                id: true,
+                stepNbr: true,
+                ruleCode: true,
+                resultCode: true,
+                resultSummary: true,
+                detailsJson: true,
+                createdAt: true,
+              },
+            })
+
+            const audits: readonly DraftOrderTiebreakAuditDto[] = auditsRows.map(
+              (a): DraftOrderTiebreakAuditDto => ({
+                id: a.id,
                 stepNbr: a.stepNbr,
                 ruleCode: a.ruleCode,
                 resultCode: a.resultCode,
                 resultSummary: a.resultSummary,
-                detailsJson: toJsonInput(a.detailsJson),
-              })),
-            })
-          }
+                detailsJson: (a.detailsJson as Prisma.JsonValue | null) ?? null,
+                createdAt: a.createdAt.toISOString(),
+              })
+            )
 
-          const auditsRows = await tx.draftOrderTiebreakAudit.findMany({
-            where: { entryId: entryRow.id },
-            orderBy: { stepNbr: 'asc' },
-            select: {
-              id: true,
-              stepNbr: true,
-              ruleCode: true,
-              resultCode: true,
-              resultSummary: true,
-              detailsJson: true,
-              createdAt: true,
+            return {
+              id: entryRow.id,
+              teamId: entryRow.teamId,
+              draftSlot: entryRow.draftSlot,
+              isPlayoff: entryRow.isPlayoff,
+              isProjected: entryRow.isProjected,
+              wins: entryRow.wins,
+              losses: entryRow.losses,
+              ties: entryRow.ties,
+              winPct: entryRow.winPct.toString(),
+              sos: entryRow.sos.toString(),
+              pointsFor: entryRow.pointsFor ?? null,
+              pointsAgainst: entryRow.pointsAgainst ?? null,
+              team: {
+                id: entryRow.Team.id,
+                name: entryRow.Team.name,
+                abbreviation: entryRow.Team.abbreviation ?? null,
+              },
+              audits,
+            }
+          })
+        )
+
+        // 3) return DTO
+        return {
+          id: snapshotRow.id,
+          mode: snapshotRow.mode,
+          strategy: snapshotRow.strategy ?? null,
+          seasonYear: snapshotRow.seasonYear,
+          seasonType: snapshotRow.seasonType,
+          throughWeek: snapshotRow.throughWeek ?? null,
+          source: snapshotRow.source,
+          inputHash: snapshotRow.inputHash,
+          computedAt: snapshotRow.computedAt.toISOString(),
+          jobId: snapshotRow.jobId ?? null,
+          entries: entryDtos,
+        }
+      })
+    } catch (err: unknown) {
+      // If the unique constraint on snapshot key trips, return the existing snapshot.
+      if (err instanceof PrismaNs.PrismaClientKnownRequestError && err.code === 'P2002') {
+        const meta = (err.meta ?? null) as Record<string, unknown> | null
+        const targetRaw = meta && 'target' in meta ? meta['target'] : null
+
+        const targets: readonly string[] = Array.isArray(targetRaw)
+          ? targetRaw.filter((x): x is string => typeof x === 'string')
+          : typeof targetRaw === 'string'
+            ? [targetRaw]
+            : []
+
+        // Be conservative: only treat this as idempotency if it looks like the snapshot unique key.
+        const looksLikeSnapshotKey =
+          targets.some((t) => t.includes('uq_draftordersnapshot_mode_strategy_season_week_hash')) ||
+          targets.some((t) => t.includes('inputHash')) ||
+          targets.length === 0 // Prisma sometimes omits target; allow fallback
+
+        if (looksLikeSnapshotKey) {
+          const existing = await this.prisma.draftOrderSnapshot.findFirst({
+            where: {
+              mode: req.mode as PrismaMode,
+              strategy: req.strategy,
+              seasonYear: req.seasonYear,
+              seasonType: req.seasonType,
+              throughWeek: req.throughWeek,
+              inputHash: req.inputHash,
             },
+            select: { id: true },
           })
 
-          const audits: readonly DraftOrderTiebreakAuditDto[] = auditsRows.map(
-            (a): DraftOrderTiebreakAuditDto => ({
-              id: a.id,
-              stepNbr: a.stepNbr,
-              ruleCode: a.ruleCode,
-              resultCode: a.resultCode,
-              resultSummary: a.resultSummary,
-              detailsJson: (a.detailsJson as Prisma.JsonValue | null) ?? null,
-              createdAt: a.createdAt.toISOString(),
-            })
-          )
-
-          return {
-            id: entryRow.id,
-            teamId: entryRow.teamId,
-            draftSlot: entryRow.draftSlot,
-            isPlayoff: entryRow.isPlayoff,
-            isProjected: entryRow.isProjected,
-            wins: entryRow.wins,
-            losses: entryRow.losses,
-            ties: entryRow.ties,
-            winPct: entryRow.winPct.toString(),
-            sos: entryRow.sos.toString(),
-            pointsFor: entryRow.pointsFor ?? null,
-            pointsAgainst: entryRow.pointsAgainst ?? null,
-            team: {
-              id: entryRow.Team.id,
-              name: entryRow.Team.name,
-              abbreviation: entryRow.Team.abbreviation ?? null,
-            },
-            audits,
+          if (existing) {
+            const dto = await this.getById(existing.id)
+            if (dto) return dto
           }
-        })
-      )
-
-      // 3) return DTO
-      return {
-        id: snapshotRow.id,
-        mode: snapshotRow.mode,
-        strategy: snapshotRow.strategy ?? null,
-        seasonYear: snapshotRow.seasonYear,
-        seasonType: snapshotRow.seasonType,
-        throughWeek: snapshotRow.throughWeek ?? null,
-        source: snapshotRow.source,
-        inputHash: snapshotRow.inputHash,
-        computedAt: snapshotRow.computedAt.toISOString(),
-        jobId: snapshotRow.jobId ?? null,
-        entries: entryDtos,
+        }
       }
-    })
+
+      throw err
+    }
   }
 }

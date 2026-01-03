@@ -1,10 +1,10 @@
-import crypto from 'crypto'
 import type { GameFact } from '@/modules/draftOrder/domain/repositories/GameFactsRepository'
 import type {
   CreateDraftOrderEntryRequest,
   CreateDraftOrderSnapshotRequest,
   CreateDraftOrderTiebreakAuditRequest,
 } from '@/modules/draftOrder/domain/repositories/DraftOrderSnapshotRepository'
+import { sha256Hex } from '@/modules/draftOrder/application/utils/sha256'
 
 interface TeamAgg {
   wins: number
@@ -24,6 +24,30 @@ function winPct(w: number, l: number, t: number): number {
 function toDec5(x: number): string {
   // Prisma Decimal accepts string; keep stable precision
   return x.toFixed(5)
+}
+
+type GameDigest = {
+  id: string
+  week: number | null
+  h: number
+  a: number
+  hs: number | null
+  as: number | null
+}
+
+function cmpGameDigest(a: GameDigest, b: GameDigest): number {
+  if (a.id !== b.id) return a.id < b.id ? -1 : 1
+  const aw = a.week ?? -1
+  const bw = b.week ?? -1
+  if (aw !== bw) return aw - bw
+  if (a.h !== b.h) return a.h - b.h
+  if (a.a !== b.a) return a.a - b.a
+  const ahs = a.hs ?? -1
+  const bhs = b.hs ?? -1
+  if (ahs !== bhs) return ahs - bhs
+  const aas = a.as ?? -1
+  const bas = b.as ?? -1
+  return aas - bas
 }
 
 export class ComputeCurrentDraftOrderService {
@@ -165,24 +189,28 @@ export class ComputeCurrentDraftOrderService {
       }
     })
 
-    const inputHash = crypto
-      .createHash('sha256')
-      .update(
-        JSON.stringify({
-          seasonYear,
-          seasonType,
-          throughWeek,
-          games: games.map((g) => ({
-            id: g.gameId,
-            week: g.week,
-            h: g.homeTeamId,
-            a: g.awayTeamId,
-            hs: g.homeScore,
-            as: g.awayScore,
-          })),
-        })
-      )
-      .digest('hex')
+    // ---- inputHash: include stable digest of game facts used ----
+    const gameDigest: GameDigest[] = games
+      .map((g) => ({
+        id: String(g.gameId),
+        week: g.week ?? null,
+        h: g.homeTeamId,
+        a: g.awayTeamId,
+        hs: g.homeScore ?? null,
+        as: g.awayScore ?? null,
+      }))
+      .sort(cmpGameDigest)
+
+    const inputHash = sha256Hex(
+      JSON.stringify({
+        mode: 'current',
+        strategy: null,
+        seasonYear,
+        seasonType,
+        throughWeek, // null vs number is preserved and intentional
+        games: gameDigest,
+      })
+    )
 
     const snapshot: CreateDraftOrderSnapshotRequest = {
       mode: 'current',

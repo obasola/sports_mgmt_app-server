@@ -17,6 +17,7 @@ export class PrismaGameFactsRepository implements GameFactsRepository {
         gameStatus: 'final' satisfies Game_gameStatus,
         ...(query.throughWeek !== null ? { gameWeek: { lte: query.throughWeek } } : {}),
       },
+      orderBy: [{ gameWeek: 'asc' }, { id: 'asc' }],
       select: {
         id: true,
         seasonYear: true,
@@ -33,7 +34,8 @@ export class PrismaGameFactsRepository implements GameFactsRepository {
     return rows.map((r): GameFact => ({
       gameId: r.id,
       seasonYear: r.seasonYear,
-      seasonType: r.seasonType ?? 2,
+      //seasonType: r.seasonType ?? 2,
+      seasonType: r.seasonType ?? query.seasonType,
       week: r.gameWeek ?? null,
       homeTeamId: r.homeTeamId,
       awayTeamId: r.awayTeamId,
