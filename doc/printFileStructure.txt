@@ -1,5 +1,5 @@
 # generate the file system layout fo tree libm specified
 find src/modules/draftOrder -maxdepth 4 -type f
 
-find src/modules/draftsimulator -maxdepth 4 -type f
+find src/modules/draftSimulator -maxdepth 4 -type f
 

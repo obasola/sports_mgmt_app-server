@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client"
+
 export interface DraftOrderTeamInfoDto {
   readonly id: number
   readonly name: string
@@ -10,7 +12,7 @@ export interface DraftOrderTiebreakAuditDto {
   readonly ruleCode: string
   readonly resultCode: string
   readonly resultSummary: string
-  readonly detailsJson: unknown | null
+  readonly detailsJson: Prisma.JsonValue | null
   readonly createdAt: string
 }
 

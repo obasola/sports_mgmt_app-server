@@ -915,7 +915,3 @@ enum DraftOrderSnapshot_mode {
   projection
 }
 
-enum draft_order_snapshot_mode {
-  current
-  projection
-}

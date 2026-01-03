@@ -1,57 +1,75 @@
 import type { Request, Response } from 'express'
-import { z } from 'zod'
+import type { z } from 'zod'
+
 import type { ListDraftOrderSnapshotsUseCase } from '../../application/usecases/ListDraftOrderSnapshotsUseCase'
 import type { GetDraftOrderSnapshotByIdUseCase } from '../../application/usecases/GetDraftOrderSnapshotByIdUseCase'
+import type { ComputeCurrentDraftOrderUseCase } from '../../application/usecases/ComputeCurrentDraftOrderUseCase'
 import type { ListDraftOrderSnapshotsQueryDto } from '../../application/dtos/ListDraftOrderSnapshotsQueryDto'
 
-const ListQuerySchema = z
-  .object({
-    mode: z.enum(['current', 'projection']).optional(),
-    strategy: z.string().min(1).optional(),
-    seasonYear: z.string().regex(/^\d{4}$/).optional(),
-    seasonType: z.coerce.number().int().min(1).max(3).optional(),
-    throughWeek: z.coerce.number().int().min(0).max(25).optional(),
-    page: z.coerce.number().int().min(1).default(1),
-    pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  })
-  .passthrough()
+type ListParsed = z.infer<
+  z.ZodObject<{
+    mode: z.ZodOptional<z.ZodEnum<['current', 'projection']>>
+    strategy: z.ZodOptional<z.ZodString>
+    seasonYear: z.ZodOptional<z.ZodString>
+    seasonType: z.ZodOptional<z.ZodNumber>
+    throughWeek: z.ZodOptional<z.ZodNumber>
+    page: z.ZodDefault<z.ZodNumber>
+    pageSize: z.ZodDefault<z.ZodNumber>
+  }>
+>
 
-const IdSchema = z.object({
-  id: z.coerce.number().int().min(1),
-})
+type IdParsed = { readonly id: number }
+
+type ComputeParsed = {
+  readonly seasonYear: string
+  readonly seasonType: number
+  readonly throughWeek?: number
+}
 
 export class DraftOrderController {
-  constructor(
-    private readonly listSnapshots: ListDraftOrderSnapshotsUseCase,
-    private readonly getById: GetDraftOrderSnapshotByIdUseCase
+  public constructor(
+    private readonly listUc: ListDraftOrderSnapshotsUseCase,
+    private readonly getByIdUc: GetDraftOrderSnapshotByIdUseCase,
+    private readonly computeCurrentUc: ComputeCurrentDraftOrderUseCase
   ) {}
 
-  list = async (req: Request, res: Response): Promise<void> => {
-    const parsed = ListQuerySchema.parse(req.query)
+  public list =
+    (parsed: ListParsed) =>
+    async (_req: Request, res: Response): Promise<void> => {
+      const query: ListDraftOrderSnapshotsQueryDto = {
+        mode: parsed.mode,
+        strategy: parsed.strategy,
+        seasonYear: parsed.seasonYear,
+        seasonType: parsed.seasonType,
+        throughWeek: parsed.throughWeek,
+        page: parsed.page,
+        pageSize: parsed.pageSize,
+      }
 
-    const query: ListDraftOrderSnapshotsQueryDto = {
-      mode: parsed.mode,
-      strategy: parsed.strategy,
-      seasonYear: parsed.seasonYear,
-      seasonType: parsed.seasonType,
-      throughWeek: parsed.throughWeek,
-      page: parsed.page,
-      pageSize: parsed.pageSize,
+      const result = await this.listUc.execute(query)
+      res.json(result)
     }
 
-    const result = await this.listSnapshots.execute(query)
-    res.json(result)
-  }
-
-  getOne = async (req: Request, res: Response): Promise<void> => {
-    const { id } = IdSchema.parse(req.params)
-
-    const snapshot = await this.getById.execute(id)
-    if (!snapshot) {
-      res.status(404).json({ error: 'snapshot not found' })
-      return
+  public getOne =
+    (parsed: IdParsed) =>
+    async (_req: Request, res: Response): Promise<void> => {
+      const snapshot = await this.getByIdUc.execute(parsed.id)
+      if (!snapshot) {
+        res.status(404).json({ error: 'snapshot not found' })
+        return
+      }
+      res.json(snapshot)
     }
 
-    res.json(snapshot)
-  }
+  public computeCurrent =
+    (parsed: ComputeParsed) =>
+    async (_req: Request, res: Response): Promise<void> => {
+      const dto = await this.computeCurrentUc.execute({
+        seasonYear: parsed.seasonYear,
+        seasonType: parsed.seasonType,
+        throughWeek: typeof parsed.throughWeek === 'number' ? parsed.throughWeek : null,
+      })
+
+      res.status(201).json(dto)
+    }
 }
