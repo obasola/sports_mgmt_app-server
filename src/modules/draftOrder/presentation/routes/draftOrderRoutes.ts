@@ -36,6 +36,18 @@ const ComputeProjectionQuerySchema = z
   })
   .passthrough()
 
+const QueueJobQuerySchema = z
+  .object({
+    seasonYear: z.string().regex(/^\d{4}$/),
+    seasonType: z.coerce.number().int().min(1).max(3).default(2),
+    throughWeek: z.coerce.number().int().min(0).max(25).optional(),
+  })
+  .passthrough()
+
+const QueueProjectionJobQuerySchema = QueueJobQuerySchema.extend({
+  strategy: z.string().min(1).max(64).optional(),
+})
+
 export function buildDraftOrderRoutes(controller: DraftOrderController): Router {
   const router = Router()
 
@@ -58,6 +70,7 @@ export function buildDraftOrderRoutes(controller: DraftOrderController): Router 
     const parsed = ComputeProjectionQuerySchema.parse(req.query)
     return controller.computeProjection(parsed)(req, res)
   })
+
 
   return router
 }

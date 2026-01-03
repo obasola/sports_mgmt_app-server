@@ -3,3 +3,8 @@ find src/modules/draftOrder -maxdepth 4 -type f
 
 find src/modules/draftSimulator -maxdepth 4 -type f
 
+find src/application/jobs -maxdepth 4 -type f
+find src/domain/jobs -maxdepth 4 -type f
+find src/infrastructure/jobs -maxdepth 4 -type f
+find src/presentation -maxdepth 4 -type f
+

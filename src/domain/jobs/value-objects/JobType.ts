@@ -1,34 +1,33 @@
-// ============================================================================
-// Jobs Module – Full DDD Implementation (TypeScript / Express / Prisma)
-// ----------------------------------------------------------------------------
-// Notes:
-// - This is a production-ready baseline adhering to DDD + SOLID and your
-//   layered architecture. It wires repositories (Prisma), application services,
-//   an in-process runner (pluggable handlers), a cron scheduler, and HTTP
-//   controllers with SSE log streaming.
-// - Minimal external deps: express, node-cron, @prisma/client, zod (for DTO
-//   validation). You can remove zod if you prefer manual validation.
-// - Replace the placeholder handler impls in InProcessJobRunner with your real
-//   importers (SyncTeamsService, BackfillSeasonService) via dependency injection.
-// - Add to your existing server: import { mountJobRoutes, createJobModule } and
-//   call mountJobRoutes(app, createJobModule(prisma)).
-// ============================================================================
-
-// ===================== DOMAIN LAYER =========================================
-
 // src/domain/jobs/value-objects/JobType.ts
-export enum JobType {
-  SYNC_TEAMS = 'syncTeams',
-  SCOREBOARD_SYNC = 'SCOREBOARD_SYNC',
-  BACKFILL_SEASON = 'backfillSeason',
 
+/**
+ * Canonical JobType values stored in Job.type (VARCHAR).
+ *
+ * IMPORTANT:
+ * - Keep these values stable: they are persisted in DB.
+ * - Use SCREAMING_SNAKE_CASE to match existing Job rows.
+ */
+export enum JobType {
+  // Existing DB-visible types (you already have rows with these)
+  IMPORT_NFL_SEASON = 'IMPORT_NFL_SEASON',
+  IMPORT_SCORES_WEEK = 'IMPORT_SCORES_WEEK',
+  SYNC_TEAMS = 'SYNC_TEAMS',
+  ENRICHMENT = 'ENRICHMENT',
+  PLAYER_SYNC = 'PLAYER_SYNC',
+
+  // Present in codebase / expected
+  IMPORT_SCORES_DATE = 'IMPORT_SCORES_DATE',
+  NFL_EVENTS_WEEKLY = 'NFL_EVENTS_WEEKLY',
+
+  // Legacy/other (keep if referenced anywhere)
+  SCOREBOARD_SYNC = 'SCOREBOARD_SYNC',
+  BACKFILL_SEASON = 'BACKFILL_SEASON',
+
+  // NEW
+  DRAFT_ORDER_COMPUTE = 'DRAFT_ORDER_COMPUTE',
+
+  // Optional future types (only keep if you actually use them)
   PF_DRAFT_SCRAPER = 'PF_DRAFT_SCRAPER',
   ESPN_PLAYER_IMPORT = 'ESPN_PLAYER_IMPORT',
   NFL_STATS_IMPORT = 'NFL_STATS_IMPORT',
-  IMPORT_SCORES_WEEK = 'IMPORT_SCORES_WEEK', // ← add this
-  IMPORT_SCORES_DATE = 'IMPORT_SCORES_DATE', 
-  NFL_EVENTS_WEEKLY = 'NFL_EVENTS_WEEKLY',
 }
-
-
-

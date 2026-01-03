@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { JobService } from './JobService';
 
-import type { JobType, JobStatus } from '../types/job-enums';
+import type { JobType } from '@/services/JobService'  // ALWAYS use this
 import { prisma as PrismaClient} from '../infrastructure/prisma';
 
 
