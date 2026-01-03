@@ -15,6 +15,7 @@ import { GetDraftOrderSnapshotByIdUseCaseImpl } from '@/modules/draftOrder/appli
 
 import { DraftOrderController } from '@/modules/draftOrder/presentation/controllers/DraftOrderController'
 import { buildDraftOrderRoutes } from '@/modules/draftOrder/presentation/routes/draftOrderRoutes'
+import { ComputeProjectedDraftOrderUseCaseImpl } from './application/usecases/impl/ComputeProjectedDraftOrderUseCaseImpl'
 
 export function buildDraftOrderModule(prisma: PrismaClient): Router {
   const snapshotRepo: DraftOrderSnapshotRepository = new PrismaDraftOrderSnapshotRepository(prisma)
@@ -25,7 +26,8 @@ export function buildDraftOrderModule(prisma: PrismaClient): Router {
 
   const computeSvc = new ComputeCurrentDraftOrderService()
   const computeCurrentUc = new ComputeCurrentDraftOrderUseCaseImpl(gamesRepo, snapshotRepo, computeSvc)
+  const computeProjectedUc = new ComputeProjectedDraftOrderUseCaseImpl(gamesRepo, snapshotRepo, computeSvc)
 
-  const controller = new DraftOrderController(listUc, getByIdUc, computeCurrentUc)
+  const controller = new DraftOrderController(listUc, getByIdUc, computeCurrentUc,computeProjectedUc)
   return buildDraftOrderRoutes(controller)
 }

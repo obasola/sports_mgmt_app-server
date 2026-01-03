@@ -6,6 +6,8 @@ import type {
 } from '@/modules/draftOrder/domain/repositories/DraftOrderSnapshotRepository'
 import { sha256Hex } from '@/modules/draftOrder/application/utils/sha256'
 
+type DraftOrderMode = 'current' | 'projection'
+
 interface TeamAgg {
   wins: number
   losses: number
@@ -22,7 +24,6 @@ function winPct(w: number, l: number, t: number): number {
 }
 
 function toDec5(x: number): string {
-  // Prisma Decimal accepts string; keep stable precision
   return x.toFixed(5)
 }
 
@@ -56,8 +57,14 @@ export class ComputeCurrentDraftOrderService {
     seasonType: number
     throughWeek: number | null
     games: ReadonlyArray<GameFact>
+    // NEW (optional)
+    mode?: DraftOrderMode
+    strategy?: string | null
   }): { snapshot: CreateDraftOrderSnapshotRequest } {
     const { seasonYear, seasonType, throughWeek, games } = args
+    const mode: DraftOrderMode = args.mode ?? 'current'
+    const strategy: string | null = args.strategy ?? null
+    const isProjected: boolean = mode === 'projection'
 
     const teams = new Map<number, TeamAgg>()
 
@@ -96,7 +103,7 @@ export class ComputeCurrentDraftOrderService {
       }
     }
 
-    // SOS = opponents combined winPct (simple implementation; stable and deterministic)
+    // SOS = opponents combined winPct (simple; deterministic)
     const sosByTeam = new Map<number, number>()
     for (const [teamId, agg] of teams.entries()) {
       let oppW = 0
@@ -136,9 +143,6 @@ export class ComputeCurrentDraftOrderService {
       pointsAgainst: agg.pointsAgainst,
     }))
 
-    // Draft order: worst record first => winPct ASC.
-    // Tie: LOWER SOS picks earlier => sos ASC.
-    // Fallback: lower point differential picks earlier => (PF-PA) ASC.
     rows.sort((a, b) => {
       if (a.winPct !== b.winPct) return a.winPct - b.winPct
       if (a.sos !== b.sos) return a.sos - b.sos
@@ -177,7 +181,7 @@ export class ComputeCurrentDraftOrderService {
         teamId: r.teamId,
         draftSlot: idx + 1,
         isPlayoff: false,
-        isProjected: false,
+        isProjected,
         wins: r.wins,
         losses: r.losses,
         ties: r.ties,
@@ -189,7 +193,6 @@ export class ComputeCurrentDraftOrderService {
       }
     })
 
-    // ---- inputHash: include stable digest of game facts used ----
     const gameDigest: GameDigest[] = games
       .map((g) => ({
         id: String(g.gameId),
@@ -203,18 +206,18 @@ export class ComputeCurrentDraftOrderService {
 
     const inputHash = sha256Hex(
       JSON.stringify({
-        mode: 'current',
-        strategy: null,
+        mode,
+        strategy,
         seasonYear,
         seasonType,
-        throughWeek, // null vs number is preserved and intentional
+        throughWeek,
         games: gameDigest,
       })
     )
 
     const snapshot: CreateDraftOrderSnapshotRequest = {
-      mode: 'current',
-      strategy: null,
+      mode,
+      strategy,
       seasonYear,
       seasonType,
       throughWeek,
