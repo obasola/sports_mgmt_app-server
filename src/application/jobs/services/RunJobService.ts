@@ -3,9 +3,16 @@ import { JobRepository } from '../../../domain/jobs/repositories/JobRepository';
 import { JobLogRepository } from '../../../domain/jobs/repositories/JobLogRepository';
 import { Job } from '../../../domain/jobs/entities/Job';
 import { JobStatus } from '../../../domain/jobs/value-objects/JobStatus';
-import { InProcessJobRunner, RunResult } from '../../../infrastructure/queue/InProcessJobRunner';
+//import { InProcessJobRunner, RunResult } from '../../../infrastructure/queue/InProcessJobRunner';
+import { InProcessJobRunner } from '../../../infrastructure/queue/InProcessJobRunner';
 import { JobLogEmitter } from '../../../infrastructure/queue/JobLogEmitter';
 import { JobLog, LogLevel } from '@/domain/jobs/entities/JobLog';
+
+// InProcessJobRunner.ts
+export type RunResult = {
+  readonly code?: string
+  readonly result?: Record<string, unknown> | null
+}
 
 export class RunJobService {
   constructor(
@@ -45,7 +52,9 @@ export class RunJobService {
       });
 
       // Map RunResult fields to your Job.complete(...) shape
-      job.complete(res.code ?? 'OK', (res as any).result ?? (res as any).data ?? null);
+      
+      //job.complete(res.code ?? 'OK', (res as any).result ?? (res as any).data ?? null);
+      job.complete(res.code ?? 'OK', res.result ?? null)
       await this.jobs.update(job);
       return job;
     } catch (err: any) {

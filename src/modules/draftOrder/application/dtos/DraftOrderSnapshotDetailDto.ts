@@ -1,3 +1,4 @@
+// src/modules/draftOrder/application/dtos/DraftOrderSnapshotDetail.dto
 import { Prisma } from "@prisma/client"
 
 export interface DraftOrderTeamInfoDto {
