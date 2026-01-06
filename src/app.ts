@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { apiRoutes } from './presentation/routes';
 import { errorHandler } from './presentation/middleware/errorHandler';
+import { prisma } from './infrastructure/prisma';
 
 const app = express();
 
@@ -21,22 +22,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API routes
-//app.use(`/api/${process.env.API_VERSION || ''}`, apiRoutes);
 app.use(`/api`, apiRoutes);
- 
 
-// Error handling
-app.use(errorHandler);
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-  });
+// 404 handler — MUST come before errorHandler
+app.use('*', (req, res, next) => {
+  const err: any = new Error('Route not found');
+  err.statusCode = 404;
+  next(err);
 });
 
-// Add this debug logging
+// Error handling — MUST be last
+app.use(errorHandler);
+
+// Debug logging (unchanged)
 app._router.stack.forEach((middleware: any) => {
   if (middleware.route) {
     console.log('📍 Route:', middleware.route.path);
@@ -51,4 +49,5 @@ app._router.stack.forEach((middleware: any) => {
 
 console.log('🔍 All routes registered. Testing endpoint...');
 console.log('🧪 Test: curl http://localhost:5000/api/draftpicks/relations/team/1/year/2025');
+
 export { app };

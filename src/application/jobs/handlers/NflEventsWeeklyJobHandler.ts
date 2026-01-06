@@ -1,3 +1,4 @@
+// src/application/jobs/handlers/NflEventsWeeklyJobHandler.ts
 import { Job } from '@/domain/jobs/entities/Job'
 import { JobHandler } from '@/infrastructure/queue/InProcessJobRunner'
 import { SyncWeekEventsService } from '@/application/schedule/services/SyncWeekEventsService'

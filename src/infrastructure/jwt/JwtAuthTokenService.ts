@@ -1,5 +1,5 @@
 // src/infrastructure/jwt/JwtAuthTokenService.ts
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt, { JwtPayload, TokenExpiredError } from "jsonwebtoken";
 import crypto from 'crypto';
 import type { AuthTokenService } from '@/domain/auth/services/AuthTokenService';
 
@@ -51,22 +51,34 @@ export class JwtAuthTokenService implements AuthTokenService {
 
     try {
       decoded = jwt.verify(token, this.accessSecret) as AccessTokenPayload;
-    } catch {
-      throw new Error('Invalid or expired access token');
+    } catch (err) {
+      if (err instanceof TokenExpiredError) {
+        const e = new Error("JWT_EXPIRED");
+        (e as any).statusCode = 401;
+        throw e;
+      }
+
+      const e = new Error("JWT_INVALID");
+      (e as any).statusCode = 401;
+      throw e;
     }
 
-    if (!decoded || typeof decoded.userName !== 'string' || typeof decoded.sub !== 'string') {
-      throw new Error('Invalid token payload');
+    if (!decoded || typeof decoded.userName !== "string" || typeof decoded.sub !== "string") {
+      const e = new Error("JWT_INVALID_PAYLOAD");
+      (e as any).statusCode = 401;
+      throw e;
     }
 
     const personId = Number.parseInt(decoded.sub, 10);
     if (!Number.isFinite(personId)) {
-      throw new Error('Invalid person ID in token');
+      const e = new Error("JWT_INVALID_SUB");
+      (e as any).statusCode = 401;
+      throw e;
     }
 
     return {
       personId,
-      userName: decoded.userName,
+      userName: decoded.userName
     };
   }
 }

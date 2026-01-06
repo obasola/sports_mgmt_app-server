@@ -1,30 +1,50 @@
-// src/services/JobService.ts
 import { prisma } from '@/lib/prisma'
+import type { Prisma, data_processing_jobs_job_type } from '@prisma/client'
 
-export type JobType =
-  | 'PLAYER_SYNC' | 'TEAM_SYNC' | 'FULL_SYNC' | 'VALIDATION' | 'ENRICHMENT'
+export type JobType = data_processing_jobs_job_type
+
 export type JobStatus =
-  | 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+  | 'PENDING'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+
+function toPrismaJson(
+  v: Record<string, unknown> | undefined
+): Prisma.InputJsonValue | undefined {
+  if (!v) return undefined
+
+  // Ensure JSON-serializable (no Dates/functions/BigInt, etc.)
+  // JSON.parse returns unknown; we cast to Prisma.InputJsonValue safely.
+  const normalized: unknown = JSON.parse(JSON.stringify(v))
+  return normalized as Prisma.InputJsonValue
+}
 
 export class JobService {
-  static start(job_type: JobType, metadata?: Record<string, any>) {
+  static start(job_type: JobType, metadata?: Record<string, unknown>) {
     return prisma.data_processing_jobs.create({
       data: {
         job_type,
         status: 'PENDING',
         started_at: new Date(),
-        ...(metadata != null ? { metadata } : {}), // omit if null/undefined
+        ...(metadata ? { metadata: toPrismaJson(metadata) } : {}),
       },
     })
   }
+
   static markRunning(id: number) {
     return prisma.data_processing_jobs.update({
-      where: { id }, data: { status: 'RUNNING', started_at: new Date() }
+      where: { id },
+      data: { status: 'RUNNING', started_at: new Date() },
     })
   }
-  static finish(id: number, status: JobStatus, opts?: {
-    total?: number, processed?: number, failed?: number, error?: string
-  }) {
+
+  static finish(
+    id: number,
+    status: JobStatus,
+    opts?: { total?: number; processed?: number; failed?: number; error?: string }
+  ) {
     return prisma.data_processing_jobs.update({
       where: { id },
       data: {
@@ -34,22 +54,11 @@ export class JobService {
         processed_records: opts?.processed,
         failed_records: opts?.failed,
         error_message: opts?.error ?? undefined,
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     })
   }
-  /* Before
-  static progress(id: number, dProcessed = 0, dFailed = 0) {
-    return prisma.data_processing_jobs.update({
-      where: { id },
-      data: {
-        processed_records: { increment: dProcessed },
-        failed_records: { increment: dFailed },
-        updated_at: new Date()
-      }
-    })
-  */
-    // AFTER:
+
   static async progress(id: number, dProcessed = 0, dFailed = 0): Promise<void> {
     await prisma.data_processing_jobs.update({
       where: { id },
@@ -60,9 +69,15 @@ export class JobService {
       },
     })
   }
-  
-  static get(id: number) { return prisma.data_processing_jobs.findUnique({ where: { id } }) }
+
+  static get(id: number) {
+    return prisma.data_processing_jobs.findUnique({ where: { id } })
+  }
+
   static list(limit = 50) {
-    return prisma.data_processing_jobs.findMany({ orderBy: { created_at: 'desc' }, take: limit })
+    return prisma.data_processing_jobs.findMany({
+      orderBy: { created_at: 'desc' },
+      take: limit,
+    })
   }
 }

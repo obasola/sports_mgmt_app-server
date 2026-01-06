@@ -87,6 +87,7 @@ model Game {
   @@index([espnCompetitionId], map: "idx_game_competitionId")
   @@index([gameStatus], map: "idx_game_status")
   @@index([seasonYear, gameWeek], map: "idx_game_year_week")
+  @@index([seasonYear, seasonType, gameStatus, gameWeek], map: "idx_game_year_type_status_week")
 }
 
 model Person {
@@ -191,34 +192,36 @@ model PostSeasonResult {
 }
 
 model Prospect {
-  id                                        Int         @id @default(autoincrement())
-  firstName                                 String      @db.VarChar(45)
-  lastName                                  String      @db.VarChar(45)
-  position                                  String      @db.VarChar(10)
-  college                                   String      @db.VarChar(75)
-  height                                    Float       @db.Float
-  weight                                    Float       @db.Float
-  handSize                                  Float?      @db.Float
-  armLength                                 Float?      @db.Float
-  homeCity                                  String?     @db.VarChar(45)
-  homeState                                 String?     @db.VarChar(45)
-  fortyTime                                 Float?      @db.Float
-  tenYardSplit                              Float?      @db.Float
-  verticalLeap                              Float?      @db.Float
-  broadJump                                 Float?      @db.Float
-  threeCone                                 Float?      @db.Float
-  twentyYardShuttle                         Float?      @db.Float
+  id                                        Int                   @id @default(autoincrement())
+  firstName                                 String                @db.VarChar(45)
+  lastName                                  String                @db.VarChar(45)
+  position                                  String                @db.VarChar(10)
+  college                                   String                @db.VarChar(75)
+  height                                    Float                 @db.Float
+  weight                                    Float                 @db.Float
+  handSize                                  Float?                @db.Float
+  armLength                                 Float?                @db.Float
+  homeCity                                  String?               @db.VarChar(45)
+  homeState                                 String?               @db.VarChar(45)
+  fortyTime                                 Float?                @db.Float
+  tenYardSplit                              Float?                @db.Float
+  verticalLeap                              Float?                @db.Float
+  broadJump                                 Float?                @db.Float
+  threeCone                                 Float?                @db.Float
+  twentyYardShuttle                         Float?                @db.Float
   benchPress                                Int?
-  drafted                                   Boolean     @default(false)
-  draftYear                                 Int?        @db.Year
+  drafted                                   Boolean               @default(false)
+  draftYear                                 Int?                  @db.Year
   teamId                                    Int?
   draftPickId                               Int?
-  createdAt                                 DateTime?   @default(now()) @db.Timestamp(0)
-  updatedAt                                 DateTime?   @default(now()) @db.Timestamp(0)
-  DraftPick_DraftPick_prospectIdToProspect  DraftPick[] @relation("DraftPick_prospectIdToProspect")
+  createdAt                                 DateTime?             @default(now()) @db.Timestamp(0)
+  updatedAt                                 DateTime?             @default(now()) @db.Timestamp(0)
+  DraftPick_DraftPick_prospectIdToProspect  DraftPick[]           @relation("DraftPick_prospectIdToProspect")
+  DraftSimulationPick                       DraftSimulationPick[]
   Player                                    Player[]
-  DraftPick_Prospect_draftPickIdToDraftPick DraftPick?  @relation("Prospect_draftPickIdToDraftPick", fields: [draftPickId], references: [id], map: "fk_Prospect_DraftPick")
-  Team                                      Team?       @relation(fields: [teamId], references: [id], map: "fk_Prospect_Team")
+  DraftPick_Prospect_draftPickIdToDraftPick DraftPick?            @relation("Prospect_draftPickIdToDraftPick", fields: [draftPickId], references: [id], map: "fk_Prospect_DraftPick")
+  Team                                      Team?                 @relation(fields: [teamId], references: [id], map: "fk_Prospect_Team")
+  ProspectRanking                           ProspectRanking[]
 
   @@index([draftPickId], map: "fk_Prospect_DraftPick")
   @@index([teamId], map: "fk_Prospect_Team_idx")
@@ -253,25 +256,29 @@ model Schedule {
 }
 
 model Team {
-  id                                Int                @id @default(autoincrement())
-  name                              String             @unique(map: "uq_team_name") @db.VarChar(45)
-  city                              String?            @db.VarChar(45)
-  state                             String?            @db.VarChar(45)
-  conference                        String?            @db.VarChar(35)
-  division                          String?            @db.VarChar(20)
-  stadium                           String?            @db.VarChar(45)
-  scheduleId                        Int?
-  abbreviation                      String?            @unique(map: "abbreviation") @db.VarChar(255)
-  espnTeamId                        Int?               @unique(map: "espnTeamId")
-  DraftPick                         DraftPick[]
-  Game_Game_homeTeamIdToTeam        Game[]             @relation("Game_homeTeamIdToTeam")
-  Game_Game_awayTeamIdToTeam        Game[]             @relation("Game_awayTeamIdToTeam")
-  PlayerTeam                        PlayerTeam[]
-  PostSeasonResult                  PostSeasonResult[]
-  Prospect                          Prospect[]
-  Schedule_Schedule_teamIdToTeam    Schedule[]         @relation("Schedule_teamIdToTeam")
-  Schedule_Schedule_oppTeamIdToTeam Schedule[]         @relation("Schedule_oppTeamIdToTeam")
-  TeamNeed                          TeamNeed[]
+  id                                                           Int                   @id @default(autoincrement())
+  name                                                         String                @unique(map: "uq_team_name") @db.VarChar(45)
+  city                                                         String?               @db.VarChar(45)
+  state                                                        String?               @db.VarChar(45)
+  conference                                                   String?               @db.VarChar(35)
+  division                                                     String?               @db.VarChar(20)
+  stadium                                                      String?               @db.VarChar(45)
+  scheduleId                                                   Int?
+  abbreviation                                                 String?               @unique(map: "abbreviation") @db.VarChar(255)
+  espnTeamId                                                   Int?                  @unique(map: "espnTeamId")
+  DraftOrderEntry                                              DraftOrderEntry[]
+  DraftPick                                                    DraftPick[]
+  DraftSimulationPick_DraftSimulationPick_currentTeamIdToTeam  DraftSimulationPick[] @relation("DraftSimulationPick_currentTeamIdToTeam")
+  DraftSimulationPick_DraftSimulationPick_originalTeamIdToTeam DraftSimulationPick[] @relation("DraftSimulationPick_originalTeamIdToTeam")
+  DraftSimulationTeam                                          DraftSimulationTeam[]
+  Game_Game_homeTeamIdToTeam                                   Game[]                @relation("Game_homeTeamIdToTeam")
+  Game_Game_awayTeamIdToTeam                                   Game[]                @relation("Game_awayTeamIdToTeam")
+  PlayerTeam                                                   PlayerTeam[]
+  PostSeasonResult                                             PostSeasonResult[]
+  Prospect                                                     Prospect[]
+  Schedule_Schedule_teamIdToTeam                               Schedule[]            @relation("Schedule_teamIdToTeam")
+  Schedule_Schedule_oppTeamIdToTeam                            Schedule[]            @relation("Schedule_oppTeamIdToTeam")
+  TeamNeed                                                     TeamNeed[]
 }
 
 model TeamNeed {
@@ -535,18 +542,19 @@ model workflow_step_results {
 }
 
 model Job {
-  id           Int        @id @default(autoincrement())
-  type         String     @db.VarChar(100)
-  payload      Json?
-  status       Job_status @default(pending)
-  createdAt    DateTime   @default(now())
-  startedAt    DateTime?
-  finishedAt   DateTime?
-  cancelAt     DateTime?
-  cancelReason String?    @db.VarChar(255)
-  resultCode   String?    @db.VarChar(50)
-  resultJson   Json?
-  logs         JobLog[]
+  id                 Int                  @id @default(autoincrement())
+  type               String               @db.VarChar(100)
+  payload            Json?
+  status             Job_status           @default(pending)
+  createdAt          DateTime             @default(now())
+  startedAt          DateTime?
+  finishedAt         DateTime?
+  cancelAt           DateTime?
+  cancelReason       String?              @db.VarChar(255)
+  resultCode         String?              @db.VarChar(50)
+  resultJson         Json?
+  DraftOrderSnapshot DraftOrderSnapshot[]
+  logs               JobLog[]
 
   @@index([status])
 }
@@ -645,6 +653,144 @@ model PersonIdentity {
   @@index([personId], map: "idx_person_identity_personId")
 }
 
+model DraftSimulation {
+  id                  Int                   @id @default(autoincrement())
+  draftYear           Int                   @db.Year
+  rounds              Int                   @db.TinyInt
+  draftSpeed          String                @db.VarChar(10)
+  rankingSource       String                @db.VarChar(20)
+  allowTrades         Boolean               @default(false)
+  cpuCpuTrades        Boolean               @default(false)
+  status              String                @db.VarChar(12)
+  currentOverallPick  Int                   @default(1) @db.SmallInt
+  createdAt           DateTime              @default(now()) @db.Timestamp(0)
+  updatedAt           DateTime              @default(now()) @db.Timestamp(0)
+  DraftSimulationPick DraftSimulationPick[]
+  DraftSimulationTeam DraftSimulationTeam[]
+
+  @@index([status], map: "idx_DraftSimulation_status")
+  @@index([draftYear], map: "idx_DraftSimulation_year")
+}
+
+model DraftSimulationPick {
+  id                                            Int             @id @default(autoincrement())
+  draftSimulationId                             Int
+  roundNbr                                      Int             @db.TinyInt
+  pickInRound                                   Int             @db.TinyInt
+  overallPick                                   Int             @db.SmallInt
+  originalTeamId                                Int
+  currentTeamId                                 Int
+  draftedProspectId                             Int?
+  draftedAt                                     DateTime?       @db.Timestamp(0)
+  createdAt                                     DateTime        @default(now()) @db.Timestamp(0)
+  updatedAt                                     DateTime        @default(now()) @db.Timestamp(0)
+  DraftSimulation                               DraftSimulation @relation(fields: [draftSimulationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_DSP_DraftSimulation")
+  Prospect                                      Prospect?       @relation(fields: [draftedProspectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_DSP_Prospect")
+  Team_DraftSimulationPick_currentTeamIdToTeam  Team            @relation("DraftSimulationPick_currentTeamIdToTeam", fields: [currentTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_DSP_Team_current")
+  Team_DraftSimulationPick_originalTeamIdToTeam Team            @relation("DraftSimulationPick_originalTeamIdToTeam", fields: [originalTeamId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_DSP_Team_original")
+
+  @@unique([draftSimulationId, overallPick], map: "uq_DSP_sim_overall")
+  @@index([draftedProspectId], map: "fk_DSP_Prospect")
+  @@index([currentTeamId], map: "fk_DSP_Team_current")
+  @@index([originalTeamId], map: "fk_DSP_Team_original")
+  @@index([draftSimulationId, draftedProspectId], map: "idx_DSP_sim_drafted")
+  @@index([draftSimulationId, roundNbr], map: "idx_DSP_sim_round")
+  @@index([draftSimulationId, currentTeamId], map: "idx_DSP_sim_team")
+}
+
+model DraftSimulationTeam {
+  id                Int             @id @default(autoincrement())
+  draftSimulationId Int
+  teamId            Int
+  isUserControlled  Boolean         @default(true)
+  createdAt         DateTime        @default(now()) @db.Timestamp(0)
+  updatedAt         DateTime        @default(now()) @db.Timestamp(0)
+  DraftSimulation   DraftSimulation @relation(fields: [draftSimulationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_DST_DraftSimulation")
+  Team              Team            @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_DST_Team")
+
+  @@unique([draftSimulationId, teamId], map: "uq_DraftSimulationTeam")
+  @@index([draftSimulationId], map: "idx_DST_sim")
+  @@index([teamId], map: "idx_DST_team")
+}
+
+model ProspectRanking {
+  id           Int      @id @default(autoincrement())
+  prospectId   Int
+  source       String   @db.VarChar(20)
+  overallRank  Int      @db.SmallInt
+  positionRank Int?     @db.SmallInt
+  grade        Decimal? @db.Decimal(5, 2)
+  createdAt    DateTime @default(now()) @db.Timestamp(0)
+  updatedAt    DateTime @default(now()) @db.Timestamp(0)
+  Prospect     Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_PR_Prospect")
+
+  @@unique([prospectId, source], map: "uq_ProspectRanking")
+  @@index([source, overallRank], map: "idx_PR_source_rank")
+}
+
+model DraftOrderEntry {
+  id                      Int                       @id @default(autoincrement())
+  snapshotId              Int
+  teamId                  Int
+  draftSlot               Int                       @db.UnsignedTinyInt
+  isPlayoff               Boolean
+  isProjected             Boolean
+  wins                    Int                       @db.UnsignedTinyInt
+  losses                  Int                       @db.UnsignedTinyInt
+  ties                    Int                       @db.UnsignedTinyInt
+  winPct                  Decimal                   @db.Decimal(6, 5)
+  sos                     Decimal                   @db.Decimal(6, 5)
+  pointsFor               Int?                      @db.UnsignedSmallInt
+  pointsAgainst           Int?                      @db.UnsignedSmallInt
+  createdAt               DateTime                  @default(now())
+  snapshot DraftOrderSnapshot @relation("DraftOrderSnapshot_entries", fields: [snapshotId], references: [id], onDelete: Cascade, map: "fk_draftorderentry_snapshot")
+  Team                    Team                      @relation(fields: [teamId], references: [id], onUpdate: NoAction, map: "fk_draftorderentry_team")
+  audits                  DraftOrderTiebreakAudit[]
+
+  @@unique([snapshotId, draftSlot], map: "uq_draftorderentry_snapshot_slot")
+  @@unique([snapshotId, teamId], map: "uq_draftorderentry_snapshot_team")
+  @@index([snapshotId], map: "ix_draftorderentry_snapshot")
+  @@index([teamId], map: "ix_draftorderentry_team")
+  @@map("DraftOrderEntry")
+}
+
+model DraftOrderSnapshot {
+  id              Int                     @id @default(autoincrement())
+  mode            DraftOrderSnapshot_mode
+  strategy        String?                 @db.VarChar(64)
+  seasonYear      String                  @db.VarChar(4)
+  seasonType      Int                     @db.UnsignedTinyInt
+  throughWeek     Int?                    @db.UnsignedTinyInt
+  source          String                  @default("internal") @db.VarChar(32)
+  inputHash       String                  @db.Char(64)
+  computedAt      DateTime                @default(now())
+  jobId           Int?
+  entries         DraftOrderEntry[]       @relation("DraftOrderSnapshot_entries")
+  Job             Job?                    @relation(fields: [jobId], references: [id], onUpdate: NoAction, map: "fk_draftordersnapshot_job")
+
+  @@unique([mode, strategy, seasonYear, seasonType, throughWeek, inputHash], map: "uq_draftordersnapshot_mode_strategy_season_week_hash")
+  @@index([jobId], map: "ix_draftordersnapshot_job")
+  @@index([mode, strategy, seasonYear, seasonType, throughWeek, computedAt], map: "ix_draftordersnapshot_lookup")
+  @@map("DraftOrderSnapshot")
+}
+
+model DraftOrderTiebreakAudit {
+  id              Int             @id @default(autoincrement())
+  entryId         Int
+  stepNbr         Int             @db.UnsignedSmallInt
+  ruleCode        String          @db.VarChar(64)
+  resultCode      String          @db.VarChar(64)
+  resultSummary   String          @db.VarChar(255)
+  detailsJson     Json?
+  createdAt       DateTime        @default(now())
+  DraftOrderEntry DraftOrderEntry @relation(fields: [entryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_draftordertiebreakaudit_entry")
+
+  @@unique([entryId, stepNbr], map: "uq_draftordertiebreakaudit_entry_step")
+  @@index([entryId], map: "ix_draftordertiebreakaudit_entry")
+  @@map("DraftOrderTiebreakAudit")
+}
+
+
 enum data_processing_jobs_job_type {
   PLAYER_SYNC
   TEAM_SYNC
@@ -652,6 +798,7 @@ enum data_processing_jobs_job_type {
   VALIDATION
   ENRICHMENT
 }
+
 
 enum data_processing_jobs_status {
   PENDING
@@ -763,3 +910,9 @@ enum Game_playoffConference {
   AFC
   NFC
 }
+
+enum DraftOrderSnapshot_mode {
+  current
+  projection
+}
+

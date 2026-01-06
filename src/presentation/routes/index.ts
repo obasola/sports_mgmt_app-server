@@ -21,8 +21,17 @@ import { teamStandingsRoutes } from "./teamStandingsRoutes";
 import { buildScoreboardRouter } from "../controllers/ScoreboardController";
 import draftPickRoutes from "./draftPickRoute";
 import { playoffsRoutes } from "./playoffsRoutes"; // 👈 NEW
+import { prisma } from "@/infrastructure/prisma";
+import { buildDraftSimulatorModule } from "@/modules/draftSimulator/moduleFactory";
+import { buildDraftOrderModule } from "@/modules/draftOrder/moduleFactory";
+
+import { queueJobService, runJobService } from '@/infrastructure/dependencies'
+import { DraftOrderJobController } from '@/modules/draftOrder/presentation/controllers/DraftOrderJobController'
+import { buildDraftOrderJobRoutes } from '@/modules/draftOrder/presentation/routes/draftOrderJobRoutes'
 
 const router = Router();
+const draftOrderJobController = new DraftOrderJobController(queueJobService, runJobService)
+
 
 /* ─────────────────────────────
  * AUTH
@@ -50,6 +59,8 @@ router.use("/draftpicks", draftPickRoutes);
 router.use("/standings", standingsRoutes);
 router.use("/teamStandings", standingsRoutes);
 router.use("/scoreboard", buildScoreboardRouter());
+router.use('/draftSimulator', buildDraftSimulatorModule(prisma))
+router.use('/draft-order', buildDraftOrderModule(prisma))
 router.use("/playoffs", playoffsRoutes); // 👈 NEW
 
 
@@ -60,6 +71,7 @@ router.use("/jobs", jobRoutes);
 router.use("/jobs/kickoff/scoreboard", scoreboardJobs);
 router.use("/jobs/scoreboard/schedule", scoreboardScheduleRoutes);
 
+router.use('/draft-order/jobs', buildDraftOrderJobRoutes(draftOrderJobController))
 /* ─────────────────────────────
  * ROUTER-LOCAL HEALTH & INFO
  * (these live under /api/*)

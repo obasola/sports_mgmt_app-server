@@ -1,3 +1,4 @@
+// src/application/auth/register/RegisterUseCase.ts
 import { IPersonRepository } from "@/domain/person/repositories/IPersonRepository";
 import { PasswordHasher } from "@/domain/auth/services/PasswordHasher";
 import { SecureTokenGenerator } from "@/domain/auth/services/SecureTokenGenerator";

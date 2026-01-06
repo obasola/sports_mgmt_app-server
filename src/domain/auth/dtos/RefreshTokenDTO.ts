@@ -1,3 +1,4 @@
+// src/domain/auth/dtos/RefreshTokenDTO.ts
 export type RefreshTokenDTO = {
   id: number | null;
   createdAt: Date;

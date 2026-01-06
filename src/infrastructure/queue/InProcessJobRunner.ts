@@ -9,9 +9,6 @@ import {
 // ❌ removed: import { syncWeekEventsService } from '@/infrastructure/dependencies'
 // ⬆ this caused the circular import crash
 
-// Handlers are provided from DI, NOT pulled from dependencies.ts
-import { nflEventsWeeklyHandler } from '@/application/jobs/handlers/NflEventsWeeklyJobHandler'
-
 export type RunResult = { code?: string; result?: Record<string, unknown> }
 
 export interface RunnerContext {

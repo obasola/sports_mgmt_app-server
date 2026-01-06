@@ -1,3 +1,4 @@
+// ..server/src/application/schedule/services/GetWeekScheduleService.ts
 import { EspnScheduleClient } from "@/infrastructure/espn/EspnScheduleClient";
 import { WeekScheduleDTO } from "@/utils/schedule/scheduleTypes";
 

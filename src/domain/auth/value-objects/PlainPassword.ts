@@ -1,3 +1,4 @@
+// src/domain/auth/value-objects/PlainPassword.ts
 export class PlainPassword {
   private constructor(private readonly value: string) {}
 

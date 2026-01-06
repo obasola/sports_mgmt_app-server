@@ -1,3 +1,4 @@
+// src/application/auth/forgot-password/ForgotPasswordUseCase.ts
 import { IPersonRepository } from "@/domain/person/repositories/IPersonRepository";
 import { SecureTokenGenerator } from "@/domain/auth/services/SecureTokenGenerator";
 import { MailService } from "@/domain/mail/services/MailService";

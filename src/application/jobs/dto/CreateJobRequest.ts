@@ -38,7 +38,19 @@ export const CreateJobRequest = z.discriminatedUnion('type', [
       week: z.number().int(),
     }),
   }),
-
+  // ───────────────────────────────
+  // 4. DRAFT_ORDER_COMPUTE
+  // ───────────────────────────────
+  z.object({
+    type: z.literal(JobType.DRAFT_ORDER_COMPUTE),
+    payload: z.object({
+      mode: z.enum(['current', 'projection']),
+      strategy: z.string().min(1).max(64).optional(),
+      seasonYear: z.string().regex(/^\d{4}$/),
+      seasonType: z.nativeEnum(SeasonType),
+      throughWeek: z.number().int().min(0).max(25).nullable(),
+    }),
+  }),
 ]);
 
 export type CreateJobRequest = z.infer<typeof CreateJobRequest>;
