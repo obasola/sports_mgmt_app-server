@@ -37,6 +37,7 @@ export class GetDraftOrderSnapshotByIdUseCaseImpl implements GetDraftOrderSnapsh
         sos: e.sos,
         pointsFor: e.pointsFor,
         pointsAgainst: e.pointsAgainst,
+        teamId: e.teamId,
         team: {
           id: e.team.id,
           name: e.team.name,

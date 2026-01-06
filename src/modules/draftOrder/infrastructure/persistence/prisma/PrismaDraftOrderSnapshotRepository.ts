@@ -59,6 +59,7 @@ type EntryRow = Prisma.DraftOrderEntryGetPayload<{
     sos: true
     pointsFor: true
     pointsAgainst: true
+    team: true,
     Team: { select: { id: true; name: true; abbreviation: true } }
   }
 }>
@@ -236,6 +237,7 @@ export class PrismaDraftOrderSnapshotRepository implements DraftOrderSnapshotRep
       sos: e.sos.toString(),
       pointsFor: e.pointsFor,
       pointsAgainst: e.pointsAgainst,
+      teamId: e.teamId,
       team: { id: e.Team.id, name: e.Team.name, abbreviation: e.Team.abbreviation },
       audits: auditsByEntryId.get(e.id) ?? [],
     }))

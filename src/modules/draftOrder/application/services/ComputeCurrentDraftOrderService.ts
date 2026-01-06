@@ -62,13 +62,40 @@ type Row = {
   pointsAgainst: number
 }
 
-function mapCount<K extends string>(rows: ReadonlyArray<Row>, keyFn: (r: Row) => K): ReadonlyMap<K, number> {
-  const m = new Map<K, number>()
-  for (const r of rows) {
-    const k = keyFn(r)
-    m.set(k, (m.get(k) ?? 0) + 1)
+function pointDiff(r: Row): number {
+  return r.pointsFor - r.pointsAgainst
+}
+
+function cmpFinalDraftOrder(a: Row, b: Row): number {
+  if (a.winPct !== b.winPct) return a.winPct - b.winPct
+  if (a.sos !== b.sos) return a.sos - b.sos
+  const aDiff = pointDiff(a)
+  const bDiff = pointDiff(b)
+  if (aDiff !== bDiff) return aDiff - bDiff
+  return a.teamId - b.teamId
+}
+
+/**
+ * Returns contiguous groups where keys are equal according to cmpSameGroup.
+ * Expects `rows` already sorted by the grouping key(s) that define adjacency.
+ */
+function findTieGroups(
+  rows: readonly Row[],
+  sameGroup: (a: Row, b: Row) => boolean
+): ReadonlyArray<readonly Row[]> {
+  const groups: Row[][] = []
+  let i = 0
+  while (i < rows.length) {
+    const g: Row[] = [rows[i]]
+    let j = i + 1
+    while (j < rows.length && sameGroup(rows[j - 1], rows[j])) {
+      g.push(rows[j])
+      j++
+    }
+    if (g.length > 1) groups.push(g)
+    i = j
   }
-  return m
+  return groups
 }
 
 export class ComputeCurrentDraftOrderService {
@@ -135,7 +162,7 @@ export class ComputeCurrentDraftOrderService {
       }
     }
 
-    // SOS = opponents combined winPct (simple + deterministic)
+    // SOS = opponents combined winPct (simple; deterministic)
     const sosByTeam = new Map<number, number>()
     for (const [teamId, agg] of teams.entries()) {
       let oppW = 0
@@ -164,97 +191,80 @@ export class ComputeCurrentDraftOrderService {
       pointsAgainst: agg.pointsAgainst,
     }))
 
-    // Stable ordering keys
-    rows.sort((a, b) => {
-      if (a.winPct !== b.winPct) return a.winPct - b.winPct
-      if (a.sos !== b.sos) return a.sos - b.sos
-      const aDiff = a.pointsFor - a.pointsAgainst
-      const bDiff = b.pointsFor - b.pointsAgainst
-      if (aDiff !== bDiff) return aDiff - bDiff
-      return a.teamId - b.teamId
-    })
+    // Sort using the full comparator you actually use to assign slots.
+    rows.sort(cmpFinalDraftOrder)
 
-    // --------- CLEAN “only the tie-breaker that resolved the tie” audits ---------
-    // Use DECIMAL-STRING keys to avoid float equality traps.
-    const winKey = (r: Row): string => toDec5(r.winPct)
-    const sosKey = (r: Row): string => `${toDec5(r.winPct)}|${toDec5(r.sos)}`
-    const diffKey = (r: Row): string =>
-      `${toDec5(r.winPct)}|${toDec5(r.sos)}|${String(r.pointsFor - r.pointsAgainst)}`
+    // Determine which tiebreak steps were actually needed per row.
+    // Strategy:
+    // - Everyone gets step 1 (WIN_PCT).
+    // - If there is any tie on winPct group that spans >1 teams, then those teams also get step 2.
+    // - Within winPct ties, if there are ties on (winPct,sos) groups >1 teams, those teams also get step 3.
+    const needsStep2 = new Set<number>()
+    const needsStep3 = new Set<number>()
 
-    const winCounts = mapCount(rows, winKey)
-    const sosCounts = mapCount(rows, sosKey)
-    const diffCounts = mapCount(rows, diffKey)
-
-    const buildAudit = (r: Row): CreateDraftOrderTiebreakAuditRequest[] => {
-      const wk = winKey(r)
-      const winGroupSize = winCounts.get(wk) ?? 0
-
-      // No tie at all -> no audit
-      if (winGroupSize <= 1) return []
-
-      const sk = sosKey(r)
-      const sosGroupSize = sosCounts.get(sk) ?? 0
-      if (sosGroupSize <= 1) {
-        // Tie existed at WIN_PCT; SOS resolved it for this team
-        return [
-          {
-            stepNbr: 2,
-            ruleCode: 'SOS',
-            resultCode: 'APPLIED',
-            resultSummary: `sos=${toDec5(r.sos)}`,
-            detailsJson: { winPct: toDec5(r.winPct), winGroupSize },
-          },
-        ]
-      }
-
-      const dk = diffKey(r)
-      const diffGroupSize = diffCounts.get(dk) ?? 0
-      if (diffGroupSize <= 1) {
-        // Still tied after SOS; point diff resolved it for this team
-        const diff = r.pointsFor - r.pointsAgainst
-        return [
-          {
-            stepNbr: 3,
-            ruleCode: 'POINT_DIFF',
-            resultCode: 'APPLIED',
-            resultSummary: `diff=${diff}`,
-            detailsJson: {
-              winPct: toDec5(r.winPct),
-              sos: toDec5(r.sos),
-              pointsFor: r.pointsFor,
-              pointsAgainst: r.pointsAgainst,
-            },
-          },
-        ]
-      }
-
-      // Still tied after point diff -> deterministic fallback
-      return [
-        {
-          stepNbr: 4,
-          ruleCode: 'TEAM_ID',
-          resultCode: 'APPLIED',
-          resultSummary: `teamId=${r.teamId}`,
-          detailsJson: { note: 'deterministic fallback' },
-        },
-      ]
+    const winPctTies = findTieGroups(rows, (a, b) => a.winPct === b.winPct)
+    for (const g of winPctTies) {
+      for (const r of g) needsStep2.add(r.teamId)
     }
-    // --------------------------------------------------------------------------
 
-    const entries: CreateDraftOrderEntryRequest[] = rows.map((r, idx) => ({
-      teamId: r.teamId,
-      draftSlot: idx + 1,
-      isPlayoff: false,
-      isProjected,
-      wins: r.wins,
-      losses: r.losses,
-      ties: r.ties,
-      winPct: toDec5(r.winPct),
-      sos: toDec5(r.sos),
-      pointsFor: r.pointsFor,
-      pointsAgainst: r.pointsAgainst,
-      audits: buildAudit(r),
-    }))
+    // Within tied winPct groups, check (winPct,sos) ties
+    for (const g of winPctTies) {
+      const sorted = [...g].sort(cmpFinalDraftOrder) // ensure adjacency by sos/diff/teamId
+      const sosTies = findTieGroups(sorted, (a, b) => a.winPct === b.winPct && a.sos === b.sos)
+      for (const sg of sosTies) {
+        for (const r of sg) needsStep3.add(r.teamId)
+      }
+    }
+
+    const entries: CreateDraftOrderEntryRequest[] = rows.map((r, idx) => {
+      const audits: CreateDraftOrderTiebreakAuditRequest[] = []
+
+      // Step 1 always
+      audits.push({
+        stepNbr: 1,
+        ruleCode: 'WIN_PCT',
+        resultCode: 'APPLIED',
+        resultSummary: `winPct=${toDec5(r.winPct)}`,
+        detailsJson: { wins: r.wins, losses: r.losses, ties: r.ties },
+      })
+
+      // Step 2 only if it was needed (winPct tie group)
+      if (needsStep2.has(r.teamId)) {
+        audits.push({
+          stepNbr: 2,
+          ruleCode: 'SOS',
+          resultCode: 'APPLIED',
+          resultSummary: `sos=${toDec5(r.sos)}`,
+          detailsJson: null,
+        })
+      }
+
+      // Step 3 only if it was needed (still tied after SOS)
+      if (needsStep3.has(r.teamId)) {
+        audits.push({
+          stepNbr: 3,
+          ruleCode: 'POINT_DIFF',
+          resultCode: 'APPLIED',
+          resultSummary: `diff=${pointDiff(r)}`,
+          detailsJson: { pointsFor: r.pointsFor, pointsAgainst: r.pointsAgainst },
+        })
+      }
+
+      return {
+        teamId: r.teamId,
+        draftSlot: idx + 1,
+        isPlayoff: false,
+        isProjected,
+        wins: r.wins,
+        losses: r.losses,
+        ties: r.ties,
+        winPct: toDec5(r.winPct),
+        sos: toDec5(r.sos),
+        pointsFor: r.pointsFor,
+        pointsAgainst: r.pointsAgainst,
+        audits,
+      }
+    })
 
     const gameDigest: GameDigest[] = games
       .map((g) => ({

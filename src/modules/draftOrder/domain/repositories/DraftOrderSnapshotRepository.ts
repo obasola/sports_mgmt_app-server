@@ -61,6 +61,7 @@ export interface DraftOrderEntryDetail {
   readonly sos: string;
   readonly pointsFor: number | null;
   readonly pointsAgainst: number | null;
+  readonly teamId: number;
   readonly team: DraftOrderTeamInfo;
   readonly audits: readonly DraftOrderTiebreakAuditRow[];
 }

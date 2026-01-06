@@ -29,6 +29,7 @@ export interface DraftOrderEntryDetailDto {
   readonly sos: string
   readonly pointsFor: number | null
   readonly pointsAgainst: number | null
+  readonly teamId: number
   readonly team: DraftOrderTeamInfoDto
   readonly audits: readonly DraftOrderTiebreakAuditDto[]
 }
