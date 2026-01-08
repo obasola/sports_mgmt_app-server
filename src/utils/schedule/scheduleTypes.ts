@@ -3,6 +3,9 @@
 export type GameStatus = 'Scheduled' | 'In Progress' | 'Final' | 'Postponed';
 export type PrimetimeType = 'TNF' | 'SNF' | 'MNF' | null;
 
+export type PlayoffRound = 'WILD_CARD' | 'DIVISIONAL' | 'CONFERENCE' | 'SUPER_BOWL'
+export type PlayoffConference = 'AFC' | 'NFC'
+
 export interface WeekScheduleDTO {
   year: number;       // e.g., 2025
   seasonType: number; // 1 = preseason, 2 = regular, 3 = postseason
@@ -35,39 +38,51 @@ export interface ScoringPlayDTO {
   /** e.g. "Pass", "Rush", "FG", or null if ESPN doesn't provide it */
   type: string | null;
 }
-
 export interface NormalizedGameDTO {
-  id: number;
-
-  date: string | null;
+  id: number
+  date: string | null
   dateFormatted: {
     day: string;
     time: string;
-  };
+  }
 
-  homeTeamId: number | null;
-  homeTeamName: string;
-  homeLogoEspn: string;
-  homeLogoLocal: string;
-  homeScore: number | null;
-  homeWinner: boolean;
-  teamColorHome: string;
+  homeTeamId: number | null      // ESPN team id
+  homeTeamName: string
+  homeScore: number | null
+  homeWinner: boolean
+  homeLogoLocal: string | null
+  homeLogoEspn: string | null
+  teamColorHome: string
 
-  awayTeamId: number | null;
-  awayTeamName: string;
-  awayLogoEspn: string;
-  awayLogoLocal: string;
-  awayScore: number | null;
-  awayWinner: boolean;
-  teamColorAway: string;
+  awayTeamId: number | null      // ESPN team id
+  awayTeamName: string
+  awayScore: number | null
+  awayWinner: boolean
+  awayLogoLocal: string | null
+  awayLogoEspn: string | null
+  teamColorAway: string
 
-  status: GameStatus;
-  statusDetail: string;
+  status: GameStatus
+  statusDetail: string
 
-  isPrimetime: boolean;
-  primetimeType: PrimetimeType;
+  isPrimetime: boolean
+  primetimeType: string | null
 
-  // NEW: scoring text and full play list
-  scoringSummaryShort: string | null;
-  scoringPlays: ScoringPlayDTO[];
+  scoringSummaryShort: string | null
+  scoringPlays: ScoringPlayDTO[]
+
+  // ✅ ADD THESE (critical for bracket)
+  homeSeed?: number | null
+  awaySeed?: number | null
+
+  // ✅ ADD THESE (server will set them in /playoffBracket route)
+  isPlayoff?: boolean
+  playoffRound?: PlayoffRound | null
+  playoffConference?: PlayoffConference | null
+
+  // ✅ ADD THESE (server enriches from Team table)
+  homeTeamAbbrev?: string | null
+  awayTeamAbbrev?: string | null
+  homeTeamDbId?: number | null
+  awayTeamDbId?: number | null
 }

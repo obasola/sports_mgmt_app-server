@@ -16,6 +16,14 @@ export class EspnScheduleClient {
     const { data } = await axios.get(listUrl);
     const items = data.items ?? [];
 
+    const playoffRoundFromWeek = (w: number): 'WILD_CARD' | 'DIVISIONAL' | 'CONFERENCE' | 'SUPER_BOWL' | null => {
+      if (w === 1) return 'WILD_CARD'
+      if (w === 2) return 'DIVISIONAL'
+      if (w === 3) return 'CONFERENCE'
+      if (w === 4) return 'SUPER_BOWL'
+      return null
+    }
+
     const normalizedEvents = await Promise.all(
       items.map(async (item: any) => {
         try {
@@ -45,6 +53,14 @@ export class EspnScheduleClient {
             console.warn(`⚠️ Event ${eventId} missing home/away structure`);
             return null;
           }
+          console.log('competitor sample', competitors[0])
+
+          console.log("@@@@@@@@@@@@@@@@@@@@")
+          console.log("Home Seed: "+homeRaw)
+          console.log("Away Seed: "+awayRaw)
+          console.log("@@@@@@@@@@@@@@@@@@@@")
+          const homeSeed = this.readSeed(homeRaw)
+          const awaySeed = this.readSeed(awayRaw)
 
           // Fetch team objects
           const homeTeamObj = await this.fetchRefObject(homeRaw.team?.$ref);
@@ -55,6 +71,11 @@ export class EspnScheduleClient {
 
           const awayTeamName =
             awayTeamObj?.displayName || awayTeamObj?.shortDisplayName || awayTeamObj?.name || 'TBD';
+
+          const homeAbbrev = typeof homeTeamObj?.abbreviation === 'string' ? homeTeamObj.abbreviation : null
+          const awayAbbrev = typeof awayTeamObj?.abbreviation === 'string' ? awayTeamObj.abbreviation : null
+
+          const playoffRound = seasonType === 3 ? playoffRoundFromWeek(week) : null
 
           // ESPN logos
           const homeLogoEspn = homeTeamObj?.logos?.[0]?.href ?? null;
@@ -175,6 +196,8 @@ export class EspnScheduleClient {
 
             scoringSummaryShort,
             scoringPlays,
+            homeSeed,
+            awaySeed,
           };
 
           return game;
@@ -184,6 +207,26 @@ export class EspnScheduleClient {
         }
       })
     );
+
+    const readSeed = (c: unknown): number | null => {
+      if (!c || typeof c !== 'object') return null
+      const obj = c as Record<string, unknown>
+
+      const seed = obj.seed
+      if (typeof seed === 'number') return seed
+
+      const rank = obj.rank
+      if (typeof rank === 'number') return rank
+
+      const curatedRank = obj.curatedRank
+      if (curatedRank && typeof curatedRank === 'object') {
+        const cr = curatedRank as Record<string, unknown>
+        const cur = cr.current
+        if (typeof cur === 'number') return cur
+      }
+
+      return null
+    }
 
     return {
       year,
@@ -282,4 +325,24 @@ export class EspnScheduleClient {
       return [];
     }
   }
+  private readSeed(competitor: unknown): number | null {
+  if (!competitor || typeof competitor !== 'object') return null
+  const c = competitor as Record<string, unknown>
+
+  const seed = c.seed
+  if (typeof seed === 'number') return seed
+
+  const rank = c.rank
+  if (typeof rank === 'number') return rank
+
+  const curatedRank = c.curatedRank
+  if (curatedRank && typeof curatedRank === 'object') {
+    const cr = curatedRank as Record<string, unknown>
+    const cur = cr.current
+    if (typeof cur === 'number') return cur
+  }
+
+  return null
+}
+
 }

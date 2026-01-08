@@ -381,6 +381,12 @@ export class PrismaGameRepository implements IGameRepository {
         homeScore: true,
         awayScore: true,
         gameDate: true,
+        /* ✅ REQUIRED playoff fields 
+        isPlayoff: true,
+        playoffRound: true,
+        playoffConference: true,
+        homeSeed: true,
+        awaySeed: true, */
       },
       orderBy: [{ playoffRound: 'asc' }, { gameDate: 'asc' }],
     });

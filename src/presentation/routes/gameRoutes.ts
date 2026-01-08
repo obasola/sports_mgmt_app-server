@@ -52,7 +52,7 @@ const GameQueryInner = z
     year: z.string().regex(/^\d{4}$/).optional(),
     week: z.coerce.number().int().min(0).max(25).optional(),
     // allow 0/1 for seasonType flag
-    seasonType: z.coerce.number().int().min(0).max(1).optional(),
+    seasonType: z.coerce.number().int().min(1).max(3).optional(),
     gameStatus: z.string().optional(),
     gameCity: z.string().optional(),
     gameCountry: z.string().optional(),

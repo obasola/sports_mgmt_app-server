@@ -13,6 +13,7 @@ import { PlayoffSeedingService } from '@/application/playoffs/services/PlayoffSe
 import { GeneratePlayoffBracketService } from '@/application/playoffs/services/GeneratePlayoffBracketService';
 
 const router = Router();
+console.log('📦 LOADED playoffsRoutes from:', __filename)
 
 const gameRepo = new PrismaGameRepository(prismaClient);
 const standingsRepo = new PrismaStandingsRepository(prismaClient);
