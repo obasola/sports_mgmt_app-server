@@ -26,6 +26,19 @@ function pointDiff(s: TeamStanding): number {
   return pf - pa;
 }
 
+function recordFromStanding(team: TeamStanding, kind: 'division' | 'conference'): WLT | null {
+  const obj = team as unknown as Record<string, unknown>;
+
+  const w = safeNum(obj[`${kind}Wins`]);
+  const l = safeNum(obj[`${kind}Losses`]);
+
+  // ties are sometimes omitted; treat missing as 0
+  const tRaw = obj[`${kind}Ties`];
+  const t = safeNum(tRaw) ?? 0;
+
+  if (w === null || l === null) return null;
+  return { w, l, t };
+}
 export class PlayoffSeedingService {
   computePlayoffSeeds(standings: TeamStanding[], games: GameWithTeams[]): Record<number, number> {
     const finals = games.filter((g) => isFinal(g.gameStatus));
@@ -39,7 +52,7 @@ export class PlayoffSeedingService {
     const divisionTeams = (conf: Conference): Map<string, TeamStanding[]> => {
       const map = new Map<string, TeamStanding[]>();
       for (const s of confTeams(conf)) {
-        const div = String(s.division);
+        const div = String(s.division).trim().toUpperCase();
         const list = map.get(div) ?? [];
         list.push(s);
         map.set(div, list);
@@ -136,16 +149,24 @@ export class PlayoffSeedingService {
     return pct(r);
   }
 
+  private headToHeadDelta(a: TeamStanding, b: TeamStanding, finals: GameWithTeams[]): number {
+    return this.headToHeadPct(a, b, finals) - this.headToHeadPct(b, a, finals);
+  }
+
   private divisionRecordPct(
     team: TeamStanding,
     finals: GameWithTeams[],
     byId: Map<number, TeamStanding>
   ): number {
-    const div = String(team.division);
+    const fromStanding = recordFromStanding(team, 'division');
+    if (fromStanding) return pct(fromStanding);
+
+    // Fallback: recompute from games (existing logic)
+    const div = String(team.division).trim().toUpperCase();
     const opps = new Set<number>();
     for (const s of byId.values()) {
       if (String(s.conference).toUpperCase() !== String(team.conference).toUpperCase()) continue;
-      if (String(s.division) !== div) continue;
+      if (String(s.division).trim().toUpperCase() !== div) continue;
       if (s.teamId !== team.teamId) opps.add(s.teamId);
     }
     return pct(this.recordVsOpponents(team.teamId, opps, finals));
@@ -156,6 +177,10 @@ export class PlayoffSeedingService {
     finals: GameWithTeams[],
     byId: Map<number, TeamStanding>
   ): number {
+    const fromStanding = recordFromStanding(team, 'conference');
+    if (fromStanding) return pct(fromStanding);
+
+    // Fallback: recompute from games (existing logic)
     const conf = String(team.conference).toUpperCase();
     const opps = new Set<number>();
     for (const s of byId.values()) {
@@ -339,7 +364,7 @@ export class PlayoffSeedingService {
     // 1) head-to-head, 2) division pct, 3) common games, 4) conference pct, 5) SOV, 6) SOS
     // (Later net points/TDs omitted here; add if you want.)
     return this.breakTieGeneric(tied, [
-      (a, b) => this.headToHeadPct(a, b, finals),
+      (a, b) => this.headToHeadDelta(a, b, finals),
       (a, b) => this.divisionRecordPct(a, finals, byId) - this.divisionRecordPct(b, finals, byId),
       (a, b, group) => {
         const common = this.commonOpponentsForTeams(group, opponentsByTeam, 0);
@@ -366,7 +391,7 @@ export class PlayoffSeedingService {
     // Wild card steps (early ones):
     // 1) head-to-head if applicable, 2) conf pct, 3) common games (min 4), 4) SOV, 5) SOS
     return this.breakTieGeneric(tied, [
-      (a, b) => this.headToHeadPct(a, b, finals),
+      (a, b) => this.headToHeadDelta(a, b, finals),
       (a, b) =>
         this.conferenceRecordPct(a, finals, byId) - this.conferenceRecordPct(b, finals, byId),
       (a, b, group) => {
