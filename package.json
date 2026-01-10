@@ -6,7 +6,10 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "npm run clean && tsc -p tsconfig.json && tsc-alias -p tsconfig.json --verbose",
-    "dev": "ts-node src/index.ts",
+    "dev:orig": "ts-node src/index.ts",
+    "dev": "nodemon",
+    "dev:watch": "nodemon",
+    "dev:once": "ts-node -r tsconfig-paths/register src/index.ts",
     "start": "node dist/index.js",
     "prod": "npm run build && node dist/index.js",
     "ingest": "ts-node -r tsconfig-paths/register src/cli/ingest.ts",

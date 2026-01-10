@@ -1,3 +1,4 @@
+// draftproanalytics-server/src/infrastructure/repositories/PrismaStandingsRepository.ts
 import { PrismaClient, Game_gameStatus } from '@prisma/client'
 import { ITeamStandingsRepository } from '@/domain/standings/repositories/ITeamStandingsRepository'
 import { TeamStanding } from '@/domain/standings/interface/TeamStanding'

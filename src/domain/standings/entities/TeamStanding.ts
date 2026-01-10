@@ -1,4 +1,4 @@
-// src/domain/standings/entities/TeamStanding.ts
+// draftproanalytics-server/src/domain/standings/entities/TeamStanding.ts
 export class TeamStanding {
   constructor(
     public teamId: number,
@@ -17,9 +17,8 @@ export class TeamStanding {
     public conferenceWins = 0,
     public conferenceLosses = 0,
     public conferenceRank = 0,
+    public playoffSeed: number | null = null,
     public pct = 0
- 
-  
   ) {}
 
   get winPct() {

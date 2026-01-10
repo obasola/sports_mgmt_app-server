@@ -2,6 +2,10 @@
 import { Team } from '../entities/Team';
 import { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 
+export interface TeamIdEspnPair {
+  id: number
+  espnTeamId: number
+}
 /** Extra filters to support ESPN mapping & fast lookups */
 export interface TeamFilters {
   name?: string;
@@ -74,10 +78,11 @@ export interface ITeamRepository {
 
   /** Fast id lookup by ESPN team id (preferred primary mapping). */
   findIdByEspnTeamId(espnTeamId: number): Promise<number | null>;
-
+  //findManyByEspnTeamIds(espnTeamIds: number[]): Promise<Array<{ id: number; espnTeamId: number }>>
   /** Retrieve full Team by ESPN team id. */
   findByEspnTeamId(espnTeamId: number): Promise<Team | null>;
-
+  findManyByIds(ids: number[]): Promise<TeamIdEspnPair[]>;
+  findManyByIdsWithEspnTeamId(dbIds: number[]): Promise<TeamIdEspnPair[]>;
   /** Fast id lookup by abbreviation (fallback mapping). */
   findIdByAbbreviation(abbreviation: string): Promise<number | null>;
 

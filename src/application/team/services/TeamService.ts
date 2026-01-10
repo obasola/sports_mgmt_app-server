@@ -1,5 +1,5 @@
 // src/application/team/services/TeamService.ts
-import { ITeamRepository } from '@/domain/team/repositories/ITeamRepository';
+import { ITeamRepository, TeamIdEspnPair } from '@/domain/team/repositories/ITeamRepository';
 import { Team } from '@/domain/team/entities/Team';
 import { NotFoundError, ConflictError } from '@/shared/errors/AppError';
 import { PaginatedResponse, PaginationParams } from '@/shared/types/common';
@@ -25,7 +25,9 @@ export class TeamService {
     if (dto.scheduleId) {
       const teamWithSchedule = await this.teamRepository.findByScheduleId(dto.scheduleId);
       if (teamWithSchedule) {
-        throw new ConflictError(`Schedule ID ${dto.scheduleId} is already assigned to another team`);
+        throw new ConflictError(
+          `Schedule ID ${dto.scheduleId} is already assigned to another team`
+        );
       }
     }
 
@@ -80,7 +82,9 @@ export class TeamService {
     if (dto.scheduleId && dto.scheduleId !== existingTeam.scheduleId) {
       const teamWithSchedule = await this.teamRepository.findByScheduleId(dto.scheduleId);
       if (teamWithSchedule && teamWithSchedule.id !== id) {
-        throw new ConflictError(`Schedule ID ${dto.scheduleId} is already assigned to another team`);
+        throw new ConflictError(
+          `Schedule ID ${dto.scheduleId} is already assigned to another team`
+        );
       }
     }
 
@@ -90,10 +94,7 @@ export class TeamService {
     }
 
     if (dto.city !== undefined || dto.state !== undefined) {
-      existingTeam.updateLocation(
-        dto.city ?? existingTeam.city,
-        dto.state ?? existingTeam.state
-      );
+      existingTeam.updateLocation(dto.city ?? existingTeam.city, dto.state ?? existingTeam.state);
     }
 
     if (dto.stadium !== undefined) {
@@ -156,6 +157,27 @@ export class TeamService {
     return teams.map((team) => this.toResponseDto(team));
   }
 
+  async getTeamIdByEspnTeamId(espnTeamId: number): Promise<TeamResponseDto | null> {
+    const team = await this.teamRepository.findByEspnTeamId(espnTeamId);
+    return team ? this.toResponseDto(team) : null;
+  }
+
+  async getTeamIdMapByEspnTeamIds(espnTeamIds: number[]): Promise<Record<number, number>> {
+    const rows = await this.teamRepository.findManyByIdsWithEspnTeamId(espnTeamIds);
+    const map: Record<number, number> = {};
+
+    for (const r of rows) {
+      map[r.espnTeamId] = r.id;
+    }
+    return map;
+  }
+
+  async getEspnTeamIdMapByDbTeamIds(dbTeamIds: number[]): Promise<Record<number, number>> {
+    const pairs: TeamIdEspnPair[] = await this.teamRepository.findManyByIds(dbTeamIds)
+    const map: Record<number, number> = {}
+    for (const p of pairs) map[p.id] = p.espnTeamId
+    return map
+  }
   async getTeamsByState(state: string): Promise<TeamResponseDto[]> {
     const teams = await this.teamRepository.findByState(state);
     return teams.map((team) => this.toResponseDto(team));
@@ -177,15 +199,16 @@ export class TeamService {
   }
 
   async getTeamStats(): Promise<TeamStatsResponseDto> {
-    const [conferenceBreakdown, divisionBreakdown, allTeams, teamsWithSchedules] = await Promise.all([
-      this.teamRepository.countByConference(),
-      this.teamRepository.countByDivision(),
-      this.teamRepository.findAll(),
-      this.teamRepository.findTeamsWithSchedules(),
-    ]);
+    const [conferenceBreakdown, divisionBreakdown, allTeams, teamsWithSchedules] =
+      await Promise.all([
+        this.teamRepository.countByConference(),
+        this.teamRepository.countByDivision(),
+        this.teamRepository.findAll(),
+        this.teamRepository.findTeamsWithSchedules(),
+      ]);
 
     const totalTeams = allTeams.pagination.total;
-    const teamsWithStadiums = allTeams.data.filter(team => team.stadium).length;
+    const teamsWithStadiums = allTeams.data.filter((team) => team.stadium).length;
 
     return {
       totalTeams,
@@ -198,7 +221,7 @@ export class TeamService {
 
   private toResponseDto(team: Team): TeamResponseDto {
     const location = team.getLocation();
-    
+
     return {
       id: team.id!,
       name: team.name,

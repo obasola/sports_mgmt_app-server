@@ -53,19 +53,20 @@ export class EspnScheduleClient {
             console.warn(`⚠️ Event ${eventId} missing home/away structure`);
             return null;
           }
-          console.log('competitor sample', competitors[0])
-
+          //console.log('competitor sample', competitors[0])
+          /*
           console.log("@@@@@@@@@@@@@@@@@@@@")
           console.log("Home Seed: "+homeRaw)
           console.log("Away Seed: "+awayRaw)
           console.log("@@@@@@@@@@@@@@@@@@@@")
+          */
           const homeSeed = this.readSeed(homeRaw)
           const awaySeed = this.readSeed(awayRaw)
 
           // Fetch team objects
           const homeTeamObj = await this.fetchRefObject(homeRaw.team?.$ref);
           const awayTeamObj = await this.fetchRefObject(awayRaw.team?.$ref);
-
+          
           const homeTeamName =
             homeTeamObj?.displayName || homeTeamObj?.shortDisplayName || homeTeamObj?.name || 'TBD';
 
@@ -254,9 +255,7 @@ export class EspnScheduleClient {
       return null;
     }
   }
-
   // ... inside class EspnScheduleClient { ... }
-
   private async fetchScoringPlays(eventId: number): Promise<ScoringPlayDTO[]> {
     const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${eventId}`;
 
@@ -343,6 +342,6 @@ export class EspnScheduleClient {
   }
 
   return null
-}
-
+  }
+  
 }

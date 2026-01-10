@@ -1,3 +1,4 @@
+// draftproanalytics-server/src/application/standings/mappers/StandingsMapper.ts
 import { TeamStanding } from '@/domain/standings/entities/TeamStanding';
 import { TeamStandingDto } from '../dto/TeamStandingDto';
 
@@ -20,6 +21,7 @@ export class StandingsMapper {
       divisionLosses: entity.divisionLosses ?? 0,
       conferenceWins: entity.conferenceWins ?? 0,
       conferenceLosses: entity.conferenceLosses ?? 0,
+      playoffSeed: entity.playoffSeed ?? null,
     };
   }
 

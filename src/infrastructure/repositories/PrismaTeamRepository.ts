@@ -9,8 +9,14 @@ import { Team } from '@/domain/team/entities/Team';
 import { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 import { NotFoundError } from '@/shared/errors/AppError';
 import { prisma } from '../database/prisma';
+import { createLogger } from '@/utils/Logger';
 
+// In a service file
+
+type TeamIdEspnRow = { id: number; espnTeamId: number | null };
+type TeamIdEspnPair = { id: number; espnTeamId: number };
 export class PrismaTeamRepository implements ITeamRepository {
+  private logger = createLogger('TeamService');
   // -------------------------------------------------------------
   // Core CRUD
   // -------------------------------------------------------------
@@ -281,6 +287,42 @@ export class PrismaTeamRepository implements ITeamRepository {
   async findByEspnTeamId(espnTeamId: number): Promise<Team | null> {
     const t = await prisma.team.findFirst({ where: { espnTeamId } });
     return t ? Team.fromPersistence(t) : null;
+  }
+
+  // infrastructure repo
+  async findManyByIds(ids: number[]): Promise<TeamIdEspnPair[]> {
+    if (ids.length === 0) return []
+
+    const rows = await prisma.team.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, espnTeamId: true },
+    })
+    this.logger.debug("Rows found: "+rows.length)
+
+    // espnTeamId is nullable in Prisma, so filter and narrow
+    const out: TeamIdEspnPair[] = []
+    for (const r of rows) {
+      
+      if (typeof r.espnTeamId === 'number' && Number.isFinite(r.espnTeamId)) {
+        out.push({ id: r.id, espnTeamId: r.espnTeamId })
+        this.logger.debug("id: "+r.id+"  espnTeamId: "+r.espnTeamId)
+      }
+    }
+    return out
+  }
+  async findManyByIdsWithEspnTeamId(dbIds: number[]): Promise<TeamIdEspnPair[]> {
+    if (dbIds.length === 0) return [];
+
+    const rows = await prisma.team.findMany({
+      where: {
+        id: { in: dbIds },
+        espnTeamId: { not: null },
+      },
+      select: { id: true, espnTeamId: true },
+    });
+
+    // espnTeamId is guaranteed non-null due to the where clause above
+    return rows.map((r) => ({ id: r.id, espnTeamId: r.espnTeamId as number }));
   }
 
   async findIdByAbbreviation(abbreviation: string): Promise<number | null> {
