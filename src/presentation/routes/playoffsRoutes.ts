@@ -9,7 +9,7 @@ import { validateQuery } from '../middleware/validation';
 
 import { PrismaGameRepository } from '@/infrastructure/repositories/PrismaGameRepository';
 import { PrismaStandingsRepository } from '@/infrastructure/repositories/PrismaStandingsRepository';
-import { PlayoffSeedingService } from '@/application/playoffs/services/PlayoffSeedingService';
+import { PlayoffSeedingService } from '@/application/standings/services/PlayoffSeedingService';
 import { GeneratePlayoffBracketService } from '@/application/playoffs/services/GeneratePlayoffBracketService';
 
 const router = Router();

@@ -1,68 +1,69 @@
 // src/application/playoffs/services/builders/ProjectedBracketBuilder.ts
-import type {
-  PlayoffBracket,
-  PlayoffRoundGroup,
-} from '@/domain/playoffs/valueObjects/PlayoffBracket';
-import type {
-  PlayoffMatchup,
-  PlayoffConference,
-} from '@/domain/playoffs/valueObjects/PlayoffTypes';
-import type { TeamStanding } from '@/domain/standings/interface/TeamStanding';
-import type { SeededTeam } from '../PlayoffSeedingService';
-import { PlayoffSeedingService } from '../PlayoffSeedingService';
+import type { PlayoffBracket, PlayoffRoundGroup } from '@/domain/playoffs/valueObjects/PlayoffBracket'
+import type { PlayoffMatchup, PlayoffConference } from '@/domain/playoffs/valueObjects/PlayoffTypes'
+import type { IGameRepository } from '@/domain/game/repositories/IGameRepository'
+import type { TeamStanding } from '@/domain/standings/interface/TeamStanding'
+import type { GameWithTeams } from '@/application/standings/services/ComputeStandingsService'
+import { PlayoffSeedingService, SeededTeam } from '@/application/standings/services/PlayoffSeedingService'
+import { buildGamesWithTeams } from '@/application/standings/util/buildGamesWithTeams'
+
+const norm = (v: unknown): string => String(v ?? '').trim().toUpperCase()
+
+
 
 export class ProjectedBracketBuilder {
-  constructor(private readonly seeding: PlayoffSeedingService) {}
+  constructor(
+    private readonly gameRepo: IGameRepository,
+    private readonly seeding: PlayoffSeedingService
+  ) {}
 
-  public build(seasonYear: number, allStandings: TeamStanding[]): PlayoffBracket {
-    const afc = allStandings.filter((t) => t.conference === 'AFC');
-    const nfc = allStandings.filter((t) => t.conference === 'NFC');
-
-    const afcSeeds = this.seeding.computeSeeds(afc);
-    const nfcSeeds = this.seeding.computeSeeds(nfc);
-
-    const afcRounds = this.projectConference(seasonYear, 'AFC', afcSeeds);
-    const nfcRounds = this.projectConference(seasonYear, 'NFC', nfcSeeds);
-
-    return {
+  public async build(seasonYear: number, allStandings: TeamStanding[]): Promise<PlayoffBracket> {
+    const regularSeasonGames = await this.gameRepo.findRegularSeasonGames(undefined, String(seasonYear))
+    const gamesWithTeams = buildGamesWithTeams({
+      games: regularSeasonGames,
+      standings: allStandings,
+      
       seasonYear,
-      afcRounds,
-      nfcRounds,
-      superBowl: null,
-    };
+    });
+    
+
+    const afc = allStandings.filter((t) => norm(t.conference) === 'AFC')
+    const nfc = allStandings.filter((t) => norm(t.conference) === 'NFC')
+
+    const afcSeeds = this.seeding.computeSeeds(afc, gamesWithTeams)
+    const nfcSeeds = this.seeding.computeSeeds(nfc, gamesWithTeams)
+
+    const afcRounds = this.projectConference(seasonYear, 'AFC', afcSeeds)
+    const nfcRounds = this.projectConference(seasonYear, 'NFC', nfcSeeds)
+
+    return { seasonYear, afcRounds, nfcRounds, superBowl: null }
   }
 
-  private projectConference(
-    seasonYear: number,
-    conference: PlayoffConference,
-    seeds: SeededTeam[]
-  ): PlayoffRoundGroup[] {
-    const wc = this.projectWildCard(seasonYear, conference, seeds);
+  private projectConference(seasonYear: number, conference: PlayoffConference, seeds: SeededTeam[]): PlayoffRoundGroup[] {
+    const wc = this.projectWildCard(seasonYear, conference, seeds)
+    const wcWinners = wc.matchups.map((g) => this.pickWinner(g))
 
-    const wcWinners = wc.matchups.map((g) => this.pickWinner(g));
+    const div = this.projectDivisional(seasonYear, conference, seeds, wcWinners)
+    const divWinners = div.matchups.map((g) => this.pickWinner(g))
 
-    const div = this.projectDivisional(seasonYear, conference, seeds, wcWinners);
-    const divWinners = div.matchups.map((g) => this.pickWinner(g));
+    const conf = this.projectConferenceChamp(seasonYear, conference, divWinners)
 
-    const conf = this.projectConferenceChamp(seasonYear, conference, divWinners);
-
-    return [wc, div, conf];
+    return [wc, div, conf]
   }
 
-  private projectWildCard(
-    seasonYear: number,
-    conference: PlayoffConference,
-    seeds: SeededTeam[]
-  ): PlayoffRoundGroup {
+  private projectWildCard(seasonYear: number, conference: PlayoffConference, seeds: SeededTeam[]): PlayoffRoundGroup {
     const pairs = [
       { slot: '2v7', home: 2, away: 7 },
       { slot: '3v6', home: 3, away: 6 },
       { slot: '4v5', home: 4, away: 5 },
-    ];
+    ]
 
     const matchups: PlayoffMatchup[] = pairs.map((p) => {
-      const home = seeds.find((s) => s.seed === p.home)!;
-      const away = seeds.find((s) => s.seed === p.away)!;
+      const home = seeds.find((s) => s.seed === p.home)
+      const away = seeds.find((s) => s.seed === p.away)
+      if (!home || !away) {
+        throw new Error(`ProjectedBracketBuilder: missing seed(s) for ${conference} ${p.slot}`)
+      }
 
       return {
         gameId: null,
@@ -78,14 +79,10 @@ export class ProjectedBracketBuilder {
         awayScore: null,
         winnerTeamId: null,
         gameDate: null,
-      };
-    });
+      }
+    })
 
-    return {
-      round: 'WILDCARD',
-      conference,
-      matchups,
-    };
+    return { round: 'WILDCARD', conference, matchups }
   }
 
   private projectDivisional(
@@ -94,46 +91,25 @@ export class ProjectedBracketBuilder {
     seeds: SeededTeam[],
     wcWinners: number[]
   ): PlayoffRoundGroup {
-    // 1-seed must exist for this projection to make sense
-    const oneSeed = seeds.find((s) => s.seed === 1);
+    const oneSeed = seeds.find((s) => s.seed === 1)
     if (!oneSeed) {
-      return {
-        round: 'DIVISIONAL',
-        conference,
-        matchups: [],
-      };
+      return { round: 'DIVISIONAL', conference, matchups: [] }
     }
 
-    // Attach seeds to the WC winners
     const winnersWithSeeds: SeededTeam[] = wcWinners
       .map((teamId) => {
-        const info = seeds.find((s) => s.teamId === teamId);
-        if (!info) {
-          throw new Error(
-            `ProjectedBracketBuilder: missing seed info for teamId=${teamId}`
-          );
-        }
-        return info;
+        const info = seeds.find((s) => s.teamId === teamId)
+        if (!info) throw new Error(`ProjectedBracketBuilder: missing seed info for teamId=${teamId}`)
+        return info
       })
-      // sort by seed ASC → [best, middle, worst]
-      .sort((a, b) => a.seed - b.seed);
+      .sort((a, b) => a.seed - b.seed)
 
-    if (winnersWithSeeds.length !== 3) {
-      // Safety fallback – if something odd happens, don't blow up
-      return {
-        round: 'DIVISIONAL',
-        conference,
-        matchups: [],
-      };
-    }
+    if (winnersWithSeeds.length !== 3) return { round: 'DIVISIONAL', conference, matchups: [] }
 
-    const best = winnersWithSeeds[0];   // lowest number (e.g. 2)
-    const middle = winnersWithSeeds[1]; // next best (e.g. 3)
-    const worst = winnersWithSeeds[2];  // highest number (e.g. 4 = "lowest seed")
+    const best = winnersWithSeeds[0]
+    const middle = winnersWithSeeds[1]
+    const worst = winnersWithSeeds[2]
 
-    // NFL rule:
-    //  - 1-seed plays the *lowest* remaining seed (worst, largest number)
-    //  - remaining two play each other (home = better seed)
     const m1: PlayoffMatchup = {
       gameId: null,
       seasonYear,
@@ -148,7 +124,7 @@ export class ProjectedBracketBuilder {
       awayScore: null,
       winnerTeamId: null,
       gameDate: null,
-    };
+    }
 
     const m2: PlayoffMatchup = {
       gameId: null,
@@ -164,26 +140,20 @@ export class ProjectedBracketBuilder {
       awayScore: null,
       winnerTeamId: null,
       gameDate: null,
-    };
+    }
 
-    return {
-      round: 'DIVISIONAL',
-      conference,
-      matchups: [m1, m2],
-    };
+    return { round: 'DIVISIONAL', conference, matchups: [m1, m2] }
   }
 
-  private projectConferenceChamp(
-    seasonYear: number,
-    conference: PlayoffConference,
-    divWinners: number[]
-  ): PlayoffRoundGroup {
-    const match: PlayoffMatchup = {
+  private projectConferenceChamp(seasonYear: number, conference: PlayoffConference, divWinners: number[]): PlayoffRoundGroup {
+    if (divWinners.length !== 2) return { round: 'CONFERENCE', conference, matchups: [] }
+
+    const m: PlayoffMatchup = {
       gameId: null,
       seasonYear,
       round: 'CONFERENCE',
       conference,
-      slot: `${conference}_CONF_1`,
+      slot: `${conference}_CONF`,
       homeTeamId: divWinners[0],
       awayTeamId: divWinners[1],
       homeSeed: null,
@@ -192,19 +162,16 @@ export class ProjectedBracketBuilder {
       awayScore: null,
       winnerTeamId: null,
       gameDate: null,
-    };
+    }
 
-    return {
-      round: 'CONFERENCE',
-      conference,
-      matchups: [match],
-    };
+    return { round: 'CONFERENCE', conference, matchups: [m] }
   }
 
-  private pickWinner(game: PlayoffMatchup): number {
-    // For now: better seed (lower number) always wins
-    return (game.homeSeed ?? 99) < (game.awaySeed ?? 99)
-      ? game.homeTeamId!
-      : game.awayTeamId!;
+  private pickWinner(g: PlayoffMatchup): number {
+    // Simple projection: lower seed number wins; if missing seed, home wins.
+    if (typeof g.homeSeed === 'number' && typeof g.awaySeed === 'number') {
+      return g.homeSeed <= g.awaySeed ? g.homeTeamId ?? 0 : g.awayTeamId ?? 0
+    }
+    return g.homeTeamId ?? 0
   }
 }

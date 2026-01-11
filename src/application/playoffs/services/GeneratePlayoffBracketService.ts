@@ -9,9 +9,9 @@ import type {
 import type { ITeamStandingsRepository } from "@/domain/standings/repositories/ITeamStandingsRepository";
 import type { TeamStanding } from "@/domain/standings/interface/TeamStanding";
 
-import { PlayoffSeedingService } from "./PlayoffSeedingService";
 import { ActualBracketBuilder } from "./builders/ActualBracketBuilder";
 import { ProjectedBracketBuilder } from "./builders/ProjectedBracketBuilder";
+import { PlayoffSeedingService } from "@/application/standings/services/PlayoffSeedingService";
 
 export class GeneratePlayoffBracketService implements PlayoffBracketService {
   private readonly actualBuilder: ActualBracketBuilder;
@@ -26,7 +26,7 @@ export class GeneratePlayoffBracketService implements PlayoffBracketService {
       this.gameRepository,
       this.seedingService
     );
-    this.projectedBuilder = new ProjectedBracketBuilder(this.seedingService);
+    this.projectedBuilder = new ProjectedBracketBuilder(this.gameRepository,this.seedingService);
   }
 
   public async getBracketForSeason(
@@ -44,13 +44,13 @@ export class GeneratePlayoffBracketService implements PlayoffBracketService {
 
     if (effectiveMode === "projected") {
       // Purely simulated “if playoffs started today”
-      return this.projectedBuilder.build(seasonYear, allStandings);
+      return await this.projectedBuilder.build(seasonYear, allStandings);
     }
 
     // Actual bracket view: use any existing playoff games, fill gaps with projections
     const playoffGames: PlayoffGameSummary[] =
       await this.gameRepository.findPlayoffGamesBySeason(seasonYear);
 
-    return this.actualBuilder.build(seasonYear, allStandings, playoffGames);
+    return await this.actualBuilder.build(seasonYear, allStandings, playoffGames);
   }
 }
