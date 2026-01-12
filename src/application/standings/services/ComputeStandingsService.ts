@@ -60,14 +60,23 @@ export class ComputeStandingsService {
         const s = (g.gameStatus || '').toLowerCase()
         if (!s.includes('final') && s !== 'completed') continue
 
-
         home.pointsFor += homeScore
         home.pointsAgainst += awayScore
         away.pointsFor += awayScore
         away.pointsAgainst += homeScore
 
-        const sameDivision = homeTeam.division === awayTeam.division
-        const sameConference = homeTeam.conference === awayTeam.conference
+        // Normalize for comparison to handle case-insensitive matching
+        const norm = (v: string | undefined | null): string => 
+          String(v ?? '').trim().toUpperCase()
+        
+        const sameDivision = norm(homeTeam.division) === norm(awayTeam.division)
+        const sameConference = norm(homeTeam.conference) === norm(awayTeam.conference)
+
+        // Debug logging for NFC South games
+        if ((homeTeam.id === 62 || homeTeam.id === 66 || homeTeam.id === 88 || homeTeam.id === 92) &&
+            (awayTeam.id === 62 || awayTeam.id === 66 || awayTeam.id === 88 || awayTeam.id === 92)) {
+          console.log(`[ComputeStandings] NFC South game: ${homeTeam.name} (${norm(homeTeam.division)}) vs ${awayTeam.name} (${norm(awayTeam.division)}) - sameDivision: ${sameDivision}`)
+        }
 
         if (homeScore > awayScore) {
           home.wins++

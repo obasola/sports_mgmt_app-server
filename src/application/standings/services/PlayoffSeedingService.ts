@@ -67,7 +67,11 @@ export class PlayoffSeedingService {
 
   // ✅ Canonical seed map (AFC+NFC together)
   public computePlayoffSeeds(standings: TeamStanding[], games: GameWithTeams[]): Record<number, number> {
+    console.log('🔍 [PlayoffSeeding] ===== computePlayoffSeeds START =====')
+    console.log('🔍 [PlayoffSeeding] Input:', standings.length, 'teams,', games.length, 'games')
+    
     const finals = games.filter((g) => isFinal(g.gameStatus))
+    console.log('🔍 [PlayoffSeeding] Filtered to', finals.length, 'final games')
 
     const byId = new Map<TeamId, TeamStanding>()
     for (const s of standings) byId.set(s.teamId, s)
@@ -93,21 +97,67 @@ export class PlayoffSeedingService {
     const pickDivisionWinners = (conf: Conference): TeamStanding[] => {
       const divMap = divisionTeams(conf)
       const winners: TeamStanding[] = []
-      for (const [, teams] of divMap.entries()) {
-        const ordered = this.orderDivision(teams, finals, byId, opponentsByTeam)
-        if (ordered[0]) winners.push(ordered[0])
+      
+      console.log(`🔍 [PlayoffSeeding] ${conf}: Found ${divMap.size} divisions`)
+      
+      // Validate we have exactly 4 divisions
+      if (divMap.size !== 4) {
+        console.warn(
+          `[PlayoffSeeding] Expected 4 divisions in ${conf}, found ${divMap.size}:`,
+          Array.from(divMap.keys())
+        )
       }
+      
+      for (const [divName, teams] of divMap.entries()) {
+        console.log(`🔍 [PlayoffSeeding] ${conf} ${divName}: ${teams.length} teams -`, 
+          teams.map(t => `${t.teamId}:${t.wins}-${t.losses}`).join(', '))
+        
+        const ordered = this.orderDivision(teams, finals, byId, opponentsByTeam)
+        if (ordered[0]) {
+          console.log(`🔍 [PlayoffSeeding] ${conf} ${divName} winner: Team ${ordered[0].teamId} (${ordered[0].wins}-${ordered[0].losses})`)
+          winners.push(ordered[0])
+        } else {
+          console.warn(`[PlayoffSeeding] No winner found for division: ${divName}`)
+        }
+      }
+      
+      console.log(`🔍 [PlayoffSeeding] ${conf} total division winners: ${winners.length}`)
       return winners
     }
 
     const afcWinners = pickDivisionWinners('AFC')
     const nfcWinners = pickDivisionWinners('NFC')
+    
+    console.log(`🔍 [PlayoffSeeding] AFC winners before ordering:`, afcWinners.map(t => t.teamId))
+    console.log(`🔍 [PlayoffSeeding] NFC winners before ordering:`, nfcWinners.map(t => t.teamId))
+    
+    // Validate we have exactly 4 division winners per conference
+    if (afcWinners.length !== 4) {
+      console.warn(`[PlayoffSeeding] Expected 4 AFC division winners, found ${afcWinners.length}`)
+    }
+    if (nfcWinners.length !== 4) {
+      console.warn(`[PlayoffSeeding] Expected 4 NFC division winners, found ${nfcWinners.length}`)
+    }
 
-    const afcDivSeeded = this.orderWildCard(afcWinners, finals, byId, opponentsByTeam, 0)
-    const nfcDivSeeded = this.orderWildCard(nfcWinners, finals, byId, opponentsByTeam, 0)
+    // ✅ FIX: Use proper division winner ordering (cross-division tiebreakers)
+    const afcDivSeeded = this.orderDivisionWinners(afcWinners, finals, byId, opponentsByTeam)
+    const nfcDivSeeded = this.orderDivisionWinners(nfcWinners, finals, byId, opponentsByTeam)
 
-    for (let i = 0; i < afcDivSeeded.length; i++) seeds[afcDivSeeded[i].teamId] = i + 1
-    for (let i = 0; i < nfcDivSeeded.length; i++) seeds[nfcDivSeeded[i].teamId] = i + 1
+    console.log(`🔍 [PlayoffSeeding] AFC winners after ordering:`, afcDivSeeded.map(t => t.teamId))
+    console.log(`🔍 [PlayoffSeeding] NFC winners after ordering:`, nfcDivSeeded.map(t => t.teamId))
+
+    console.log('🔍 [PlayoffSeeding] Assigning seeds 1-4...')
+    for (let i = 0; i < afcDivSeeded.length; i++) {
+      const team = afcDivSeeded[i]
+      seeds[team.teamId] = i + 1
+      console.log(`🔍 [PlayoffSeeding] AFC Seed ${i + 1} → Team ${team.teamId}`)
+    }
+    
+    for (let i = 0; i < nfcDivSeeded.length; i++) {
+      const team = nfcDivSeeded[i]
+      seeds[team.teamId] = i + 1
+      console.log(`🔍 [PlayoffSeeding] NFC Seed ${i + 1} → Team ${team.teamId}`)
+    }
 
     const pickWildCards = (conf: Conference, alreadyIn: Set<number>): TeamStanding[] => {
       const pool = confTeams(conf).filter((s) => !alreadyIn.has(s.teamId))
@@ -133,6 +183,8 @@ export class PlayoffSeedingService {
     for (let i = 0; i < afcWc.length; i++) seeds[afcWc[i].teamId] = 5 + i
     for (let i = 0; i < nfcWc.length; i++) seeds[nfcWc[i].teamId] = 5 + i
 
+    console.log('🔍 [PlayoffSeeding] Final seeds:', seeds)
+    console.log('🔍 [PlayoffSeeding] ===== computePlayoffSeeds END =====')
     return seeds
   }
 
@@ -163,10 +215,25 @@ export class PlayoffSeedingService {
     return this.headToHeadPct(a, b, finals) - this.headToHeadPct(b, a, finals)
   }
 
-  private divisionRecordPct(team: TeamStanding, finals: GameWithTeams[], byId: Map<number, TeamStanding>): number {
-    const fromStanding = recordFromStanding(team, 'division')
-    if (fromStanding) return pct(fromStanding)
+  /**
+   * ✅ NEW: For multi-team ties, calculate each team's record against ALL other tied teams
+   * This is the correct NFL tiebreaker for 3+ team divisional ties
+   */
+  private headToHeadRecordInGroup(team: TeamStanding, group: TeamStanding[], finals: GameWithTeams[]): { w: number; l: number; t: number; pct: number } {
+    const opponents = new Set(group.filter(t => t.teamId !== team.teamId).map(t => t.teamId))
+    const record = this.recordVsOpponents(team.teamId, opponents, finals)
+    return {
+      w: record.w,
+      l: record.l,
+      t: record.t,
+      pct: pct(record)
+    }
+  }
 
+  private divisionRecordPct(team: TeamStanding, finals: GameWithTeams[], byId: Map<number, TeamStanding>): number {
+    // TEMPORARY FIX: Always calculate from games because TeamStanding.divisionWins/Losses are incorrect
+    // TODO: Fix ComputeStandingsService to populate divisionWins/divisionLosses correctly
+    
     const div = norm(team.division)
     const conf = norm(team.conference)
     const opps = new Set<number>()
@@ -175,13 +242,17 @@ export class PlayoffSeedingService {
       if (norm(s.division) !== div) continue
       if (s.teamId !== team.teamId) opps.add(s.teamId)
     }
-    return pct(this.recordVsOpponents(team.teamId, opps, finals))
+    
+    const record = this.recordVsOpponents(team.teamId, opps, finals)
+    const pctValue = pct(record)
+    console.log(`    [DivRecord] Team ${team.teamId}: Calculated ${record.w}-${record.l}-${record.t} = ${pctValue.toFixed(3)}`)
+    return pctValue
   }
 
   private conferenceRecordPct(team: TeamStanding, finals: GameWithTeams[], byId: Map<number, TeamStanding>): number {
-    const fromStanding = recordFromStanding(team, 'conference')
-    if (fromStanding) return pct(fromStanding)
-
+    // TEMPORARY FIX: Always calculate from games because TeamStanding.conferenceWins/Losses might be incorrect
+    // TODO: Verify ComputeStandingsService populates conferenceWins/conferenceLosses correctly
+    
     const conf = norm(team.conference)
     const opps = new Set<number>()
     for (const s of byId.values()) {
@@ -317,6 +388,30 @@ export class PlayoffSeedingService {
     return out
   }
 
+  /**
+   * ✅ NEW: Order division winners from different divisions (seeds 1-4)
+   * Uses cross-division tiebreaking rules per NFL guidelines
+   */
+  private orderDivisionWinners(
+    winners: TeamStanding[],
+    finals: GameWithTeams[],
+    byId: Map<number, TeamStanding>,
+    opponentsByTeam: Map<number, Set<number>>
+  ): TeamStanding[] {
+    const grouped = this.groupByWinPct(winners)
+
+    const out: TeamStanding[] = []
+    for (const tieGroup of grouped) {
+      if (tieGroup.length === 1) {
+        out.push(tieGroup[0])
+        continue
+      }
+      // Division winners use modified tiebreakers
+      out.push(...this.breakTieDivisionWinners(tieGroup, finals, byId, opponentsByTeam))
+    }
+    return out
+  }
+
   private orderWildCard(
     teams: TeamStanding[],
     finals: GameWithTeams[],
@@ -360,15 +455,111 @@ export class PlayoffSeedingService {
     byId: Map<number, TeamStanding>,
     opponentsByTeam: Map<number, Set<number>>
   ): TeamStanding[] {
+    if (tied.length > 1) {
+      console.log(`\n🔍 [Tiebreaker] Breaking tie for ${tied.length} teams:`, tied.map(t => `${t.teamId}(${t.wins}-${t.losses})`))
+    }
+    
     return this.breakTieGeneric(tied, [
-      (a, b) => this.headToHeadDelta(a, b, finals),
-      (a, b) => this.divisionRecordPct(a, finals, byId) - this.divisionRecordPct(b, finals, byId),
+      (a, b, group) => {
+        // For 3+ team ties, use record against all tied teams
+        if (group.length >= 3) {
+          const aRecord = this.headToHeadRecordInGroup(a, group, finals)
+          const bRecord = this.headToHeadRecordInGroup(b, group, finals)
+          const delta = aRecord.pct - bRecord.pct
+          if (delta !== 0) {
+            console.log(`  H2H vs Tied Teams: ${a.teamId}=${aRecord.w}-${aRecord.l}-${aRecord.t} (${aRecord.pct.toFixed(3)}) vs ${b.teamId}=${bRecord.w}-${bRecord.l}-${bRecord.t} (${bRecord.pct.toFixed(3)}) = ${delta > 0 ? a.teamId : b.teamId}`)
+          }
+          return delta
+        }
+        // For 2-team ties, use pairwise head-to-head
+        const delta = this.headToHeadDelta(a, b, finals)
+        if (delta !== 0) {
+          console.log(`  H2H: ${a.teamId} vs ${b.teamId} = ${delta > 0 ? a.teamId : b.teamId} wins`)
+        }
+        return delta
+      },
+      (a, b) => {
+        const aPct = this.divisionRecordPct(a, finals, byId)
+        const bPct = this.divisionRecordPct(b, finals, byId)
+        const delta = aPct - bPct
+        if (delta !== 0 && tied.length <= 3) {
+          console.log(`  Div Record: ${a.teamId}=${aPct.toFixed(3)} vs ${b.teamId}=${bPct.toFixed(3)} = ${delta > 0 ? a.teamId : b.teamId}`)
+        }
+        return delta
+      },
       (a, b, group) => {
         const common = this.commonOpponentsForTeams(group, opponentsByTeam, 0)
         if (!common) return 0
+        const aPct = this.commonOpponentsPct(a, common, finals)
+        const bPct = this.commonOpponentsPct(b, common, finals)
+        const delta = aPct - bPct
+        if (delta !== 0 && tied.length <= 3) {
+          console.log(`  Common Opps (${common.size}): ${a.teamId}=${aPct.toFixed(3)} vs ${b.teamId}=${bPct.toFixed(3)} = ${delta > 0 ? a.teamId : b.teamId}`)
+          console.log(`    Common opponent IDs:`, Array.from(common).sort((x, y) => x - y))
+          
+          // Show detailed records for debugging
+          const aRecord = this.recordVsOpponents(a.teamId, common, finals)
+          const bRecord = this.recordVsOpponents(b.teamId, common, finals)
+          console.log(`    Team ${a.teamId} vs common: ${aRecord.w}-${aRecord.l}-${aRecord.t}`)
+          console.log(`    Team ${b.teamId} vs common: ${bRecord.w}-${bRecord.l}-${bRecord.t}`)
+        }
+        return delta
+      },
+      (a, b) => {
+        const aPct = this.conferenceRecordPct(a, finals, byId)
+        const bPct = this.conferenceRecordPct(b, finals, byId)
+        const delta = aPct - bPct
+        if (tied.length <= 3) {
+          console.log(`  Conf Record: ${a.teamId}=${aPct.toFixed(3)} vs ${b.teamId}=${bPct.toFixed(3)}${delta !== 0 ? ` = ${delta > 0 ? a.teamId : b.teamId}` : ' (tied)'}`)
+        }
+        return delta
+      },
+      (a, b) => {
+        const aSoV = this.strengthOfVictory(a, finals, byId)
+        const bSoV = this.strengthOfVictory(b, finals, byId)
+        const delta = aSoV - bSoV
+        if (tied.length <= 3) {
+          console.log(`  Strength of Victory: ${a.teamId}=${aSoV.toFixed(3)} vs ${b.teamId}=${bSoV.toFixed(3)}${delta !== 0 ? ` = ${delta > 0 ? a.teamId : b.teamId}` : ' (tied)'}`)
+        }
+        return delta
+      },
+      (a, b) => {
+        const aSoS = this.strengthOfSchedule(a, finals, byId)
+        const bSoS = this.strengthOfSchedule(b, finals, byId)
+        const delta = aSoS - bSoS
+        if (tied.length <= 3) {
+          console.log(`  Strength of Schedule: ${a.teamId}=${aSoS.toFixed(3)} vs ${b.teamId}=${bSoS.toFixed(3)}${delta !== 0 ? ` = ${delta > 0 ? a.teamId : b.teamId}` : ' (tied)'}`)
+        }
+        return delta
+      },
+      (a, b) => {
+        const delta = pointDiff(a) - pointDiff(b)
+        if (delta !== 0 && tied.length <= 3) {
+          console.log(`  Point Diff: ${a.teamId}=${pointDiff(a)} vs ${b.teamId}=${pointDiff(b)} = ${delta > 0 ? a.teamId : b.teamId}`)
+        }
+        return delta
+      },
+    ])
+  }
+
+  /**
+   * ✅ NEW: Tiebreaker for division winners from different divisions
+   * Per NFL rules for seeding division winners 1-4
+   */
+  private breakTieDivisionWinners(
+    tied: TeamStanding[],
+    finals: GameWithTeams[],
+    byId: Map<number, TeamStanding>,
+    opponentsByTeam: Map<number, Set<number>>
+  ): TeamStanding[] {
+    return this.breakTieGeneric(tied, [
+      (a, b) => this.headToHeadDelta(a, b, finals),
+      (a, b) => this.conferenceRecordPct(a, finals, byId) - this.conferenceRecordPct(b, finals, byId),
+      (a, b, group) => {
+        const common = this.commonOpponentsForTeams(group, opponentsByTeam, 4)
+        if (!common) return 0
         return this.commonOpponentsPct(a, common, finals) - this.commonOpponentsPct(b, common, finals)
       },
-      (a, b) => this.conferenceRecordPct(a, finals, byId) - this.conferenceRecordPct(b, finals, byId),
       (a, b) => this.strengthOfVictory(a, finals, byId) - this.strengthOfVictory(b, finals, byId),
       (a, b) => this.strengthOfSchedule(a, finals, byId) - this.strengthOfSchedule(b, finals, byId),
       (a, b) => pointDiff(a) - pointDiff(b),

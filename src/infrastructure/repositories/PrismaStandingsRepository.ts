@@ -76,23 +76,40 @@ export class PrismaStandingsRepository implements ITeamStandingsRepository {
         standings[awayTeam.id].ties++
       }
 
-      // Division & conference breakdowns (optional)
-      if (homeTeam.division === awayTeam.division) {
-        if (homeScore! > awayScore!) standings[homeTeam.id].divisionWins++
-        else if (awayScore! > homeScore!) standings[awayTeam.id].divisionWins++
-        else {
-          standings[homeTeam.id].divisionLosses++
-          standings[awayTeam.id].divisionLosses++
-        }
+      // Division & conference breakdowns
+      // Normalize for case-insensitive comparison
+      const norm = (v: string | undefined | null): string => 
+        String(v ?? '').trim().toUpperCase()
+      
+      const sameDivision = norm(homeTeam.division) === norm(awayTeam.division)
+      const sameConference = norm(homeTeam.conference) === norm(awayTeam.conference)
+
+      // Debug logging for NFC South games
+      if ((homeTeam.id === 62 || homeTeam.id === 66 || homeTeam.id === 88 || homeTeam.id === 92) &&
+          (awayTeam.id === 62 || awayTeam.id === 66 || awayTeam.id === 88 || awayTeam.id === 92)) {
+        console.log(`[PrismaStandingsRepo] NFC South: ${homeTeam.name} (div="${homeTeam.division}") vs ${awayTeam.name} (div="${awayTeam.division}") - sameDivision: ${sameDivision}, score: ${homeScore}-${awayScore}`)
       }
 
-      if (homeTeam.conference === awayTeam.conference) {
-        if (homeScore! > awayScore!) standings[homeTeam.id].conferenceWins++
-        else if (awayScore! > homeScore!) standings[awayTeam.id].conferenceWins++
-        else {
-          standings[homeTeam.id].conferenceLosses++
-          standings[awayTeam.id].conferenceLosses++
+      if (sameDivision) {
+        if (homeScore! > awayScore!) {
+          standings[homeTeam.id].divisionWins++
+          standings[awayTeam.id].divisionLosses++
+        } else if (awayScore! > homeScore!) {
+          standings[awayTeam.id].divisionWins++
+          standings[homeTeam.id].divisionLosses++
         }
+        // Ties don't increment wins or losses
+      }
+
+      if (sameConference) {
+        if (homeScore! > awayScore!) {
+          standings[homeTeam.id].conferenceWins++
+          standings[awayTeam.id].conferenceLosses++
+        } else if (awayScore! > homeScore!) {
+          standings[awayTeam.id].conferenceWins++
+          standings[homeTeam.id].conferenceLosses++
+        }
+        // Ties don't increment wins or losses
       }
     }
 
@@ -100,6 +117,16 @@ export class PrismaStandingsRepository implements ITeamStandingsRepository {
     for (const s of Object.values(standings)) {
       const totalGames = s.wins + s.losses + s.ties
       s.winPct = totalGames > 0 ? Number(((s.wins + 0.5 * s.ties) / totalGames).toFixed(3)) : 0
+    }
+
+    // Debug: Show NFC South final division records
+    const nfcSouth = [62, 66, 88, 92]
+    console.log('\n[PrismaStandingsRepo] NFC South Final Division Records:')
+    for (const teamId of nfcSouth) {
+      const s = standings[teamId]
+      if (s) {
+        console.log(`  ${s.teamName}: ${s.divisionWins}-${s.divisionLosses} (overall: ${s.wins}-${s.losses}-${s.ties})`)
+      }
     }
 
     return Object.values(standings)
