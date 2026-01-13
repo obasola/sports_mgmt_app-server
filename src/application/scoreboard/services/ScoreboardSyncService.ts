@@ -1,7 +1,7 @@
 // src/application/scoreboard/services/ScoreboardSyncService.ts
 
 import { fetchScoreboard, SeasonType } from '@/infrastructure/espn/scoreboardClient';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/infrastructure/database/prisma";
 import { PrismaGameRepository } from '@/infrastructure/repositories/PrismaGameRepository';
 import { Game_gameStatus } from '@prisma/client';
 import { DebugLogger } from '@/infrastructure/logging/DebugLogger';
@@ -15,13 +15,13 @@ export interface ScoreboardSyncResult {
 }
 
 export class ScoreboardSyncService {
-  private prisma: PrismaClient;
+  
   private games: PrismaGameRepository;
   private logger: DebugLogger;
 
   constructor() {
-    this.prisma = new PrismaClient();
-    this.games = new PrismaGameRepository(this.prisma);
+    
+    this.games = new PrismaGameRepository(prisma);
     this.logger = DebugLogger.getInstance();
   }
 
@@ -184,6 +184,6 @@ export class ScoreboardSyncService {
   }
 
   async dispose() {
-    await this.prisma.$disconnect();
+    await prisma.$disconnect();
   }
 }

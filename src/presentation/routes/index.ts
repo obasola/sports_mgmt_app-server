@@ -21,7 +21,7 @@ import { teamStandingsRoutes } from "./teamStandingsRoutes";
 import { buildScoreboardRouter } from "../controllers/ScoreboardController";
 import draftPickRoutes from "./draftPickRoute";
 import { playoffsRoutes } from "./playoffsRoutes"; // 👈 NEW
-import { prisma } from "@/infrastructure/prisma";
+import { prisma } from "@/infrastructure/database/prisma";
 import { buildDraftSimulatorModule } from "@/modules/draftSimulator/moduleFactory";
 import { buildDraftOrderModule } from "@/modules/draftOrder/moduleFactory";
 

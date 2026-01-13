@@ -10,8 +10,9 @@ import { PrismaTeamRepository } from '@/infrastructure/repositories/PrismaTeamRe
 import { TeamService } from '@/application/team/services/TeamService';
 import { EspnClient } from '@/infrastructure/espn/EspnClient';
 import { PlayoffSeedingService } from '@/application/standings/services/PlayoffSeedingService';
+import { prisma } from "@/infrastructure/database/prisma";
 
-const prisma = new PrismaClient();
+
 const repo = new PrismaStandingsRepository(prisma);
 const service = new StandingsService(repo);
 const controller = new StandingsController(service);
@@ -26,7 +27,7 @@ router.get('/', async (req, res, next) => {
     const year = Number(req.query.year) || new Date().getFullYear();
     const seasonType = Number(req.query.seasonType) || 2;
     const useCase = new ListStandingsUseCase(
-      new PrismaStandingsRepository(new PrismaClient()),
+      new PrismaStandingsRepository(prisma),
       new ComputeStandingsService(),
       new PlayoffSeedingService(),
     );

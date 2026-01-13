@@ -12,7 +12,7 @@ import { RefreshTokenDTO } from '@/domain/auth/dtos/RefreshTokenDTO';
 
 import { PaginationParams, PaginatedResponse } from '@/shared/types/common';
 
-import { prisma } from '../prisma';
+import { prisma } from "@/infrastructure/database/prisma";
 import { PersonMapper } from '@/domain/person/mapper/PersonMapper';
 
 export class PrismaPersonRepository implements IPersonRepository {

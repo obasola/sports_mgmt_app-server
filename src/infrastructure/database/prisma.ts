@@ -1,14 +1,16 @@
-import { PrismaClient } from '@prisma/client';
+// src/infrastructure/prisma.ts
+import { PrismaClient } from "@prisma/client";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl || databaseUrl.trim().length === 0) {
+  throw new Error("DATABASE_URL is missing");
+}
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: ['query'],
-  });
+// Prisma 7 + MySQL: requires adapter or accelerateUrl
+const adapter = new PrismaMariaDb(databaseUrl);
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-
+export const prisma = new PrismaClient({
+  adapter,
+  log: ["error", "warn"],
+});

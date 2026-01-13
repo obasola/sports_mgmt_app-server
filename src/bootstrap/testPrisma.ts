@@ -1,4 +1,4 @@
-import { prisma } from '../infrastructure/prisma';
+import { prisma } from "@/infrastructure/database/prisma";
 
 async function main() {
   const games = await prisma.game.findMany();

@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { prisma as prismaClient } from '../../infrastructure/prisma';
+import { prisma } from "@/infrastructure/database/prisma";
 
 import { PlayoffBracketController } from '../controllers/PlayoffBracketController';
 import { validateQuery } from '../middleware/validation';
@@ -15,8 +15,8 @@ import { GeneratePlayoffBracketService } from '@/application/playoffs/services/G
 const router = Router();
 console.log('📦 LOADED playoffsRoutes from:', __filename)
 
-const gameRepo = new PrismaGameRepository(prismaClient);
-const standingsRepo = new PrismaStandingsRepository(prismaClient);
+const gameRepo = new PrismaGameRepository(prisma);
+const standingsRepo = new PrismaStandingsRepository(prisma);
 const seeding = new PlayoffSeedingService();
 
 const service = new GeneratePlayoffBracketService(gameRepo, standingsRepo, seeding);

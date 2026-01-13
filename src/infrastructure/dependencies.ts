@@ -1,13 +1,13 @@
 import { PrismaClient } from '@prisma/client'
-import { prisma } from './prisma'
+import { prisma } from "@/infrastructure/database/prisma";
 
 /* ───────────────────────────────────────────────────────────────
  * Auth / email infrastructure
  * ─────────────────────────────────────────────────────────────── */
 import { Argon2PasswordHasher } from './security/Argon2PasswordHasher'
 import { NodeCryptoSecureTokenGenerator } from './security/NodeCryptoSecureTokenGenerator'
-import { JwtAuthTokenService } from './jwt/JwtAuthTokenService'
 import { createMailService } from './mail/MailServiceFactory'
+import { prisma as prismaClient } from "@/infrastructure/database/prisma";
 
 import { RegisterUseCase } from '@/application/auth/register/RegisterUseCase'
 import { VerifyEmailUseCase } from '@/application/auth/verify-email/VerifyEmailUseCase'
@@ -64,11 +64,12 @@ import { ScheduleJobService } from '@/application/jobs/services/ScheduleJobServi
  * ─────────────────────────────────────────────────────────────── */
 import { registerAppJobHandlers } from '@/infrastructure/queue/registerAppJobHandlers'
 import { buildDraftOrderComposition } from '@/modules/draftOrder/moduleComposition'
+import { JwtTokenService } from '@/modules/auth/infrastructure/security/JwtTokenService';
 
 /* ───────────────────────────────────────────────────────────────
  * 1) Core infrastructure
  * ─────────────────────────────────────────────────────────────── */
-const prismaClient = prisma ?? new PrismaClient()
+
 const espnClient = new EspnScoreboardClient()
 const jobEmitter = new JobLogEmitter()
 
@@ -129,7 +130,7 @@ const scheduleJobService = new ScheduleJobService(cronScheduler)
 export const personRepo = new PrismaPersonRepository()
 export const passwordHasher = new Argon2PasswordHasher()
 export const tokenGen = new NodeCryptoSecureTokenGenerator()
-export const jwtTokens = new JwtAuthTokenService()
+export const jwtTokens = new JwtTokenService()
 export const mailer = createMailService()
 
 export const registerUseCase = new RegisterUseCase(personRepo, passwordHasher, tokenGen, mailer)

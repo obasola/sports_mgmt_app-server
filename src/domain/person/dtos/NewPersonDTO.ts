@@ -4,5 +4,5 @@ export type NewPersonInput = {
   passwordHash: string;
   firstName: string;
   lastName: string;
-  rid?: number | null;
+  activeRid?: number | null;
 };

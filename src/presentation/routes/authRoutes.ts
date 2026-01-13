@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { AuthController } from "@/presentation/controllers/AuthController";
 
-import { prisma } from "@/infrastructure/prisma";
+import { prisma } from "@/infrastructure/database/prisma";
 import { PrismaPersonRepository } from "@/infrastructure/repositories/PrismaPersonRepository";
 import { MailService } from "@/domain/mail/services/MailService";
 import { buildAuthController } from "@/bootstrap/auth/authModule";

@@ -8,4 +8,5 @@ export interface LoginResponseDTO {
   accessToken: string;
   personId: number;
   userName: string;
+  activeRid: number
 }

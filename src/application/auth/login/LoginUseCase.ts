@@ -1,48 +1,58 @@
 // src/application/auth/login/LoginUseCase.ts
-import type { IPersonRepository } from '@/domain/person/repositories/IPersonRepository';
-import type { PasswordHasher } from '@/domain/auth/services/PasswordHasher';
-import type { AuthTokenService } from '@/domain/auth/services/AuthTokenService';
-import type { LoginInputDTO, LoginResponseDTO } from './LoginDTO';
+import type { IPersonRepository } from "@/domain/person/repositories/IPersonRepository";
+import type { PasswordHasher } from "@/domain/auth/services/PasswordHasher";
+import type { LoginInputDTO, LoginResponseDTO } from "./LoginDTO";
+import { JwtTokenService } from "@/modules/auth/infrastructure/security/JwtTokenService";
 
 export class LoginUseCase {
   constructor(
     private readonly personRepo: IPersonRepository,
     private readonly hasher: PasswordHasher,
-    private readonly tokens: AuthTokenService
+    private readonly tokens: JwtTokenService
   ) {}
 
-  async execute(input: LoginInputDTO): Promise<LoginResponseDTO> {
+  public async execute(input: LoginInputDTO): Promise<LoginResponseDTO> {
     const { userName, password } = input;
 
-    // 1. Find user
+    // 1) Find user
     const person = await this.personRepo.findByUserName(userName);
     if (!person || !person.passwordHash) {
-      throw new Error('Invalid credentials');
-    }
-
-    // 2. Optional: require verified email
-    if (!person.emailVerified) {
-      throw new Error('Email not verified');
-    }
-
-    // 3. Compare password using hasher
-    const ok = await this.hasher.compare(password, person.passwordHash);
-    if (!ok) {
-      throw new Error('Invalid credentials');
+      throw new Error("Invalid credentials");
     }
 
     if (!person.pid) {
-      throw new Error('Person ID missing');
+      throw new Error("Person ID missing");
     }
 
-    // 4. Issue access token (and optionally refresh)
-    const accessToken = this.tokens.generateAccessToken(person.pid, person.userName);
-    // If you later wire refresh tokens, do it here with tokens.generateRefreshToken()
+    // 2) Optional: require verified email
+    if (!person.emailVerified) {
+      throw new Error("Email not verified");
+    }
+
+    // 3) Compare password
+    const ok = await this.hasher.compare(password, person.passwordHash);
+    if (!ok) {
+      throw new Error("Invalid credentials");
+    }
+
+    // 4) Issue access token WITH activeRid embedded
+    const effectiveActiveRid = typeof person.activeRid === "number" ? person.activeRid : 1;
+
+    const { accessToken } = this.tokens.issueTokens({
+      personId: person.pid,
+      userName: person.userName,
+      activeRid: effectiveActiveRid,
+    });
+
+    // NOTE: leaving refresh-token issuance out here because your LoginResponseDTO
+    // currently only returns accessToken/personId/userName/activeRid.
+    // (You can add refresh later once the frontend expects it.)
 
     return {
       accessToken,
       personId: person.pid,
       userName: person.userName,
+      activeRid: effectiveActiveRid,
     };
   }
 }

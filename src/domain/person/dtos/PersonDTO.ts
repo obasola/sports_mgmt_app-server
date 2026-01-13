@@ -5,7 +5,7 @@ export interface PersonProps {
   passwordHash: string | null;
   firstName: string;
   lastName: string;
-  rid: number | null;
+  activeRid: number | null;
   isActive: boolean;
 
   emailVerified: boolean;

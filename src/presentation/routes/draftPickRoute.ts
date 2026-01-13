@@ -3,9 +3,8 @@ import { Router } from 'express';
 import { DraftPickController } from '../controllers/DraftPickController';
 import { DraftPickService } from '../../application/draftPick/services/DraftPickService';
 import { PrismaDraftPickRepository } from '../../infrastructure/repositories/PrismaDraftPickRepository';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/infrastructure/database/prisma';
 
-const prisma = new PrismaClient();
 const draftPickRepository = new PrismaDraftPickRepository(prisma);
 const draftPickService = new DraftPickService(draftPickRepository);
 const draftPickController = new DraftPickController(draftPickService);

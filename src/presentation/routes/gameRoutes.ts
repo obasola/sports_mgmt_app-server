@@ -1,7 +1,7 @@
 // src/presentation/routes/gameRoutes.ts
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma as prismaClient} from '../../infrastructure/prisma';
+import { prisma } from "@/infrastructure/database/prisma";
 
 import { GameController } from '../controllers/GameController';
 import { GameService } from '@/application/game/services/GameService';
@@ -20,7 +20,7 @@ const router = Router();
  * Dependencies
  * -------------------------------------------------------------------------- */
 
-const gameRepository = new PrismaGameRepository(prismaClient);
+const gameRepository = new PrismaGameRepository(prisma);
 const teamRepository = new PrismaTeamRepository();
 const gameService = new GameService(gameRepository, teamRepository);
 const gameController = new GameController(gameService);

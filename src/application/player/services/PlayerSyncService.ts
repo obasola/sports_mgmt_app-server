@@ -4,7 +4,7 @@ import { IPlayerRepository } from '@/domain/player/repositories/IPlayerRepositor
 import { IPlayerTeamRepository } from '@/domain/playerTeam/repositories/IPlayerTeamRepository';
 import { Player } from '@/domain/player/entities/Player';
 import { PlayerTeam } from '@/domain/playerTeam/entities/PlayerTeam';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/infrastructure/database/prisma";
 import { IJobLogger } from '@/jobs/IJobLogger';
 
 export class PlayerSyncService {
@@ -12,7 +12,7 @@ export class PlayerSyncService {
     private espn: EspnPlayerClient,
     private playerRepo: IPlayerRepository,
     private playerTeamRepo: IPlayerTeamRepository,
-    private prisma = new PrismaClient(),
+  
     private job: IJobLogger
   ) {}
 
@@ -50,7 +50,7 @@ export class PlayerSyncService {
 
     try {
       const athletes = await this.espn.listTeamAthletes(teamEspnId);
-      const localTeam = await this.prisma.team.findFirst({
+      const localTeam = await prisma.team.findFirst({
         where: { espnTeamId: teamEspnId },
       });
       if (!localTeam) throw new Error(`No local team for espnTeamId=${teamEspnId}`);

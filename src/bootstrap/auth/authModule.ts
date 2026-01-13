@@ -1,5 +1,5 @@
 // src/bootstrap/authModule.ts
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/infrastructure/database/prisma";
 
 import { AuthController } from '@/presentation/controllers/AuthController';
 import { RegisterUseCase } from '@/application/auth/register/RegisterUseCase';
@@ -9,16 +9,17 @@ import { BcryptPasswordHasher } from '@/infrastructure/auth/BcryptPasswordHasher
 import { SecureTokenGeneratorImpl } from '@/infrastructure/auth/SecureTokenGeneratorImpl';
 import { SendGridMailService } from '@/infrastructure/mail/SendGridMailService';
 import { createMailService } from '@/infrastructure/mail/MailServiceFactory';
-import { JwtAuthTokenService } from '@/infrastructure/jwt/JwtAuthTokenService';
+
 import { LoginUseCase } from '@/application/auth/login/LoginUseCase';
+import { JwtTokenService } from "@/modules/auth/infrastructure/security/JwtTokenService";
 
 
 export function buildAuthController(): AuthController {
-  const prisma = new PrismaClient();
+  
   const personRepo = new PrismaPersonRepository(prisma);
 
   const passwordHasher = new BcryptPasswordHasher();
-  const tokenService = new JwtAuthTokenService();
+  const tokenService = new JwtTokenService();
 
   const tokenSecret =
     process.env.SECURE_TOKEN_SECRET ?? process.env.JWT_SECRET ?? '';

@@ -1,4 +1,5 @@
 // (sports_mgmt_app_server/) src/index.ts
+import "reflect-metadata";
 import 'module-alias/register'; // ✅ must be first for @/... paths to resolve
 import './config/env';          // ✅ loads dotenv-flow next
 import express from 'express';
@@ -13,6 +14,11 @@ import { errorHandler } from './presentation/middleware/errorHandler';
 import { initScoreboardCron } from './jobs/scoreboardCron';
 
 import { useCorsFromEnv } from './presentation/middleware/cors';
+import { container } from "tsyringe";
+import { prisma } from "@/infrastructure/database/prisma";
+import type { PrismaClient } from "@prisma/client";
+
+container.register<PrismaClient>("PrismaClient", { useValue: prisma });
 
 
 const app = express();

@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { importNflSeason, SeasonKind } from './nflSeason'
-import { prisma } from '../../../infrastructure/prisma';
-
+import { prisma } from "@/infrastructure/database/prisma";
 
 export async function runImportNflSeasonJob(payload: { year: number; seasons: SeasonKind[] }, jobId?: number) {
   const job = jobId
