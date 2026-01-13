@@ -16,6 +16,20 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Temporary view structure for view `vRoleEffectivePermission`
+--
+
+DROP TABLE IF EXISTS `vRoleEffectivePermission`;
+/*!50001 DROP VIEW IF EXISTS `vRoleEffectivePermission`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `vRoleEffectivePermission` AS SELECT 
+ 1 AS `roleId`,
+ 1 AS `domainCode`,
+ 1 AS `actionCode`*/;
+SET character_set_client = @saved_cs_client;
+
+--
 -- Temporary view structure for view `TeamScheduleView`
 --
 
@@ -42,6 +56,24 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `wonLostFlag`,
  1 AS `result`*/;
 SET character_set_client = @saved_cs_client;
+
+--
+-- Final view structure for view `vRoleEffectivePermission`
+--
+
+/*!50001 DROP VIEW IF EXISTS `vRoleEffectivePermission`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `vRoleEffectivePermission` AS select `rp`.`roleId` AS `roleId`,`d`.`domainCode` AS `domainCode`,`a`.`actionCode` AS `actionCode` from ((`RolePermission` `rp` join `FeatureDomain` `d` on((`d`.`domainId` = `rp`.`domainId`))) join `PermissionAction` `a` on((`a`.`actionId` = `rp`.`actionId`))) where (`rp`.`isAllowed` = 1) union select `rp`.`roleId` AS `roleId`,`d`.`domainCode` AS `domainCode`,'VIEW' AS `actionCode` from ((`RolePermission` `rp` join `FeatureDomain` `d` on((`d`.`domainId` = `rp`.`domainId`))) join `PermissionAction` `a` on((`a`.`actionId` = `rp`.`actionId`))) where ((`rp`.`isAllowed` = 1) and (`a`.`actionCode` in ('EDIT','CREATE','DELETE','RUN'))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 
 --
 -- Final view structure for view `TeamScheduleView`
@@ -275,4 +307,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-06 13:38:46
+-- Dump completed on 2026-01-13 15:54:06

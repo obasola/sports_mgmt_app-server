@@ -31,12 +31,14 @@ CREATE TABLE `Person` (
   `lastName` varchar(35) NOT NULL,
   `emailVerified` tinyint(1) NOT NULL DEFAULT '0',
   `verifiedAt` datetime DEFAULT NULL,
-  `rid` int DEFAULT NULL,
   `isActive` tinyint(1) DEFAULT '1',
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `lastLoginAt` datetime DEFAULT NULL,
-  PRIMARY KEY (`pid`)
+  `activeRid` int DEFAULT NULL,
+  PRIMARY KEY (`pid`),
+  KEY `fk_person_active_role` (`activeRid`),
+  CONSTRAINT `fk_person_active_role` FOREIGN KEY (`activeRid`) REFERENCES `Roles` (`rid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -46,7 +48,7 @@ CREATE TABLE `Person` (
 
 LOCK TABLES `Person` WRITE;
 /*!40000 ALTER TABLE `Person` DISABLE KEYS */;
-INSERT INTO `Person` VALUES (6,'eusdart98','dthompson98@gmail.com','$2b$10$zLZnwejS.RAKmVwmWUpJHuAiAA7LSVO14G6XDFpC.BHf7t321LQOO','Darryl','Thompson',1,'2025-12-01 06:56:16',NULL,1,'2025-12-01 06:32:15','2025-12-01 00:56:15',NULL);
+INSERT INTO `Person` VALUES (6,'eusdart98','dthompson98@gmail.com','$2b$10$zLZnwejS.RAKmVwmWUpJHuAiAA7LSVO14G6XDFpC.BHf7t321LQOO','Darryl','Thompson',1,'2025-12-01 06:56:16',1,'2025-12-01 06:32:15','2026-01-11 23:20:45',NULL,4);
 /*!40000 ALTER TABLE `Person` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -59,4 +61,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-06 13:38:45
+-- Dump completed on 2026-01-13 15:54:03

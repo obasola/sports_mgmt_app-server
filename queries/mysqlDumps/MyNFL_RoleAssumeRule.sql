@@ -16,33 +16,34 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `player_headshots`
+-- Table structure for table `RoleAssumeRule`
 --
 
-DROP TABLE IF EXISTS `player_headshots`;
+DROP TABLE IF EXISTS `RoleAssumeRule`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `player_headshots` (
+CREATE TABLE `RoleAssumeRule` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `espn_player_id` int NOT NULL,
-  `url` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `width` smallint unsigned DEFAULT NULL,
-  `height` smallint unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `fromRoleId` int NOT NULL,
+  `toRoleId` int NOT NULL,
+  `isAllowed` tinyint(1) NOT NULL DEFAULT '1',
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_headshots_player` (`espn_player_id`),
-  CONSTRAINT `player_headshots_ibfk_1` FOREIGN KEY (`espn_player_id`) REFERENCES `espn_players` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `uq_from_to` (`fromRoleId`,`toRoleId`),
+  KEY `fk_assume_to` (`toRoleId`),
+  CONSTRAINT `fk_assume_from` FOREIGN KEY (`fromRoleId`) REFERENCES `Roles` (`rid`),
+  CONSTRAINT `fk_assume_to` FOREIGN KEY (`toRoleId`) REFERENCES `Roles` (`rid`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `player_headshots`
+-- Dumping data for table `RoleAssumeRule`
 --
 
-LOCK TABLES `player_headshots` WRITE;
-/*!40000 ALTER TABLE `player_headshots` DISABLE KEYS */;
-/*!40000 ALTER TABLE `player_headshots` ENABLE KEYS */;
+LOCK TABLES `RoleAssumeRule` WRITE;
+/*!40000 ALTER TABLE `RoleAssumeRule` DISABLE KEYS */;
+INSERT INTO `RoleAssumeRule` VALUES (1,4,4,1,'2026-01-12 17:53:40'),(2,4,2,1,'2026-01-12 17:53:40'),(3,4,1,1,'2026-01-12 17:53:40'),(4,4,3,1,'2026-01-12 17:53:40'),(8,2,2,1,'2026-01-12 17:53:40'),(9,2,1,1,'2026-01-12 17:53:40'),(10,2,3,1,'2026-01-12 17:53:40'),(11,3,1,1,'2026-01-12 17:53:40'),(12,3,3,1,'2026-01-12 17:53:40'),(14,1,1,1,'2026-01-12 17:53:40');
+/*!40000 ALTER TABLE `RoleAssumeRule` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -54,4 +55,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-13 15:54:04
+-- Dump completed on 2026-01-13 15:54:03

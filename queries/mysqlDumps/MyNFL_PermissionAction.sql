@@ -16,32 +16,30 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `roles`
+-- Table structure for table `PermissionAction`
 --
 
-DROP TABLE IF EXISTS `roles`;
+DROP TABLE IF EXISTS `PermissionAction`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `roles` (
-  `rid` int NOT NULL AUTO_INCREMENT,
-  `roleName` varchar(25) NOT NULL,
-  `description` varchar(100) DEFAULT NULL,
-  `isActive` tinyint(1) DEFAULT '1',
-  `createdAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`rid`),
-  UNIQUE KEY `roleName` (`roleName`)
+CREATE TABLE `PermissionAction` (
+  `actionId` int NOT NULL AUTO_INCREMENT,
+  `actionCode` varchar(20) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`actionId`),
+  UNIQUE KEY `actionCode` (`actionCode`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `roles`
+-- Dumping data for table `PermissionAction`
 --
 
-LOCK TABLES `roles` WRITE;
-/*!40000 ALTER TABLE `roles` DISABLE KEYS */;
-INSERT INTO `roles` VALUES (1,'public','General public access',1,'2025-08-05 16:39:16','2025-08-05 16:39:16'),(2,'dev','Developer access',1,'2025-08-05 16:39:16','2025-08-05 16:39:16'),(3,'qa','QA Tester access',1,'2025-08-05 16:39:16','2025-08-05 16:39:16'),(4,'admin','Administrator access',1,'2025-08-05 16:39:16','2025-08-05 16:39:16');
-/*!40000 ALTER TABLE `roles` ENABLE KEYS */;
+LOCK TABLES `PermissionAction` WRITE;
+/*!40000 ALTER TABLE `PermissionAction` DISABLE KEYS */;
+INSERT INTO `PermissionAction` VALUES (1,'VIEW','Read-only access','2026-01-12 17:45:10'),(2,'EDIT','Update existing data','2026-01-12 17:45:10'),(3,'CREATE','Create new data','2026-01-12 17:45:10'),(4,'DELETE','Delete data','2026-01-12 17:45:10'),(5,'RUN','Execute operations (jobs/scrapers)','2026-01-12 17:45:10');
+/*!40000 ALTER TABLE `PermissionAction` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -53,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-06 13:38:46
+-- Dump completed on 2026-01-13 15:54:04

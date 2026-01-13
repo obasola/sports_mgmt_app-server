@@ -16,33 +16,38 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `player_headshots`
+-- Table structure for table `PersonRole`
 --
 
-DROP TABLE IF EXISTS `player_headshots`;
+DROP TABLE IF EXISTS `PersonRole`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `player_headshots` (
+CREATE TABLE `PersonRole` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `espn_player_id` int NOT NULL,
-  `url` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `width` smallint unsigned DEFAULT NULL,
-  `height` smallint unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `personId` int NOT NULL,
+  `roleId` int NOT NULL,
+  `assignedByPersonId` int DEFAULT NULL,
+  `assignedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `revokedAt` timestamp NULL DEFAULT NULL,
+  `isActive` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
-  KEY `idx_headshots_player` (`espn_player_id`),
-  CONSTRAINT `player_headshots_ibfk_1` FOREIGN KEY (`espn_player_id`) REFERENCES `espn_players` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `uq_person_role` (`personId`,`roleId`),
+  KEY `fk_personrole_role` (`roleId`),
+  KEY `fk_personrole_assignedby` (`assignedByPersonId`),
+  CONSTRAINT `fk_personrole_assignedby` FOREIGN KEY (`assignedByPersonId`) REFERENCES `Person` (`pid`),
+  CONSTRAINT `fk_personrole_person` FOREIGN KEY (`personId`) REFERENCES `Person` (`pid`),
+  CONSTRAINT `fk_personrole_role` FOREIGN KEY (`roleId`) REFERENCES `Roles` (`rid`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `player_headshots`
+-- Dumping data for table `PersonRole`
 --
 
-LOCK TABLES `player_headshots` WRITE;
-/*!40000 ALTER TABLE `player_headshots` DISABLE KEYS */;
-/*!40000 ALTER TABLE `player_headshots` ENABLE KEYS */;
+LOCK TABLES `PersonRole` WRITE;
+/*!40000 ALTER TABLE `PersonRole` DISABLE KEYS */;
+INSERT INTO `PersonRole` VALUES (1,6,1,6,'2026-01-12 05:11:07',NULL,1),(2,6,2,6,'2026-01-12 05:13:16',NULL,1),(3,6,3,6,'2026-01-12 05:14:29',NULL,1),(4,6,4,6,'2026-01-12 05:15:22',NULL,1);
+/*!40000 ALTER TABLE `PersonRole` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -54,4 +59,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-13 15:54:04
+-- Dump completed on 2026-01-13 15:54:05
