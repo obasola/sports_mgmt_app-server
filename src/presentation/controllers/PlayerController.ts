@@ -44,7 +44,6 @@ export class PlayerController {
       new EspnPlayerClient(),
       new PrismaPlayerRepository(),
       new PrismaPlayerTeamRepository(),
-      undefined,
       jobLogger
     )
   }

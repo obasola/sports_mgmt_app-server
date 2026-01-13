@@ -1,8 +1,8 @@
 // src/presentation/controllers/StandingsController.ts
 import { Request, Response } from 'express';
 import { StandingsService } from '@/application/standings/services/StandingsService';
-import { PrismaClient } from '@prisma/client';
-const debugPrisma = new PrismaClient();
+import { prisma as debugPrisma} from "@/infrastructure/database/prisma";
+
 
 export class StandingsController {
   constructor(private service: StandingsService) {}

@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model AppSetting {
@@ -91,23 +90,28 @@ model Game {
 }
 
 model Person {
-  pid                    Int                      @id @default(autoincrement())
-  userName               String                   @db.VarChar(25)
-  emailAddress           String                   @db.VarChar(75)
-  passwordHash           String?                  @db.VarChar(255)
-  firstName              String                   @db.VarChar(25)
-  lastName               String                   @db.VarChar(35)
-  emailVerified          Boolean                  @default(false)
-  verifiedAt             DateTime?                @db.DateTime(0)
-  rid                    Int?
-  isActive               Boolean?                 @default(true)
-  createdAt              DateTime?                @default(now()) @db.DateTime(0)
-  updatedAt              DateTime?                @default(now()) @db.DateTime(0)
-  lastLoginAt            DateTime?                @db.DateTime(0)
-  EmailVerificationToken EmailVerificationToken[]
-  PasswordResetToken     PasswordResetToken[]
-  PersonIdentity         PersonIdentity[]
-  refreshTokens          RefreshToken[]
+  pid                                              Int                      @id @default(autoincrement())
+  userName                                         String                   @db.VarChar(25)
+  emailAddress                                     String                   @db.VarChar(75)
+  passwordHash                                     String?                  @db.VarChar(255)
+  firstName                                        String                   @db.VarChar(25)
+  lastName                                         String                   @db.VarChar(35)
+  emailVerified                                    Boolean                  @default(false)
+  verifiedAt                                       DateTime?                @db.DateTime(0)
+  isActive                                         Boolean?                 @default(true)
+  createdAt                                        DateTime?                @default(now()) @db.DateTime(0)
+  updatedAt                                        DateTime?                @default(now()) @db.DateTime(0)
+  lastLoginAt                                      DateTime?                @db.DateTime(0)
+  activeRid                                        Int?
+  EmailVerificationToken                           EmailVerificationToken[]
+  PasswordResetToken                               PasswordResetToken[]
+  Roles                                            Roles?                   @relation(fields: [activeRid], references: [rid], onDelete: NoAction, onUpdate: NoAction, map: "fk_person_active_role")
+  PersonIdentity                                   PersonIdentity[]
+  PersonRole_PersonRole_assignedByPersonIdToPerson PersonRole[]             @relation("PersonRole_assignedByPersonIdToPerson")
+  PersonRole_PersonRole_personIdToPerson           PersonRole[]             @relation("PersonRole_personIdToPerson")
+  refreshTokens                                    RefreshToken[]
+
+  @@index([activeRid], map: "fk_person_active_role")
 }
 
 model RefreshToken {
@@ -296,12 +300,14 @@ model TeamNeed {
 }
 
 model Roles {
-  rid         Int       @id @default(autoincrement())
-  roleName    String    @unique(map: "roleName") @db.VarChar(25)
-  description String?   @db.VarChar(100)
-  isActive    Boolean?  @default(true)
-  createdAt   DateTime? @default(now()) @db.Timestamp(0)
-  updatedAt   DateTime? @default(now()) @db.Timestamp(0)
+  rid         Int          @id @default(autoincrement())
+  roleName    String       @unique(map: "roleName") @db.VarChar(25)
+  description String?      @db.VarChar(100)
+  isActive    Boolean?     @default(true)
+  createdAt   DateTime?    @default(now()) @db.Timestamp(0)
+  updatedAt   DateTime?    @default(now()) @db.Timestamp(0)
+  Person      Person[]
+  PersonRole  PersonRole[]
 }
 
 model data_processing_jobs {
@@ -488,15 +494,6 @@ model processing_metrics {
   @@index([job_id], map: "idx_metrics_job")
   @@index([metric_name], map: "idx_metrics_name")
   @@index([recorded_at], map: "idx_metrics_recorded")
-}
-
-model roles {
-  rid         Int       @id @default(autoincrement())
-  roleName    String    @unique(map: "roleName") @db.VarChar(25)
-  description String?   @db.VarChar(100)
-  isActive    Boolean?  @default(true)
-  createdAt   DateTime? @default(now()) @db.Timestamp(0)
-  updatedAt   DateTime? @default(now()) @db.Timestamp(0)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -729,23 +726,23 @@ model ProspectRanking {
 }
 
 model DraftOrderEntry {
-  id                      Int                       @id @default(autoincrement())
-  snapshotId              Int
-  teamId                  Int
-  draftSlot               Int                       @db.UnsignedTinyInt
-  isPlayoff               Boolean
-  isProjected             Boolean
-  wins                    Int                       @db.UnsignedTinyInt
-  losses                  Int                       @db.UnsignedTinyInt
-  ties                    Int                       @db.UnsignedTinyInt
-  winPct                  Decimal                   @db.Decimal(6, 5)
-  sos                     Decimal                   @db.Decimal(6, 5)
-  pointsFor               Int?                      @db.UnsignedSmallInt
-  pointsAgainst           Int?                      @db.UnsignedSmallInt
-  createdAt               DateTime                  @default(now())
-  snapshot DraftOrderSnapshot @relation("DraftOrderSnapshot_entries", fields: [snapshotId], references: [id], onDelete: Cascade, map: "fk_draftorderentry_snapshot")
-  Team                    Team                      @relation(fields: [teamId], references: [id], onUpdate: NoAction, map: "fk_draftorderentry_team")
-  audits                  DraftOrderTiebreakAudit[]
+  id            Int                       @id @default(autoincrement())
+  snapshotId    Int
+  teamId        Int
+  draftSlot     Int                       @db.UnsignedTinyInt
+  isPlayoff     Boolean
+  isProjected   Boolean
+  wins          Int                       @db.UnsignedTinyInt
+  losses        Int                       @db.UnsignedTinyInt
+  ties          Int                       @db.UnsignedTinyInt
+  winPct        Decimal                   @db.Decimal(6, 5)
+  sos           Decimal                   @db.Decimal(6, 5)
+  pointsFor     Int?                      @db.UnsignedSmallInt
+  pointsAgainst Int?                      @db.UnsignedSmallInt
+  createdAt     DateTime                  @default(now())
+  snapshot      DraftOrderSnapshot        @relation("DraftOrderSnapshot_entries", fields: [snapshotId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_draftorderentry_snapshot")
+  Team          Team                      @relation(fields: [teamId], references: [id], onUpdate: NoAction, map: "fk_draftorderentry_team")
+  audits        DraftOrderTiebreakAudit[]
 
   @@unique([snapshotId, draftSlot], map: "uq_draftorderentry_snapshot_slot")
   @@unique([snapshotId, teamId], map: "uq_draftorderentry_snapshot_team")
@@ -755,18 +752,18 @@ model DraftOrderEntry {
 }
 
 model DraftOrderSnapshot {
-  id              Int                     @id @default(autoincrement())
-  mode            DraftOrderSnapshot_mode
-  strategy        String?                 @db.VarChar(64)
-  seasonYear      String                  @db.VarChar(4)
-  seasonType      Int                     @db.UnsignedTinyInt
-  throughWeek     Int?                    @db.UnsignedTinyInt
-  source          String                  @default("internal") @db.VarChar(32)
-  inputHash       String                  @db.Char(64)
-  computedAt      DateTime                @default(now())
-  jobId           Int?
-  entries         DraftOrderEntry[]       @relation("DraftOrderSnapshot_entries")
-  Job             Job?                    @relation(fields: [jobId], references: [id], onUpdate: NoAction, map: "fk_draftordersnapshot_job")
+  id          Int                     @id @default(autoincrement())
+  mode        DraftOrderSnapshot_mode
+  strategy    String?                 @db.VarChar(64)
+  seasonYear  String                  @db.VarChar(4)
+  seasonType  Int                     @db.UnsignedTinyInt
+  throughWeek Int?                    @db.UnsignedTinyInt
+  source      String                  @default("internal") @db.VarChar(32)
+  inputHash   String                  @db.Char(64)
+  computedAt  DateTime                @default(now())
+  jobId       Int?
+  entries     DraftOrderEntry[]       @relation("DraftOrderSnapshot_entries")
+  Job         Job?                    @relation(fields: [jobId], references: [id], onUpdate: NoAction, map: "fk_draftordersnapshot_job")
 
   @@unique([mode, strategy, seasonYear, seasonType, throughWeek, inputHash], map: "uq_draftordersnapshot_mode_strategy_season_week_hash")
   @@index([jobId], map: "ix_draftordersnapshot_job")
@@ -790,6 +787,22 @@ model DraftOrderTiebreakAudit {
   @@map("DraftOrderTiebreakAudit")
 }
 
+model PersonRole {
+  id                                           Int       @id @default(autoincrement())
+  personId                                     Int
+  roleId                                       Int
+  assignedByPersonId                           Int?
+  assignedAt                                   DateTime  @default(now()) @db.Timestamp(0)
+  revokedAt                                    DateTime? @db.Timestamp(0)
+  isActive                                     Boolean   @default(true)
+  Person_PersonRole_assignedByPersonIdToPerson Person?   @relation("PersonRole_assignedByPersonIdToPerson", fields: [assignedByPersonId], references: [pid], onDelete: NoAction, onUpdate: NoAction, map: "fk_personrole_assignedby")
+  Person_PersonRole_personIdToPerson           Person    @relation("PersonRole_personIdToPerson", fields: [personId], references: [pid], onDelete: NoAction, onUpdate: NoAction, map: "fk_personrole_person")
+  Roles                                        Roles     @relation(fields: [roleId], references: [rid], onDelete: NoAction, onUpdate: NoAction, map: "fk_personrole_role")
+
+  @@unique([personId, roleId], map: "uq_person_role")
+  @@index([assignedByPersonId], map: "fk_personrole_assignedby")
+  @@index([roleId], map: "fk_personrole_role")
+}
 
 enum data_processing_jobs_job_type {
   PLAYER_SYNC
@@ -798,7 +811,6 @@ enum data_processing_jobs_job_type {
   VALIDATION
   ENRICHMENT
 }
-
 
 enum data_processing_jobs_status {
   PENDING
@@ -915,4 +927,3 @@ enum DraftOrderSnapshot_mode {
   current
   projection
 }
-

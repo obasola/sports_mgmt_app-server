@@ -12,7 +12,7 @@ export class PersonMapper {
     passwordHash: string,
     firstName: string,
     lastName: string,
-    rid?: number | null
+    activeRid?: number | null
   ): NewPersonInput {
     return {
       userName,
@@ -20,7 +20,7 @@ export class PersonMapper {
       passwordHash,
       firstName,
       lastName,
-      rid,
+      activeRid,
     };
   }
   static mapPersonToNewPersonInput(
@@ -32,7 +32,7 @@ export class PersonMapper {
       passwordHash: person.passwordHash ? person.passwordHash : '',
       firstName: person.firstName,
       lastName: person.lastName,
-      rid: person.rid,
+      activeRid: person.activeRid,
     };
   }
   /**
@@ -45,7 +45,7 @@ export class PersonMapper {
       passwordHash: input.passwordHash,
       firstName: input.firstName,
       lastName: input.lastName,
-      rid: input.rid ?? null,
+      activeRid: input.activeRid ?? null,
       isActive: true,
       emailVerified: false,
       verifiedAt: null,
@@ -65,7 +65,7 @@ export class PersonMapper {
     passwordHash: string | null,
     firstName: string,
     lastName: string,
-    rid: number | null,
+    activeRid: number | null,
     isActive: boolean,
     emailVerified: boolean,
     verifiedAt: Date | null,
@@ -80,7 +80,7 @@ export class PersonMapper {
       passwordHash,
       firstName,
       lastName,
-      rid,
+      activeRid,
       isActive,
       emailVerified,
       verifiedAt,
@@ -101,7 +101,7 @@ export class PersonMapper {
       passwordHash: row.passwordHash,
       firstName: row.firstName,
       lastName: row.lastName,
-      rid: row.rid,
+      activeRid: row.activeRid,
       isActive: row.isActive,
       emailVerified: row.emailVerified,
       verifiedAt: row.verifiedAt,

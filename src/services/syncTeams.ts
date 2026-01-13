@@ -2,10 +2,10 @@
 // src/services/syncTeams.ts
 // ================================================
 import axios from 'axios';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/infrastructure/database/prisma";
 import { IJobLogger } from '@/jobs/IJobLogger';
 
-const prisma = new PrismaClient();
+
 
 export class SyncTeamsService {
   constructor(private readonly job: IJobLogger) {}

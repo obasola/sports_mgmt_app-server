@@ -11,6 +11,7 @@ import {
   PaginationDtoSchema,
 } from '@/application/schedule/dto/ScheduleDto';
 import { z } from 'zod';
+import { prisma } from "@/infrastructure/database/prisma";
 
 import { EspnScheduleClient } from '../../infrastructure/espn/EspnScheduleClient';
 import { GetWeekScheduleService } from '@/application/schedule/services/GetWeekScheduleService';
@@ -20,7 +21,7 @@ import type { PlayoffConference, PlayoffRound } from '@/utils/schedule/scheduleT
 console.log('📦 LOADED scheduleRoutes from:', __filename)
 
 const weekScheduleService = new GetWeekScheduleService(new EspnScheduleClient());
-const teamMetaRepo = new PrismaTeamMetaRepository()
+const teamMetaRepo = new PrismaTeamMetaRepository(prisma)
 
 const roundFromWeek = (w: number): PlayoffRound | null => {
   if (w === 1) return 'WILD_CARD'

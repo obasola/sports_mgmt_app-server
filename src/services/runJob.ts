@@ -2,10 +2,10 @@ import { Prisma } from '@prisma/client';
 import { JobService } from './JobService';
 
 import type { JobType } from '@/services/JobService'  // ALWAYS use this
-import { prisma as PrismaClient} from '../infrastructure/prisma';
+import { prisma } from "@/infrastructure/database/prisma";
 
 
-export const prisma = PrismaClient;
+
 
 export async function runJob<T>(
   job_type: JobType,

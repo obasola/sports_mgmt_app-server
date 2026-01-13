@@ -4,11 +4,18 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { registerAccessControlModule } from "@/modules/accessControl/infrastructure/di/accessControl.container";
+import { buildAccessRoutes } from "@/modules/accessControl/presentation/http/access.routes";
 import { apiRoutes } from './presentation/routes';
 import { errorHandler } from './presentation/middleware/errorHandler';
-import { prisma } from './infrastructure/prisma';
+import { prisma } from "@/infrastructure/database/prisma";
 
 const app = express();
+
+
+registerAccessControlModule();
+
+
 
 // Security middleware
 app.use(helmet());
@@ -23,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API routes
 app.use(`/api`, apiRoutes);
+app.use("/api/access", buildAccessRoutes());
 
 // 404 handler — MUST come before errorHandler
 app.use('*', (req, res, next) => {

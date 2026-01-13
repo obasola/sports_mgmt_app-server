@@ -6,7 +6,7 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 // ── Infrastructure ──────────────────────────────────────────────
-import { prisma } from '@/infrastructure/prisma';
+import { prisma } from "@/infrastructure/database/prisma";
 import { PrismaJobRepository } from '@/infrastructure/repositories/PrismaJobRepository';
 import { PrismaJobLogRepository } from '@/infrastructure/repositories/PrismaJobLogRepository';
 import { JobLogEmitter } from '@/infrastructure/queue/JobLogEmitter';

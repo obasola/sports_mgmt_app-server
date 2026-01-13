@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // src/server/cli/scrapeDraftPicks.ts
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/infrastructure/database/prisma";
 import { ProFootballReferenceScraper } from '../infrastructure/scraper/ProFootballReferenceScraper';
 import { DraftPickImportService } from '../application/services/DraftPickImportService';
 import { DraftPickScraperOrchestrator } from '../application/services/DraftPickScraperOrchestrator';
@@ -16,7 +16,7 @@ import { DEFAULT_SCRAPER_CONFIG } from '../infrastructure/scraper/IScraperConfig
  *   npm run scrape:draft -- --validate 2024
  */
 
-const prisma = new PrismaClient();
+
 
 async function main() {
   const args = process.argv.slice(2);

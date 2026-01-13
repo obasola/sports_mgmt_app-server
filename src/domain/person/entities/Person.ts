@@ -8,7 +8,7 @@ export type PersonProps = {
   passwordHash: string | null;
   firstName: string;
   lastName: string;
-  rid: number | null;
+  activeRid: number | null;
   isActive: boolean;
   emailVerified: boolean;
   verifiedAt: Date | null;
@@ -25,7 +25,7 @@ export type NewPersonInput = {
   passwordHash: string;
   firstName: string;
   lastName: string;
-  rid?: number | null;
+  activeRid?: number | null;
 };
 
 export class Person {
@@ -41,7 +41,7 @@ export class Person {
       passwordHash: input.passwordHash,
       firstName: input.firstName.trim(),
       lastName: input.lastName.trim(),
-      rid: input.rid ?? 1, // sensible default (adjust to your rules)
+      activeRid: input.activeRid ?? 1, // sensible default (adjust to your rules)
       isActive: true,
 
       emailVerified: false,
@@ -61,7 +61,7 @@ export class Person {
     passwordHash: string | null;
     firstName: string;
     lastName: string;
-    rid: number | null;
+    activeRid: number | null;
     isActive: boolean | null;
     emailVerified: boolean | null;
     verifiedAt: Date | null;
@@ -76,7 +76,7 @@ export class Person {
       passwordHash: row.passwordHash,
       firstName: row.firstName,
       lastName: row.lastName,
-      rid: row.rid,
+      activeRid: row.activeRid,
       isActive: row.isActive ?? true,
       emailVerified: row.emailVerified ?? false,
       verifiedAt: row.verifiedAt,
@@ -157,8 +157,8 @@ export class Person {
     return this.props.lastName;
   }
 
-  public get rid(): number | null {
-    return this.props.rid;
+  public get activeRid(): number | null {
+    return this.props.activeRid;
   }
 
   public get isActive(): boolean {
@@ -259,7 +259,7 @@ export class Person {
     passwordHash: string | null;
     firstName: string;
     lastName: string;
-    rid: number | null;
+    activeRid: number | null;
     isActive: boolean;
     emailVerified: boolean;
     verifiedAt: Date | null;
@@ -274,7 +274,7 @@ export class Person {
       passwordHash: this.props.passwordHash,
       firstName: this.props.firstName,
       lastName: this.props.lastName,
-      rid: this.props.rid,
+      activeRid: this.props.activeRid,
       isActive: this.props.isActive,
       emailVerified: this.props.emailVerified,
       verifiedAt: this.props.verifiedAt,

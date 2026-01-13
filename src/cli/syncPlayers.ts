@@ -7,9 +7,10 @@ import { PrismaPlayerTeamRepository } from '@/infrastructure/repositories/Prisma
 import { PlayerSyncService } from '@/application/player/services/PlayerSyncService'
 import { PrismaJobLogger } from '@/infrastructure/repositories/PrismaJobLogger'
 import { PrismaClient } from '@prisma/client'
-import { prisma } from '../infrastructure/prisma';
+import { prisma } from "@/infrastructure/database/prisma";
 
 const jobLogger = new PrismaJobLogger(prisma);
+
 function parseArgs(argv: string[]) {
   const result: Record<string, string> = {}
   for (const a of argv) {
@@ -29,7 +30,6 @@ async function main() {
     new EspnPlayerClient(),
     new PrismaPlayerRepository(),
     new PrismaPlayerTeamRepository(),
-    undefined,
     jobLogger
   )
 

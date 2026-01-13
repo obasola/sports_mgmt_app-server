@@ -10,11 +10,12 @@ export interface TeamMetaRow {
   conference: TeamConference | null
 }
 
-const prisma = new PrismaClient()
+
 
 export class PrismaTeamMetaRepository {
+  constructor(private readonly prisma: PrismaClient) {}
   async findAllMeta(): Promise<TeamMetaRow[]> {
-    const rows = await prisma.team.findMany({
+    const rows = await this.prisma.team.findMany({
       select: {
         id: true,
         espnTeamId: true,
