@@ -3,7 +3,7 @@ import { PrismaClient, Prisma, Game_gameStatus } from '@prisma/client';
 import { Game } from '../../domain/game/entities/Game';
 import type { IGameRepository, GameFilters } from '../../domain/game/repositories/IGameRepository';
 import type { PaginationParams, PaginatedResponse } from '@/shared/types/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+
 import type { PlayoffGameSummary } from '@/domain/game/repositories/IGameRepository';
 import type { PlayoffConference, PlayoffRound } from '@/domain/playoffs/valueObjects/PlayoffTypes';
 
