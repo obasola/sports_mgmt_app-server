@@ -36,7 +36,7 @@ CREATE TABLE `RolePermission` (
   CONSTRAINT `fk_roleperm_action` FOREIGN KEY (`actionId`) REFERENCES `PermissionAction` (`actionId`),
   CONSTRAINT `fk_roleperm_domain` FOREIGN KEY (`domainId`) REFERENCES `FeatureDomain` (`domainId`),
   CONSTRAINT `fk_roleperm_role` FOREIGN KEY (`roleId`) REFERENCES `Roles` (`rid`)
-) ENGINE=InnoDB AUTO_INCREMENT=407 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=395 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -58,4 +58,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-13 15:54:03
+-- Dump completed on 2026-01-16 12:40:03
