@@ -1,9 +1,14 @@
-import { container } from "tsyringe";
-import { PrismaAccessControlRepository } from "../persistence/prisma/PrismaAccessControlRepository";
-import type { IAccessControlRepository } from "../../domain/repositories/IAccessControlRepository";
+// src/modules/accessControl/.../accessControl.container.ts
 
+/**
+ * Legacy hook (tsyringe removed).
+ *
+ * This remains as a no-op so older bootstrap code that calls
+ * registerAccessControlModule() doesn't break.
+ *
+ * IMPORTANT:
+ * Use explicit wiring (moduleFactory/buildAccessControlUseCases) instead of DI.
+ */
 export function registerAccessControlModule(): void {
-  container.register<IAccessControlRepository>("IAccessControlRepository", {
-    useClass: PrismaAccessControlRepository,
-  });
+  // no-op
 }

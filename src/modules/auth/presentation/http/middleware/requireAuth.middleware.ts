@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from "express";
-import { container } from "tsyringe";
 import type { AuthUser } from "@/shared/presentation/http/authUser";
 import { JwtTokenService } from "@/modules/auth/infrastructure/security/JwtTokenService";
 
@@ -16,7 +15,6 @@ function readBearerToken(req: Request): string | null {
 }
 
 function readCookieAccessToken(req: Request): string | null {
-  // If you add cookie-parser later, req.cookies will exist.
   const cookiesUnknown = (req as unknown as { cookies?: unknown }).cookies;
   if (!cookiesUnknown || typeof cookiesUnknown !== "object") return null;
 
@@ -32,7 +30,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   }
 
   try {
-    const jwtSvc = container.resolve(JwtTokenService);
+    const jwtSvc = new JwtTokenService();
     const user: AuthUser = jwtSvc.verifyAccessToken(token);
 
     req.user = user;

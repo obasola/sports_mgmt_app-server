@@ -1,14 +1,11 @@
-// draftproanalytics-server/src/modules/accessControl/application/usecases/SwitchActiveRoleUseCase
-import { inject, injectable } from "tsyringe";
 import type { AccessMeResponse } from "../../domain/types/access.types";
 import type { IAccessControlRepository } from "../../domain/repositories/IAccessControlRepository";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../domain/access.errors";
 import { GetMyAccessContextUseCase } from "./GetMyAccessContextUseCase";
 
-@injectable()
 export class SwitchActiveRoleUseCase {
-  constructor(
-    @inject("IAccessControlRepository") private readonly repo: IAccessControlRepository,
+  public constructor(
+    private readonly repo: IAccessControlRepository,
     private readonly getContext: GetMyAccessContextUseCase
   ) {}
 
@@ -23,13 +20,12 @@ export class SwitchActiveRoleUseCase {
     const toRole = await this.repo.getRoleByName(trimmed);
     if (!toRole) throw new NotFoundError(`Role '${trimmed}' not found.`);
     const toRoleId = toRole.rid;
+
     const assigned = await this.repo.isRoleAssignedToPerson(personId, toRoleId);
     if (!assigned) throw new ForbiddenError(`Role '${trimmed}' is not assigned to this user.`);
 
     const allowed = await this.repo.isAssumeAllowed(person.activeRid, toRoleId);
-    if (!allowed) {
-      throw new ForbiddenError(`Not allowed to switch from active role to '${trimmed}'.`);
-    }
+    if (!allowed) throw new ForbiddenError(`Not allowed to switch from active role to '${trimmed}'.`);
 
     await this.repo.setActiveRole(personId, toRoleId);
 

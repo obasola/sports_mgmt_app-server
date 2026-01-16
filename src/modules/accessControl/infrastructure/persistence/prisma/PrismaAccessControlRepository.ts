@@ -1,13 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 import { Prisma } from "@prisma/client";
-import { inject, injectable } from "tsyringe";
+
 
 import type { IAccessControlRepository, PersonRow } from "../../../domain/repositories/IAccessControlRepository";
 import type { ActionCode, AssignedRole, PermissionMap, PermissionTuple } from "../../../domain/types/access.types";
 
-@injectable()
 export class PrismaAccessControlRepository implements IAccessControlRepository {
-  public constructor(@inject("PrismaClient") private readonly db: PrismaClient) {}
+  public constructor(private readonly db: PrismaClient) {}
   public async getPersonWithActiveRole(personId: number): Promise<PersonRow | null> {
     const p = await this.db.person.findUnique({
       where: { pid: personId },

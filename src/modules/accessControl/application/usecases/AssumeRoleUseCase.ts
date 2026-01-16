@@ -1,4 +1,3 @@
-import { inject, injectable } from "tsyringe";
 import type { AccessMeResponse } from "../../domain/types/access.types";
 import type { IAccessControlRepository } from "../../domain/repositories/IAccessControlRepository";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../domain/access.errors";
@@ -6,10 +5,9 @@ import { GetMyAccessContextUseCase } from "./GetMyAccessContextUseCase";
 
 const PUBLIC_RID = 1;
 
-@injectable()
 export class AssumeRoleUseCase {
-  constructor(
-    @inject("IAccessControlRepository") private readonly repo: IAccessControlRepository,
+  public constructor(
+    private readonly repo: IAccessControlRepository,
     private readonly getMe: GetMyAccessContextUseCase
   ) {}
 
