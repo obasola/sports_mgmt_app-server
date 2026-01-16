@@ -312,7 +312,7 @@ model Roles {
   RoleAssumeRule_RoleAssumeRule_toRoleIdToRoles   RoleAssumeRule[] @relation("RoleAssumeRule_toRoleIdToRoles")
   RolePermission                                  RolePermission[]
 }
-final
+
 model data_processing_jobs {
   id                   Int                           @id @default(autoincrement())
   job_type             data_processing_jobs_job_type
