@@ -22,12 +22,12 @@ import { buildScoreboardRouter } from "../controllers/ScoreboardController";
 import draftPickRoutes from "./draftPickRoute";
 import { playoffsRoutes } from "./playoffsRoutes"; // 👈 NEW
 import { prisma } from "@/infrastructure/database/prisma";
-import { buildDraftSimulatorModule } from "@/modules/draftSimulator/moduleFactory";
+import { DraftOrderJobController } from "@/modules/draftOrder/presentation/controllers/DraftOrderJobController";
+import { buildAccessRoutes } from "@/modules/accessControl/presentation/routes/access.routes";
+import { queueJobService, runJobService } from "@/infrastructure/dependencies";
 import { buildDraftOrderModule } from "@/modules/draftOrder/moduleFactory";
-
-import { queueJobService, runJobService } from '@/infrastructure/dependencies'
-import { DraftOrderJobController } from '@/modules/draftOrder/presentation/controllers/DraftOrderJobController'
-import { buildDraftOrderJobRoutes } from '@/modules/draftOrder/presentation/routes/draftOrderJobRoutes'
+import { buildDraftOrderJobRoutes } from "@/modules/draftOrder/presentation/routes/draftOrderJobRoutes";
+import { buildDraftSimulatorModule } from "@/modules/draftSimulator/moduleFactory";
 
 const router = Router();
 const draftOrderJobController = new DraftOrderJobController(queueJobService, runJobService)
@@ -37,7 +37,7 @@ const draftOrderJobController = new DraftOrderJobController(queueJobService, run
  * AUTH
  * ───────────────────────────── */
 router.use("/auth", authRoutes);
-
+router.use("/access", buildAccessRoutes(prisma));
 /* ─────────────────────────────
  * CORE DOMAIN ROUTES
  * ───────────────────────────── */
@@ -79,7 +79,7 @@ router.use('/draft-order/jobs', buildDraftOrderJobRoutes(draftOrderJobController
 router.get("/health", (req, res) => {
   res.json({
     success: true,
-    message: "Sports Management API v1 is running",
+    message: "DraftProAnalytics API v1 is running",
     timestamp: new Date().toISOString(),
   });
 });

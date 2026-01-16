@@ -5,14 +5,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { registerAccessControlModule } from "@/modules/accessControl/infrastructure/di/accessControl.container";
-import { buildAccessRoutes } from "@/modules/accessControl/presentation/http/access.routes";
+
 import { apiRoutes } from './presentation/routes';
 import { errorHandler } from './presentation/middleware/errorHandler';
 import { prisma } from "@/infrastructure/database/prisma";
+import { buildAdminAccessRouter } from './modules/accessControl/presentation/routes/adminAccess.routes';
+import { buildAccessRoutes } from "@/modules/accessControl/presentation/routes/access.routes";
 
 const app = express();
 
-
+const db = prisma;
 registerAccessControlModule();
 
 
@@ -30,8 +32,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // API routes
 app.use(`/api`, apiRoutes);
-app.use("/api/access", buildAccessRoutes());
-
+app.use("/api/access", buildAccessRoutes(db));
+app.use("/api/admin/access", buildAdminAccessRouter(db));
 // 404 handler — MUST come before errorHandler
 app.use('*', (req, res, next) => {
   const err: any = new Error('Route not found');

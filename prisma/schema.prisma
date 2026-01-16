@@ -300,16 +300,19 @@ model TeamNeed {
 }
 
 model Roles {
-  rid         Int          @id @default(autoincrement())
-  roleName    String       @unique(map: "roleName") @db.VarChar(25)
-  description String?      @db.VarChar(100)
-  isActive    Boolean?     @default(true)
-  createdAt   DateTime?    @default(now()) @db.Timestamp(0)
-  updatedAt   DateTime?    @default(now()) @db.Timestamp(0)
-  Person      Person[]
-  PersonRole  PersonRole[]
+  rid                                             Int              @id @default(autoincrement())
+  roleName                                        String           @unique(map: "roleName") @db.VarChar(25)
+  description                                     String?          @db.VarChar(100)
+  isActive                                        Boolean?         @default(true)
+  createdAt                                       DateTime?        @default(now()) @db.Timestamp(0)
+  updatedAt                                       DateTime?        @default(now()) @db.Timestamp(0)
+  Person                                          Person[]
+  PersonRole                                      PersonRole[]
+  RoleAssumeRule_RoleAssumeRule_fromRoleIdToRoles RoleAssumeRule[] @relation("RoleAssumeRule_fromRoleIdToRoles")
+  RoleAssumeRule_RoleAssumeRule_toRoleIdToRoles   RoleAssumeRule[] @relation("RoleAssumeRule_toRoleIdToRoles")
+  RolePermission                                  RolePermission[]
 }
-
+final
 model data_processing_jobs {
   id                   Int                           @id @default(autoincrement())
   job_type             data_processing_jobs_job_type
@@ -802,6 +805,52 @@ model PersonRole {
   @@unique([personId, roleId], map: "uq_person_role")
   @@index([assignedByPersonId], map: "fk_personrole_assignedby")
   @@index([roleId], map: "fk_personrole_role")
+}
+
+model FeatureDomain {
+  domainId       Int              @id @default(autoincrement())
+  domainCode     String           @unique(map: "domainCode") @db.VarChar(50)
+  displayName    String           @db.VarChar(100)
+  isMaintenance  Boolean          @default(false)
+  createdAt      DateTime         @default(now()) @db.Timestamp(0)
+  RolePermission RolePermission[]
+}
+
+model PermissionAction {
+  actionId       Int              @id @default(autoincrement())
+  actionCode     String           @unique(map: "actionCode") @db.VarChar(20)
+  description    String?          @db.VarChar(255)
+  createdAt      DateTime         @default(now()) @db.Timestamp(0)
+  RolePermission RolePermission[]
+}
+
+model RoleAssumeRule {
+  id                                     Int      @id @default(autoincrement())
+  fromRoleId                             Int
+  toRoleId                               Int
+  isAllowed                              Boolean  @default(true)
+  createdAt                              DateTime @default(now()) @db.Timestamp(0)
+  Roles_RoleAssumeRule_fromRoleIdToRoles Roles    @relation("RoleAssumeRule_fromRoleIdToRoles", fields: [fromRoleId], references: [rid], onDelete: NoAction, onUpdate: NoAction, map: "fk_assume_from")
+  Roles_RoleAssumeRule_toRoleIdToRoles   Roles    @relation("RoleAssumeRule_toRoleIdToRoles", fields: [toRoleId], references: [rid], onDelete: NoAction, onUpdate: NoAction, map: "fk_assume_to")
+
+  @@unique([fromRoleId, toRoleId], map: "uq_from_to")
+  @@index([toRoleId], map: "fk_assume_to")
+}
+
+model RolePermission {
+  id               Int              @id @default(autoincrement())
+  roleId           Int
+  domainId         Int
+  actionId         Int
+  isAllowed        Boolean          @default(true)
+  createdAt        DateTime         @default(now()) @db.Timestamp(0)
+  PermissionAction PermissionAction @relation(fields: [actionId], references: [actionId], onDelete: NoAction, onUpdate: NoAction, map: "fk_roleperm_action")
+  FeatureDomain    FeatureDomain    @relation(fields: [domainId], references: [domainId], onDelete: NoAction, onUpdate: NoAction, map: "fk_roleperm_domain")
+  Roles            Roles            @relation(fields: [roleId], references: [rid], onDelete: NoAction, onUpdate: NoAction, map: "fk_roleperm_role")
+
+  @@unique([roleId, domainId, actionId], map: "uq_role_domain_action")
+  @@index([actionId], map: "fk_roleperm_action")
+  @@index([domainId], map: "fk_roleperm_domain")
 }
 
 enum data_processing_jobs_job_type {

@@ -1,8 +1,9 @@
+// draftproanalytics-server/src/modules/accessControl/application/usecases/SwitchActiveRoleUseCase
 import { inject, injectable } from "tsyringe";
-import type { AccessContext } from "../../domain/access.types";
-import type { IAccessControlRepository } from "../../domain/IAccessControlRepository";
+import type { AccessMeResponse } from "../../domain/types/access.types";
+import type { IAccessControlRepository } from "../../domain/repositories/IAccessControlRepository";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../domain/access.errors";
-import { GetMyAccessContextUseCase } from "./GetMyAccessContext.usecase";
+import { GetMyAccessContextUseCase } from "./GetMyAccessContextUseCase";
 
 @injectable()
 export class SwitchActiveRoleUseCase {
@@ -11,7 +12,7 @@ export class SwitchActiveRoleUseCase {
     private readonly getContext: GetMyAccessContextUseCase
   ) {}
 
-  public async execute(personId: number, targetRoleName: string): Promise<AccessContext> {
+  public async execute(personId: number, targetRoleName: string): Promise<AccessMeResponse> {
     const trimmed = targetRoleName.trim().toLowerCase();
     if (trimmed.length === 0) throw new ValidationError("roleName is required.");
 
@@ -19,9 +20,9 @@ export class SwitchActiveRoleUseCase {
     if (!person) throw new NotFoundError(`Person ${personId} not found.`);
     if (!person.activeRid) throw new ValidationError("Person has no activeRid set.");
 
-    const toRoleId = await this.repo.getRoleIdByName(trimmed);
-    if (!toRoleId) throw new NotFoundError(`Role '${trimmed}' not found.`);
-
+    const toRole = await this.repo.getRoleByName(trimmed);
+    if (!toRole) throw new NotFoundError(`Role '${trimmed}' not found.`);
+    const toRoleId = toRole.rid;
     const assigned = await this.repo.isRoleAssignedToPerson(personId, toRoleId);
     if (!assigned) throw new ForbiddenError(`Role '${trimmed}' is not assigned to this user.`);
 

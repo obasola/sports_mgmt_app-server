@@ -1,261 +1,459 @@
 
 > sports_mgmt_app-server@1.0.0 build
-> npm run clean && tsc -p tsconfig.json && tsc-alias -p tsconfig.json --verbose
+> npm run clean && node --stack_size=12288 ./node_modules/typescript/lib/tsc.js -p tsconfig.json && tsc-alias -p tsconfig.json --verbose
 
 
 > sports_mgmt_app-server@1.0.0 clean
 > rimraf dist
 
-src/domain/auth/mappers/EmailVerificationTokenMapper.ts(7,5): error TS2741: Property 'isExpired' is missing in type '{ id: number | null; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'EmailVerificationTokenDTO'.
-src/domain/auth/mappers/PasswordResetTokenMapper.ts(7,5): error TS2741: Property 'isExpired' is missing in type '{ id: number | null; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'PasswordResetTokenDTO'.
-src/domain/auth/mappers/RefreshTokenMapper.ts(8,5): error TS2741: Property 'isExpired' is missing in type '{ id: number | null; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'RefreshTokenDTO'.
-src/domain/auth/mappers/RefreshTokenMapper.ts(38,5): error TS2322: Type 'number | null' is not assignable to type 'number | undefined'.
-  Type 'null' is not assignable to type 'number | undefined'.
-src/infrastructure/jwt/JwtAuthTokenService.ts(2,17): error TS2307: Cannot find module 'jsonwebtoken' or its corresponding type declarations.
-src/infrastructure/jwt/JwtAuthTokenService.ts(22,26): error TS2339: Property 'randomBytes' does not exist on type 'Crypto'.
-src/infrastructure/mail/MailerSendMailService.ts(1,23): error TS2459: Module '"@/domain/mail/services/MailService"' declares 'MailMessage' locally, but it is not exported.
-src/infrastructure/repositories/PrismaPersonRepository.ts(38,34): error TS2339: Property 'pageSize' does not exist on type 'PaginationParams'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(50,7): error TS2353: Object literal may only specify known properties, and 'items' does not exist in type 'PaginatedResponse<Person>'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(50,23): error TS2345: Argument of type '(row: { pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }) => Person' is not assignable to parameter of type '(value: { firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }, index: number, array: { ...; }[]) => Person'.
+src/application/player/services/PlayerSyncService.ts(54,18): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamWhereInput'.
+src/application/scoreboard/services/ScoreboardSyncService.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'Game_gameStatus'.
+src/application/services/DraftPickImportService.ts(91,13): error TS2353: Object literal may only specify known properties, and 'abbreviation' does not exist in type 'TeamWhereInput'.
+src/application/services/DraftPickImportService.ts(125,11): error TS2561: Object literal may only specify known properties, but 'yearEnteredLeague' does not exist in type '(Without<PlayerUpdateInput, PlayerUncheckedUpdateInput> & PlayerUncheckedUpdateInput) | (Without<...> & PlayerUpdateInput)'. Did you mean to write 'year_entered_league'?
+src/application/services/DraftPickImportService.ts(140,9): error TS2561: Object literal may only specify known properties, but 'yearEnteredLeague' does not exist in type '(Without<PlayerCreateInput, PlayerUncheckedCreateInput> & PlayerUncheckedCreateInput) | (Without<...> & PlayerCreateInput)'. Did you mean to write 'year_entered_league'?
+src/application/services/DraftPickImportService.ts(160,44): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/application/services/DraftPickImportService.ts(169,25): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/application/services/DraftPickImportService.ts(181,25): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/application/services/DraftPickImportService.ts(206,48): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/application/services/DraftPickImportService.ts(214,25): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/application/services/importer/nflSeason.ts(3,24): error TS2305: Module '"@prisma/client"' has no exported member 'Game'.
+src/application/services/importer/nflSeason.ts(35,18): error TS2339: Property 'jobLog' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/services/importer/nflSeason.ts(154,41): error TS2339: Property 'game' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/services/importer/nflSeason.ts(172,26): error TS2339: Property 'game' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/services/importer/nflSeason.ts(176,28): error TS2339: Property 'game' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/services/importer/runImportJob.ts(7,20): error TS2339: Property 'job' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/services/importer/runImportJob.ts(8,20): error TS2339: Property 'job' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/services/importer/runImportJob.ts(10,16): error TS2339: Property 'job' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/services/importer/runImportJob.ts(14,18): error TS2339: Property 'job' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/services/importer/runImportJob.ts(20,18): error TS2339: Property 'job' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/application/standings/types/GameWithTeams.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'Game_gameStatus'.
+src/bootstrap/testPrisma.ts(4,30): error TS2339: Property 'game' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/cli/ingest.ts(52,34): error TS2339: Property 'espn_teams' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/cli/ingest.ts(55,35): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/domain/game/repositories/IGameRepository.ts(44,43): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameUpdateInput'. Did you mean 'TeamUpdateInput'?
+src/espn/mappers/playerMapper.ts(1,30): error TS2307: Cannot find module './../../../node_modules/.prisma/client/index.d' or its corresponding type declarations.
+src/espn/mappers/playerMapper.ts(24,18): error TS2339: Property 'espn_players' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/espn/mappers/teamMapper.ts(8,18): error TS2339: Property 'espn_teams' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/database/prisma.ts(14,3): error TS2322: Type 'PrismaMariaDb' is not assignable to type 'never'.
+src/infrastructure/queue/IJobHandler.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'Job'.
+src/infrastructure/repositories/DraftPickRepository.ts(61,36): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/DraftPickRepository.ts(73,23): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/DraftPickRepository.ts(95,39): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(13,44): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(21,39): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(39,14): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(45,14): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(49,32): error TS7006: Parameter 'combineScore' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(68,46): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(82,18): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(88,32): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(95,39): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(103,40): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(112,31): error TS7006: Parameter 'combineScore' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(134,40): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(144,31): error TS7006: Parameter 'combineScore' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(151,40): error TS2551: Property 'combineScore' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'combine_Score'?
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(164,13): error TS7006: Parameter 'cs' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaCombineScoreRepository.ts(165,16): error TS7006: Parameter 'combineScore' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaDraftPickRepository.ts(15,30): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaDraftPickRepository.ts(32,30): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaDraftPickRepository.ts(55,30): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaDraftPickRepository.ts(66,30): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaDraftPickRepository.ts(85,23): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(2,32): error TS2305: Module '"@prisma/client"' has no exported member 'Game_gameStatus'.
+src/infrastructure/repositories/PrismaGameRepository.ts(41,39): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(75,16): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaGameRepository.ts(88,59): error TS2353: Object literal may only specify known properties, and 'abbreviation' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaGameRepository.ts(92,35): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(102,35): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(115,53): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameWhereInput'. Did you mean 'TeamWhereInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(117,25): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameWhereInput'. Did you mean 'TeamWhereInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(151,19): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(158,19): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(162,23): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(169,39): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(193,49): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameUpdateInput'. Did you mean 'TeamUpdateInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(194,39): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(204,23): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(208,37): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(213,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(218,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(226,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(231,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(236,25): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameWhereInput'. Did you mean 'TeamWhereInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(239,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(245,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(249,25): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameWhereInput'. Did you mean 'TeamWhereInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(252,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(258,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(262,25): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameWhereInput'. Did you mean 'TeamWhereInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(266,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(271,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(275,25): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameWhereInput'. Did you mean 'TeamWhereInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(279,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(284,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(292,25): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameWhereInput'. Did you mean 'TeamWhereInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(297,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(302,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(306,25): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameWhereInput'. Did you mean 'TeamWhereInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(310,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(315,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(324,37): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(358,35): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(367,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(394,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaGameRepository.ts(426,35): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaGameRepository.ts(428,30): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameUncheckedUpdateInput'. Did you mean 'TeamUncheckedUpdateInput'?
+src/infrastructure/repositories/PrismaGameRepository.ts(429,30): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'GameUncheckedCreateInput'. Did you mean 'TeamUncheckedCreateInput'?
+src/infrastructure/repositories/PrismaJobLogRepository.ts(14,35): error TS2339: Property 'jobLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobLogRepository.ts(29,36): error TS2339: Property 'jobLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobLogRepository.ts(38,36): error TS2339: Property 'jobLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobLogRepository.ts(43,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaJobLogger.ts(11,35): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobLogger.ts(25,23): error TS2339: Property 'jobLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobLogger.ts(36,23): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobLogger.ts(48,23): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobLogger.ts(59,23): error TS2339: Property 'jobLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobRepository.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'Job_status'.
+src/infrastructure/repositories/PrismaJobRepository.ts(19,43): error TS2366: Function lacks ending return statement and return type does not include 'undefined'.
+src/infrastructure/repositories/PrismaJobRepository.ts(50,35): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobRepository.ts(62,35): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobRepository.ts(80,35): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobRepository.ts(96,35): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobRepository.ts(108,19): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobRepository.ts(109,19): error TS2339: Property 'job' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaJobRepository.ts(118,24): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPersonRepository.ts(43,13): error TS2339: Property 'isActive' does not exist on type 'PersonWhereInput'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(46,13): error TS2339: Property 'emailVerified' does not exist on type 'PersonWhereInput'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(66,22): error TS2345: Argument of type '(row: { pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }) => Person' is not assignable to parameter of type '(value: { pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }, index: number, array: { pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }[]) => Person'.
   Types of parameters 'row' and 'value' are incompatible.
-    Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
-src/infrastructure/repositories/PrismaPersonRepository.ts(62,44): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
-  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
-src/infrastructure/repositories/PrismaPersonRepository.ts(66,54): error TS2322: Type '{ emailAddress: string; }' is not assignable to type 'PersonWhereUniqueInput'.
-  Type '{ emailAddress: string; }' is not assignable to type '{ pid: number; } & { pid?: number | undefined; AND?: PersonWhereInput | PersonWhereInput[] | undefined; OR?: PersonWhereInput[] | undefined; ... 10 more ...; refreshTokens?: RefreshTokenListRelationFilter | undefined; }'.
-    Property 'pid' is missing in type '{ emailAddress: string; }' but required in type '{ pid: number; }'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(67,44): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
-  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
-src/infrastructure/repositories/PrismaPersonRepository.ts(71,54): error TS2322: Type '{ userName: string; }' is not assignable to type 'PersonWhereUniqueInput'.
-  Type '{ userName: string; }' is not assignable to type '{ pid: number; } & { pid?: number | undefined; AND?: PersonWhereInput | PersonWhereInput[] | undefined; OR?: PersonWhereInput[] | undefined; ... 10 more ...; refreshTokens?: RefreshTokenListRelationFilter | undefined; }'.
-    Property 'pid' is missing in type '{ userName: string; }' but required in type '{ pid: number; }'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(72,44): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
-  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
-src/infrastructure/repositories/PrismaPersonRepository.ts(101,9): error TS2353: Object literal may only specify known properties, and 'rid' does not exist in type '(Without<PersonCreateInput, PersonUncheckedCreateInput> & PersonUncheckedCreateInput) | (Without<...> & PersonCreateInput)'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(109,35): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
-  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
-src/infrastructure/repositories/PrismaPersonRepository.ts(118,35): error TS2345: Argument of type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is not assignable to parameter of type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }'.
-  Type '{ firstName: string; lastName: string; pid: number; userName: string; emailAddress: string; password: string; emailVerified: boolean; verifiedAt: Date | null; }' is missing the following properties from type '{ pid: number; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; rid: number | null; isActive: boolean | null; emailVerified: boolean | null; verifiedAt: Date | null; createdAt: Date | null; updatedAt: Date | null; lastLoginAt: Date | null; }': passwordHash, rid, isActive, createdAt, and 2 more.
-src/infrastructure/repositories/PrismaPersonRepository.ts(129,51): error TS2322: Type 'EmailVerificationTokenDTO' is not assignable to type '(Without<EmailVerificationTokenCreateInput, EmailVerificationTokenUncheckedCreateInput> & EmailVerificationTokenUncheckedCreateInput) | (Without<...> & EmailVerificationTokenCreateInput)'.
-  Type 'EmailVerificationTokenDTO' is not assignable to type 'Without<EmailVerificationTokenCreateInput, EmailVerificationTokenUncheckedCreateInput> & EmailVerificationTokenUncheckedCreateInput'.
-    Type 'EmailVerificationTokenDTO' is not assignable to type 'EmailVerificationTokenUncheckedCreateInput'.
-      Types of property 'id' are incompatible.
-        Type 'number | null' is not assignable to type 'number | undefined'.
-          Type 'null' is not assignable to type 'number | undefined'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(133,5): error TS2322: Type '{ id: number; createdAt: Date; personId: number; token: string; expiresAt: Date; } | null' is not assignable to type 'EmailVerificationTokenDTO | null'.
-  Property 'isExpired' is missing in type '{ id: number; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'EmailVerificationTokenDTO'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(151,47): error TS2322: Type 'PasswordResetTokenDTO' is not assignable to type '(Without<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput> & PasswordResetTokenUncheckedCreateInput) | (Without<...> & PasswordResetTokenCreateInput)'.
-  Type 'PasswordResetTokenDTO' is not assignable to type 'Without<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput> & PasswordResetTokenUncheckedCreateInput'.
-    Type 'PasswordResetTokenDTO' is not assignable to type 'PasswordResetTokenUncheckedCreateInput'.
-      Types of property 'id' are incompatible.
-        Type 'number | null' is not assignable to type 'number | undefined'.
-          Type 'null' is not assignable to type 'number | undefined'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(155,5): error TS2322: Type '{ id: number; createdAt: Date; personId: number; token: string; expiresAt: Date; } | null' is not assignable to type 'PasswordResetTokenDTO | null'.
-  Property 'isExpired' is missing in type '{ id: number; createdAt: Date; personId: number; token: string; expiresAt: Date; }' but required in type 'PasswordResetTokenDTO'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(173,41): error TS2322: Type 'RefreshTokenDTO' is not assignable to type '(Without<RefreshTokenCreateInput, RefreshTokenUncheckedCreateInput> & RefreshTokenUncheckedCreateInput) | (Without<...> & RefreshTokenCreateInput)'.
-  Type 'RefreshTokenDTO' is not assignable to type 'Without<RefreshTokenCreateInput, RefreshTokenUncheckedCreateInput> & RefreshTokenUncheckedCreateInput'.
-    Property 'tokenHash' is missing in type 'RefreshTokenDTO' but required in type 'RefreshTokenUncheckedCreateInput'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(177,5): error TS2322: Type '{ id: number; createdAt: Date; personId: number; expiresAt: Date; tokenHash: string; } | null' is not assignable to type 'RefreshTokenDTO | null'.
-  Type '{ id: number; createdAt: Date; personId: number; expiresAt: Date; tokenHash: string; }' is missing the following properties from type 'RefreshTokenDTO': token, isExpired
-src/infrastructure/repositories/PrismaPersonRepository.ts(177,55): error TS2353: Object literal may only specify known properties, and 'token' does not exist in type 'RefreshTokenWhereUniqueInput'.
-src/infrastructure/repositories/PrismaPersonRepository.ts(181,33): error TS2345: Argument of type 'RefreshTokenDTO' is not assignable to parameter of type '{ select?: RefreshTokenSelect<DefaultArgs> | null | undefined; omit?: RefreshTokenOmit<DefaultArgs> | null | undefined; include?: RefreshTokenInclude<...> | ... 1 more ... | undefined; data: (Without<...> & RefreshTokenUncheckedUpdateInput) | (Without<...> & RefreshTokenUpdateInput); where: RefreshTokenWhereUniqueIn...'.
-  Type 'RefreshTokenDTO' is missing the following properties from type '{ select?: RefreshTokenSelect<DefaultArgs> | null | undefined; omit?: RefreshTokenOmit<DefaultArgs> | null | undefined; include?: RefreshTokenInclude<...> | ... 1 more ... | undefined; data: (Without<...> & RefreshTokenUncheckedUpdateInput) | (Without<...> & RefreshTokenUpdateInput); where: RefreshTokenWhereUniqueIn...': data, where
-src/infrastructure/security/Argon2PasswordHasher.ts(3,20): error TS2307: Cannot find module 'argon2' or its corresponding type declarations.
-src/presentation/controllers/AuthEmailController.ts(2,35): error TS2307: Cannot find module '@/infrastructure/email/MailServiceFactory' or its corresponding type declarations.
-src/presentation/controllers/AuthEmailController.ts(11,11): error TS18047: 'req.body' is possibly 'null'.
-src/presentation/controllers/AuthEmailController.ts(11,20): error TS2339: Property 'email' does not exist on type 'ReadableStream<any>'.
-src/presentation/controllers/AuthEmailController.ts(16,14): error TS2554: Expected 0 arguments, but got 1.
-src/presentation/controllers/AuthEmailController.ts(18,9): error TS2349: This expression is not callable.
-  Type 'Number' has no call signatures.
-src/presentation/controllers/PersonController.ts(120,48): error TS2339: Property 'searchPersonsByName' does not exist on type 'PersonService'.
-
-
-// src/infrastructure/repositories/PrismaPersonRepository.ts
-import { PrismaClient, Person as PrismaPerson, RefreshToken } from "@prisma/client";
-
-import { IPersonRepository } from "@/domain/person/repositories/IPersonRepository";
-import { PersonFilters } from "@/domain/person/repositories/PersonFilters";
-
-import { Person } from "@/domain/person/entities/Person";
-import { NewPersonInput } from "@/domain/person/entities/Person";
-
-import { EmailVerificationTokenDTO } from "@/domain/auth/dtos/EmailVerificationTokenDTO";
-import { PasswordResetTokenDTO } from "@/domain/auth/dtos/PasswordResetTokenDTO";
-import { RefreshTokenDTO } from "@/domain/auth/dtos/RefreshTokenDTO";
-
-import { PaginationParams, PaginatedResponse } from "@/shared/types/common";
-
-import { prisma } from "../prisma";
-
-export class PrismaPersonRepository implements IPersonRepository {
-  constructor(private readonly db: PrismaClient = prisma) {}
-
-  // ───────────────────────────────────────────
-  // PERSON: findAll with filters + pagination
-  // ───────────────────────────────────────────
-  async findAll(
-    filters: PersonFilters = {},
-    pagination?: PaginationParams
-  ): Promise<PaginatedResponse<Person>> {
-
-    const where: any = {};
-
-    if (filters.userName)       where.userName = { contains: filters.userName, mode: "insensitive" };
-    if (filters.emailAddress)   where.emailAddress = { contains: filters.emailAddress, mode: "insensitive" };
-    if (filters.firstName)      where.firstName = { contains: filters.firstName, mode: "insensitive" };
-    if (filters.lastName)       where.lastName = { contains: filters.lastName, mode: "insensitive" };
-    if (filters.isActive !== undefined)       where.isActive = filters.isActive;
-    if (filters.emailVerified !== undefined)  where.emailVerified = filters.emailVerified;
-
-    const page = pagination?.page ?? 1;
-    const pageSize = pagination?.pageSize ?? 25;
-
-    const total = await this.db.person.count({ where });
-
-    const rows = await this.db.person.findMany({
-      where,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      orderBy: { pid: "asc" }
-    });
-
-    return {
-      items: rows.map(Person.fromPersistence),
-      total,
-      page,
-      pageSize
-    };
-  }
-
-  // ───────────────────────────────────────────
-  // PERSON: finders
-  // ───────────────────────────────────────────
-  async findById(pid: number): Promise<Person | null> {
-    const record = await this.db.person.findUnique({ where: { pid } });
-    return record ? Person.fromPersistence(record) : null;
-  }
-
-  async findByEmail(email: string): Promise<Person | null> {
-    const record = await this.db.person.findUnique({ where: { emailAddress: email } });
-    return record ? Person.fromPersistence(record) : null;
-  }
-
-  async findByUserName(userName: string): Promise<Person | null> {
-    const record = await this.db.person.findUnique({ where: { userName } });
-    return record ? Person.fromPersistence(record) : null;
-  }
-
-  // ───────────────────────────────────────────
-  // PERSON: exists
-  // ───────────────────────────────────────────
-  async exists(pid: number): Promise<boolean> {
-    return (await this.db.person.count({ where: { pid } })) > 0;
-  }
-
-  async existsByEmailAddress(emailAddress: string): Promise<boolean> {
-    return (await this.db.person.count({ where: { emailAddress } })) > 0;
-  }
-
-  async existsByUserName(userName: string): Promise<boolean> {
-    return (await this.db.person.count({ where: { userName } })) > 0;
-  }
-
-  // ───────────────────────────────────────────
-  // PERSON: create / update / delete
-  // ───────────────────────────────────────────
-  async createPerson(input: NewPersonInput): Promise<Person> {
-    const record = await this.db.person.create({
-      data: {
-        userName: input.userName,
-        emailAddress: input.emailAddress,
-        password: input.passwordHash,  // correct Prisma column
-        firstName: input.firstName,
-        lastName: input.lastName,
-        rid: input.rid ?? null,
-        isActive: true,
-        emailVerified: false,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    });
-
-    return Person.fromPersistence(record);
-  }
-
-  async updatePerson(person: Person): Promise<Person> {
-    const updated = await this.db.person.update({
-      where: { pid: person.pid },
-      data: person.toPersistence()
-    });
-
-    return Person.fromPersistence(updated);
-  }
-
-  async delete(pid: number): Promise<void> {
-    await this.db.person.delete({ where: { pid } });
-  }
-
-  // ───────────────────────────────────────────
-  // EMAIL VERIFICATION TOKENS
-  // ───────────────────────────────────────────
-  async createEmailVerificationToken(dto: EmailVerificationTokenDTO): Promise<void> {
-    await this.db.emailVerificationToken.create({ data: dto });
-  }
-
-  async findEmailVerificationToken(token: string): Promise<EmailVerificationTokenDTO | null> {
-    return this.db.emailVerificationToken.findUnique({ where: { token } });
-  }
-
-  async markEmailVerified(personId: number): Promise<void> {
-    await this.db.person.update({
-      where: { pid: personId },
-      data: { emailVerified: true, verifiedAt: new Date() }
-    });
-  }
-
-  async deleteEmailVerificationToken(id: number): Promise<void> {
-    await this.db.emailVerificationToken.delete({ where: { id } });
-  }
-
-  // ───────────────────────────────────────────
-  // PASSWORD RESET TOKENS
-  // ───────────────────────────────────────────
-  async createPasswordResetToken(dto: PasswordResetTokenDTO): Promise<void> {
-    await this.db.passwordResetToken.create({ data: dto });
-  }
-
-  async findPasswordResetToken(token: string): Promise<PasswordResetTokenDTO | null> {
-    return this.db.passwordResetToken.findUnique({ where: { token } });
-  }
-
-  async updatePassword(personId: number, hashedPassword: string): Promise<void> {
-    await this.db.person.update({
-      where: { pid: personId },
-      data: { password: hashedPassword }
-    });
-  }
-
-  async deletePasswordResetToken(id: number): Promise<void> {
-    await this.db.passwordResetToken.delete({ where: { id } });
-  }
-
-  // ───────────────────────────────────────────
-  // REFRESH TOKENS
-  // ───────────────────────────────────────────
-  async createRefreshToken(dto: RefreshTokenDTO): Promise<void> {
-    await this.db.refreshToken.create({ data: dto });
-  }
-
-  async findRefreshToken(token: string): Promise<RefreshTokenDTO | null> {    
-    return this.db.refreshToken.findUnique({ where: { token } });
-  }
-
-  async saveRefreshToken(dto: RefreshTokenDTO): Promise<void> {
-    this.db.refreshToken.update(dto);
-  }
-
-  async deleteRefreshToken(id: number): Promise<void> {
-    await this.db.refreshToken.delete({ where: { id } });
-  }
-}
-
+    Type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is missing the following properties from type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }': passwordHash, activeRid, isActive, emailVerified, and 4 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(81,44): error TS2345: Argument of type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is not assignable to parameter of type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }'.
+  Type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is missing the following properties from type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }': passwordHash, activeRid, isActive, emailVerified, and 4 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(90,44): error TS2345: Argument of type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is not assignable to parameter of type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }'.
+  Type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is missing the following properties from type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }': passwordHash, activeRid, isActive, emailVerified, and 4 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(99,44): error TS2345: Argument of type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is not assignable to parameter of type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }'.
+  Type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is missing the following properties from type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }': passwordHash, activeRid, isActive, emailVerified, and 4 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(125,9): error TS2561: Object literal may only specify known properties, but 'passwordHash' does not exist in type '(Without<PersonCreateInput, PersonUncheckedCreateInput> & PersonUncheckedCreateInput) | (Without<...> & PersonCreateInput)'. Did you mean to write 'password'?
+src/infrastructure/repositories/PrismaPersonRepository.ts(138,35): error TS2345: Argument of type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is not assignable to parameter of type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }'.
+  Type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is missing the following properties from type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }': passwordHash, activeRid, isActive, emailVerified, and 4 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(147,35): error TS2345: Argument of type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is not assignable to parameter of type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }'.
+  Type '{ pid: number; userName: string; emailAddress: string; password: string; firstName: string; lastName: string; }' is missing the following properties from type '{ pid: number | undefined; userName: string; emailAddress: string; passwordHash: string | null; firstName: string; lastName: string; activeRid: number | null; isActive: boolean | null; ... 4 more ...; lastLoginAt: Date | null; }': passwordHash, activeRid, isActive, emailVerified, and 4 more.
+src/infrastructure/repositories/PrismaPersonRepository.ts(158,19): error TS2339: Property 'emailVerificationToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(170,34): error TS2339: Property 'emailVerificationToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(188,15): error TS2353: Object literal may only specify known properties, and 'emailVerified' does not exist in type '(Without<PersonUpdateInput, PersonUncheckedUpdateInput> & PersonUncheckedUpdateInput) | (Without<...> & PersonUpdateInput)'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(193,19): error TS2339: Property 'emailVerificationToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(200,19): error TS2339: Property 'passwordResetToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(212,34): error TS2339: Property 'passwordResetToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(230,15): error TS2561: Object literal may only specify known properties, but 'passwordHash' does not exist in type '(Without<PersonUpdateInput, PersonUncheckedUpdateInput> & PersonUncheckedUpdateInput) | (Without<...> & PersonUpdateInput)'. Did you mean to write 'password'?
+src/infrastructure/repositories/PrismaPersonRepository.ts(235,19): error TS2339: Property 'passwordResetToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(242,19): error TS2339: Property 'refreshToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(255,34): error TS2339: Property 'refreshToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(273,19): error TS2339: Property 'refreshToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPersonRepository.ts(284,19): error TS2339: Property 'refreshToken' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(14,43): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(22,38): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(40,14): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(50,14): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(54,31): error TS7006: Parameter 'playerAward' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(73,45): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(87,18): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(93,32): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(100,39): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(108,30): error TS7006: Parameter 'playerAward' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(112,39): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(124,30): error TS7006: Parameter 'playerAward' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(128,39): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(136,30): error TS7006: Parameter 'playerAward' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerAwardRepository.ts(140,25): error TS2551: Property 'playerAward' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Award'?
+src/infrastructure/repositories/PrismaPlayerRepository.ts(4,10): error TS2724: '"@prisma/client"' has no exported member named 'PlayerTeam'. Did you mean 'Player_Team'?
+src/infrastructure/repositories/PrismaPlayerRepository.ts(89,16): error TS2353: Object literal may only specify known properties, and 'espnAthleteId' does not exist in type 'PlayerWhereUniqueInput'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(101,35): error TS2345: Argument of type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' is not assignable to parameter of type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+  Property 'espnAthleteId' is missing in type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' but required in type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(105,59): error TS2353: Object literal may only specify known properties, and 'espnAthleteId' does not exist in type 'PlayerWhereUniqueInput'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(106,41): error TS2345: Argument of type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' is not assignable to parameter of type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+  Property 'espnAthleteId' is missing in type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' but required in type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(149,11): error TS2561: Object literal may only specify known properties, but 'PlayerTeam' does not exist in type 'PlayerWhereInput'. Did you mean to write 'Player_Team'?
+src/infrastructure/repositories/PrismaPlayerRepository.ts(159,69): error TS2345: Argument of type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' is not assignable to parameter of type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+  Property 'espnAthleteId' is missing in type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' but required in type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(205,16): error TS2353: Object literal may only specify known properties, and 'prospectId' does not exist in type 'PlayerWhereInput'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(209,44): error TS2345: Argument of type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' is not assignable to parameter of type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+  Property 'espnAthleteId' is missing in type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' but required in type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(217,9): error TS2561: Object literal may only specify known properties, but 'yearEnteredLeague' does not exist in type 'PlayerWhereInput'. Did you mean to write 'year_entered_league'?
+src/infrastructure/repositories/PrismaPlayerRepository.ts(223,59): error TS2345: Argument of type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' is not assignable to parameter of type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+  Property 'espnAthleteId' is missing in type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' but required in type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(232,9): error TS2561: Object literal may only specify known properties, but 'yearEnteredLeague' does not exist in type 'PlayerWhereInput'. Did you mean to write 'year_entered_league'?
+src/infrastructure/repositories/PrismaPlayerRepository.ts(236,19): error TS2561: Object literal may only specify known properties, but 'yearEnteredLeague' does not exist in type 'PlayerOrderByWithRelationInput'. Did you mean to write 'year_entered_league'?
+src/infrastructure/repositories/PrismaPlayerRepository.ts(240,59): error TS2345: Argument of type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' is not assignable to parameter of type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+  Property 'espnAthleteId' is missing in type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' but required in type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+src/infrastructure/repositories/PrismaPlayerRepository.ts(246,9): error TS2561: Object literal may only specify known properties, but 'yearEnteredLeague' does not exist in type 'PlayerWhereInput'. Did you mean to write 'year_entered_league'?
+src/infrastructure/repositories/PrismaPlayerRepository.ts(252,59): error TS2345: Argument of type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' is not assignable to parameter of type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+  Property 'espnAthleteId' is missing in type '{ id: number; firstName: string; lastName: string; age: number; height: number | null; weight: number | null; handSize: number | null; armLength: number | null; homeCity: string | null; ... 6 more ...; combineScoreId: number | null; }' but required in type '{ id: number; espnAthleteId: string | null; firstName: string; lastName: string; age: number; height?: number | null | undefined; weight?: number | null | undefined; handSize?: number | null | undefined; ... 7 more ...; prospectId?: number | ... 1 more ... | undefined; }'.
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(53,35): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'PlayerTeamUncheckedCreateInput'. Did you mean 'Player_TeamUncheckedCreateInput'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(65,42): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(73,37): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(97,14): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(107,14): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(111,30): error TS7006: Parameter 'playerTeam' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(132,43): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'PlayerTeamUncheckedUpdateInput'. Did you mean 'Player_TeamUncheckedUpdateInput'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(147,44): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(161,18): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(167,32): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(175,38): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(183,29): error TS7006: Parameter 'playerTeam' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(189,38): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(197,29): error TS7006: Parameter 'playerTeam' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(203,38): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(211,29): error TS7006: Parameter 'playerTeam' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(217,38): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(228,29): error TS7006: Parameter 'playerTeam' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(234,37): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(251,38): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(262,29): error TS7006: Parameter 'playerTeam' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(282,32): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(287,30): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(297,35): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(314,24): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'PlayerTeamUncheckedCreateInput'. Did you mean 'Player_TeamUncheckedCreateInput'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(325,32): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(327,30): error TS2724: '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member named 'PlayerTeamUncheckedUpdateInput'. Did you mean 'Player_TeamUncheckedUpdateInput'?
+src/infrastructure/repositories/PrismaPlayerTeamRepository.ts(332,30): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(14,48): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(25,43): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(46,14): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(58,14): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(62,36): error TS7006: Parameter 'postSeasonResult' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(81,50): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(98,18): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(104,32): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(112,44): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(120,35): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(124,44): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(132,35): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(136,43): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(150,44): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(158,35): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(162,44): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(173,35): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(177,44): error TS2551: Property 'postSeasonResult' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'. Did you mean 'post_Season_Result'?
+src/infrastructure/repositories/PrismaPostSeasonResultRepository.ts(188,35): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaProspectRepository.ts(24,40): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(32,35): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(50,14): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(59,14): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(63,28): error TS7006: Parameter 'prospect' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaProspectRepository.ts(82,42): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(96,18): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(102,32): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(134,36): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(151,26): error TS7006: Parameter 'prospect' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaProspectRepository.ts(172,33): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(184,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaProspectRepository.ts(191,33): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(203,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaProspectRepository.ts(211,37): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(216,32): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaProspectRepository.ts(227,23): error TS7006: Parameter 'groups' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaProspectRepository.ts(227,44): error TS7006: Parameter 'g' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaProspectRepository.ts(239,27): error TS7006: Parameter 'prospect' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(14,7): error TS2322: Type '{ teamId?: number | undefined; seasonYear?: number | undefined; oppTeamId: number; oppTeamConference?: string | undefined; oppTeamDivision?: string | undefined; scheduleWeek?: number | undefined; ... 8 more ...; teamScore?: number | undefined; }' is not assignable to type '(Without<ScheduleCreateInput, ScheduleUncheckedCreateInput> & ScheduleUncheckedCreateInput) | (Without<...> & ScheduleCreateInput)'.
+  Type '{ teamId?: number | undefined; seasonYear?: number | undefined; oppTeamId: number; oppTeamConference?: string | undefined; oppTeamDivision?: string | undefined; scheduleWeek?: number | undefined; ... 8 more ...; teamScore?: number | undefined; }' is not assignable to type 'Without<ScheduleUncheckedCreateInput, ScheduleCreateInput> & ScheduleCreateInput'.
+    Property 'Team_Schedule_awayTeamIdToTeam' is missing in type '{ teamId?: number | undefined; seasonYear?: number | undefined; oppTeamId: number; oppTeamConference?: string | undefined; oppTeamDivision?: string | undefined; scheduleWeek?: number | undefined; ... 8 more ...; teamScore?: number | undefined; }' but required in type 'ScheduleCreateInput'.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(17,37): error TS2345: Argument of type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is not assignable to parameter of type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }'.
+  Type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is missing the following properties from type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }': teamId, seasonYear, oppTeamId, oppTeamConference, and 3 more.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(25,48): error TS2345: Argument of type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is not assignable to parameter of type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }'.
+  Type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is missing the following properties from type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }': teamId, seasonYear, oppTeamId, oppTeamConference, and 3 more.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(44,13): error TS2353: Object literal may only specify known properties, and 'seasonYear' does not exist in type 'ScheduleOrderByWithRelationInput'.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(53,66): error TS2345: Argument of type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is not assignable to parameter of type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }'.
+  Type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is missing the following properties from type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }': teamId, seasonYear, oppTeamId, oppTeamConference, and 3 more.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(77,37): error TS2345: Argument of type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is not assignable to parameter of type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }'.
+  Type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is missing the following properties from type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }': teamId, seasonYear, oppTeamId, oppTeamConference, and 3 more.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(101,9): error TS2561: Object literal may only specify known properties, but 'teamId' does not exist in type 'ScheduleWhereInput'. Did you mean to write 'teamID'?
+src/infrastructure/repositories/PrismaScheduleRepository.ts(110,65): error TS2345: Argument of type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is not assignable to parameter of type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }'.
+  Type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is missing the following properties from type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }': teamId, seasonYear, oppTeamId, oppTeamConference, and 3 more.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(116,9): error TS2561: Object literal may only specify known properties, but 'oppTeamId' does not exist in type 'ScheduleWhereInput'. Did you mean to write 'teamID'?
+src/infrastructure/repositories/PrismaScheduleRepository.ts(119,11): error TS2353: Object literal may only specify known properties, and 'seasonYear' does not exist in type 'ScheduleOrderByWithRelationInput'.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(124,65): error TS2345: Argument of type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is not assignable to parameter of type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }'.
+  Type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is missing the following properties from type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }': teamId, seasonYear, oppTeamId, oppTeamConference, and 3 more.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(144,65): error TS2345: Argument of type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is not assignable to parameter of type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }'.
+  Type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is missing the following properties from type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }': teamId, seasonYear, oppTeamId, oppTeamConference, and 3 more.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(159,11): error TS2353: Object literal may only specify known properties, and 'seasonYear' does not exist in type 'ScheduleOrderByWithRelationInput'.
+src/infrastructure/repositories/PrismaScheduleRepository.ts(164,65): error TS2345: Argument of type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is not assignable to parameter of type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }'.
+  Type '{ id: number; awayTeamId: number; homeTeamId: number | null; scheduleWeek: number | null; gameDate: Date | null; gameCity: string | null; gameStateProvince: string | null; gameCountry: string | null; ... 7 more ...; teamID: number | null; }' is missing the following properties from type '{ id: number; teamId: number | null; seasonYear: number | null; oppTeamId: number; oppTeamConference: string | null; oppTeamDivision: string | null; scheduleWeek: number | null; gameDate: Date | null; ... 7 more ...; teamScore: number | null; }': teamId, seasonYear, oppTeamId, oppTeamConference, and 3 more.
+src/infrastructure/repositories/PrismaStandingsRepository.ts(2,24): error TS2305: Module '"@prisma/client"' has no exported member 'Game_gameStatus'.
+src/infrastructure/repositories/PrismaStandingsRepository.ts(12,24): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamMetaRepository.ts(21,9): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamSelect<DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamMetaRepository.ts(29,82): error TS2339: Property 'espnTeamId' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }'.
+src/infrastructure/repositories/PrismaTeamMetaRepository.ts(34,25): error TS2339: Property 'abbreviation' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; } & { espnTeamId: number; }'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(13,40): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(21,35): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(39,14): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(48,14): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(52,28): error TS7006: Parameter 'teamNeed' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(71,42): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(85,18): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(91,32): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(99,36): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(104,27): error TS7006: Parameter 'teamNeed' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(108,36): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(117,27): error TS7006: Parameter 'teamNeed' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(129,36): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(137,27): error TS7006: Parameter 'teamNeed' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(141,36): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(149,27): error TS7006: Parameter 'teamNeed' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(153,36): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamNeedRepository.ts(161,27): error TS7006: Parameter 'teamNeed' implicitly has an 'any' type.
+src/infrastructure/repositories/PrismaTeamRepository.ts(28,33): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(33,40): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(52,51): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(82,33): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(104,40): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(112,50): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(120,50): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(128,50): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(136,50): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(141,40): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(149,50): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(157,50): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(195,16): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(201,18): error TS2353: Object literal may only specify known properties, and 'abbreviation' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(209,11): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type '(Without<TeamUpdateInput, TeamUncheckedUpdateInput> & TeamUncheckedUpdateInput) | (Without<...> & TeamUpdateInput)'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(210,56): error TS2339: Property 'abbreviation' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(216,35): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(220,11): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type '(Without<TeamCreateInput, TeamUncheckedCreateInput> & TeamUncheckedCreateInput) | (Without<...> & TeamCreateInput)'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(226,35): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(248,18): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(248,52): error TS2353: Object literal may only specify known properties, and 'abbreviation' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(256,13): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type '(Without<TeamUpdateInput, TeamUncheckedUpdateInput> & TeamUncheckedUpdateInput) | (Without<...> & TeamUpdateInput)'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(257,56): error TS2339: Property 'abbreviation' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(266,13): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type '(Without<TeamCreateInput, TeamUncheckedCreateInput> & TeamUncheckedCreateInput) | (Without<...> & TeamCreateInput)'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(281,16): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(288,54): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(289,37): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(298,27): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamSelect<DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(306,20): error TS2339: Property 'espnTeamId' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(306,65): error TS2339: Property 'espnTeamId' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(307,44): error TS2339: Property 'espnTeamId' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(308,58): error TS2339: Property 'espnTeamId' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(319,9): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(321,27): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type 'TeamSelect<DefaultArgs>'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(325,55): error TS2339: Property 'espnTeamId' does not exist on type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(330,16): error TS2353: Object literal may only specify known properties, and 'abbreviation' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(337,54): error TS2353: Object literal may only specify known properties, and 'abbreviation' does not exist in type 'TeamWhereInput'.
+src/infrastructure/repositories/PrismaTeamRepository.ts(338,37): error TS2345: Argument of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is not assignable to parameter of type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }'.
+  Type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; }' is missing the following properties from type '{ id: number; name: string; city: string | null; state: string | null; conference: string | null; division: string | null; stadium: string | null; scheduleId: number | null; espnTeamId: number | null; abbreviation: string | null; }': espnTeamId, abbreviation
+src/infrastructure/repositories/PrismaTeamRepository.ts(353,19): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type '(Without<TeamUpdateInput, TeamUncheckedUpdateInput> & TeamUncheckedUpdateInput) | (Without<...> & TeamUpdateInput)'.
+src/infrastructure/repositories/ProspectRepository.ts(10,41): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/ProspectRepository.ts(21,26): error TS7006: Parameter 'prospect' implicitly has an 'any' type.
+src/infrastructure/repositories/ProspectRepository.ts(25,40): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/ProspectRepository.ts(37,23): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/ProspectRepository.ts(49,41): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/ProspectRepository.ts(57,26): error TS7006: Parameter 'prospect' implicitly has an 'any' type.
+src/infrastructure/repositories/ProspectRepository.ts(61,39): error TS2339: Property 'prospect' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/TeamNeedRepository.ts(10,37): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/TeamNeedRepository.ts(18,22): error TS7006: Parameter 'need' implicitly has an 'any' type.
+src/infrastructure/repositories/TeamNeedRepository.ts(22,39): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/TeamNeedRepository.ts(35,23): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/infrastructure/repositories/TeamNeedRepository.ts(45,23): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/domain/repositories/GameFactsRepository.ts(3,15): error TS2305: Module '"@prisma/client"' has no exported member 'Game_gameStatus'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(27,35): error TS2694: Namespace '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member 'NullableJsonNullValueInput'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(33,31): error TS2694: Namespace '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member 'DraftOrderSnapshotGetPayload'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(48,24): error TS2694: Namespace '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member 'DraftOrderEntryGetPayload'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(67,24): error TS2694: Namespace '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member 'DraftOrderTiebreakAuditGetPayload'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(89,25): error TS2694: Namespace '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member 'DraftOrderSnapshotWhereInput'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(98,19): error TS2339: Property 'draftOrderSnapshot' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(99,19): error TS2339: Property 'draftOrderSnapshot' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(119,54): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(124,29): error TS2339: Property 'draftOrderEntry' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(130,67): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(132,59): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(150,36): error TS2339: Property 'draftOrderSnapshot' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(170,42): error TS2339: Property 'draftOrderEntry' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(195,31): error TS2339: Property 'draftOrderTiebreakAudit' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(347,38): error TS2339: Property 'draftOrderSnapshot' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(375,39): error TS2339: Property 'draftOrderEntry' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(408,24): error TS2339: Property 'draftOrderTiebreakAudit' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(420,41): error TS2339: Property 'draftOrderTiebreakAudit' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(435,16): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaDraftOrderSnapshotRepository.ts(503,46): error TS2339: Property 'draftOrderSnapshot' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaGameFactsRepository.ts(2,29): error TS2305: Module '"@prisma/client"' has no exported member 'Game_gameStatus'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaGameFactsRepository.ts(13,36): error TS2339: Property 'game' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftOrder/infrastructure/persistence/prisma/PrismaGameFactsRepository.ts(34,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(14,35): error TS2339: Property 'draftSimulation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(28,25): error TS2339: Property 'draftSimulationTeam' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(41,35): error TS2339: Property 'draftSimulation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(44,40): error TS2339: Property 'draftSimulationPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(46,25): error TS2339: Property 'draftSimulation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(54,40): error TS2339: Property 'draftPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(66,32): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(66,35): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(78,19): error TS2339: Property 'draftSimulationPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(79,19): error TS2339: Property 'draftSimulation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(89,35): error TS2339: Property 'draftSimulation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(97,36): error TS2339: Property 'draftSimulationPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(103,39): error TS2339: Property 'draftSimulationPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(110,16): error TS2339: Property 'draftSimulationPick' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(115,29): error TS2339: Property 'draftSimulationPick' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(125,18): error TS2339: Property 'draftSimulation' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(130,18): error TS2339: Property 'draftSimulation' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(141,35): error TS2339: Property 'draftSimulation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(144,41): error TS2339: Property 'draftSimulationTeam' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(149,37): error TS2339: Property 'draftSimulationPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(160,49): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaDraftSimulationRepository.ts(189,35): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(22,82): error TS2694: Namespace '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member 'ProspectWhereInput'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(23,21): error TS2694: Namespace '"/home/dthompson/node_modules/.prisma/client/index".Prisma' has no exported member 'ProspectWhereInput'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(59,42): error TS2339: Property 'draftSimulationPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(65,13): error TS7006: Parameter 'x' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(66,16): error TS7006: Parameter 'x' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(70,36): error TS2339: Property 'prospectRanking' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(86,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(88,26): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(101,42): error TS2339: Property 'draftSimulationPick' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(107,13): error TS7006: Parameter 'x' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(108,16): error TS7006: Parameter 'x' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(112,36): error TS2339: Property 'prospectRanking' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(128,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaProspectRepository.ts(130,26): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaTeamNeedRepository.ts(8,36): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaTeamNeedRepository.ts(12,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaTeamNeedRepository.ts(24,36): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/draftSimulator/infrastructure/persistence/prisma/PrismaTeamNeedRepository.ts(35,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/teams/infrastructure/repositories/PrismaTeamNeedRepository.ts(9,36): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/teams/infrastructure/repositories/PrismaTeamNeedRepository.ts(14,22): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/teams/infrastructure/repositories/PrismaTeamNeedRepository.ts(26,35): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/teams/infrastructure/repositories/PrismaTeamNeedRepository.ts(52,23): error TS2339: Property 'teamNeed' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/teams/infrastructure/repositories/PrismaTeamRosterRepository.ts(8,36): error TS2551: Property 'playerTeam' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'player_Team'?
+src/modules/teams/infrastructure/repositories/PrismaTeamRosterRepository.ts(13,22): error TS7006: Parameter 'pt' implicitly has an 'any' type.
+src/routes/jobs.ts(12,29): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/routes/jobs.ts(19,28): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/routes/jobs.ts(41,28): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/routes/jobs.ts(57,28): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/JobService.ts(2,23): error TS2305: Module '"@prisma/client"' has no exported member 'data_processing_jobs_job_type'.
+src/services/JobService.ts(26,19): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/JobService.ts(37,19): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/JobService.ts(48,19): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/JobService.ts(63,18): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/JobService.ts(74,19): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/JobService.ts(78,19): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/ScoreboardScheduleService.ts(45,28): error TS2339: Property 'appSetting' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/ScoreboardScheduleService.ts(62,16): error TS2339: Property 'appSetting' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/runJob.ts(22,16): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/runJob.ts(33,18): error TS2339: Property 'data_processing_jobs' does not exist on type 'PrismaClient<{ adapter: PrismaMariaDb; log: ("warn" | "error")[]; }, never, DefaultArgs>'.
+src/services/syncTeams.ts(40,20): error TS2353: Object literal may only specify known properties, and 'abbreviation' does not exist in type 'TeamWhereUniqueInput'.
+src/services/syncTeams.ts(42,13): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type '(Without<TeamUpdateInput, TeamUncheckedUpdateInput> & TeamUncheckedUpdateInput) | (Without<...> & TeamUpdateInput)'.
+src/services/syncTeams.ts(46,13): error TS2353: Object literal may only specify known properties, and 'espnTeamId' does not exist in type '(Without<TeamCreateInput, TeamUncheckedCreateInput> & TeamUncheckedCreateInput) | (Without<...> & TeamCreateInput)'.

@@ -1,0 +1,22 @@
+import type { IAccessControlRepository } from "../../domain/repositories/IAccessControlRepository";
+
+export type GrantRoleToPersonInput = {
+  personId: number;
+  roleId: number;
+  adminId: number; // who performed the grant
+};
+
+export class GrantRoleToPersonUseCase {
+  public constructor(private readonly repo: IAccessControlRepository) {}
+
+  public async execute(input: GrantRoleToPersonInput): Promise<void> {
+    const { personId, roleId, adminId } = input;
+
+    // keep validation minimal here; controller can validate more thoroughly
+    if (!Number.isInteger(personId) || personId <= 0) throw new Error("Invalid personId");
+    if (!Number.isInteger(roleId) || roleId <= 0) throw new Error("Invalid roleId");
+    if (!Number.isInteger(adminId) || adminId <= 0) throw new Error("Invalid adminId");
+
+    await this.repo.grantRoleToPerson(personId, roleId, adminId);
+  }
+}
